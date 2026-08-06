@@ -40,23 +40,23 @@ export function PromotionModal({ open, editing, branches, variants, promoType, r
       onOk={onSave}
       okText={editing ? "Guardar cambios" : "Crear promoción"}
       cancelText="Cancelar"
-      width={promoType ? 960 : 620}
+      width={promoType ? "min(960px, 95vw)" : "min(620px, 95vw)"}
       destroyOnHidden
     >
       <Form form={form} layout="vertical" className="mt-4">
-        <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+        <div className="flex flex-col md:flex-row gap-6 items-start">
           {/* Left column — general fields */}
-          <div style={{ flex: "0 0 300px" }}>
+          <div className="w-full md:w-[300px] md:flex-none">
             <Form.Item label="Nombre" name="name" rules={[{ required: true, message: "Requerido" }]}>
               <Input placeholder="Ej: 2x1 los miércoles" />
             </Form.Item>
             <Row gutter={12}>
-              <Col span={16}>
+              <Col xs={24} sm={16}>
                 <Form.Item label="Tipo" name="type" rules={[{ required: true, message: "Requerido" }]}>
                   <Select options={TYPE_OPTIONS} placeholder="Seleccionar tipo" onChange={onTypeChange} />
                 </Form.Item>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={8}>
                 <Form.Item label="Activa" name="active" valuePropName="checked" initialValue={true}>
                   <Switch />
                 </Form.Item>
@@ -85,7 +85,7 @@ export function PromotionModal({ open, editing, branches, variants, promoType, r
 
           {/* Right column — rules (only when type is selected) */}
           {promoType && (
-            <div style={{ flex: 1, borderLeft: "1px solid #f0f0f0", paddingLeft: 24, minWidth: 0, maxHeight: 480, overflowY: "auto" }}>
+            <div className="w-full flex-1 min-w-0 max-h-[480px] overflow-y-auto pt-4 border-t border-gray-100 md:pt-0 md:border-t-0 md:border-l md:pl-6">
               <PromotionRules
                 promoType={promoType}
                 rules={rules}
