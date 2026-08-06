@@ -67,6 +67,7 @@ export class OrdersService {
         flavors: i.flavors?.length
           ? i.flavors.map((f) => ({ variant_id: f.variant_id, product_name: f.product_name ?? '', proportion: f.proportion }))
           : undefined,
+        promo_id: i.promo_id ?? undefined,
       };
     });
 

@@ -88,6 +88,7 @@ export const PosService = {
             variant_id: i.variant_id,
             qty: i.qty,
             flavors: (i.flavors as FlavorItem[] | undefined) ?? null,
+            promo_id: i.promo_id ?? null,
           })),
         }),
       });
