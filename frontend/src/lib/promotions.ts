@@ -18,6 +18,7 @@ export interface CartItem {
   variant_name: string;
   category: string;
   flavors?: FlavorItem[]; // only present for mixed pizzas (mitad/mitad)
+  promo_id?: string; // set when added via the POS "Promociones" tab — ties this line to that specific promotion
 }
 
 export interface PromotionRule {
@@ -132,9 +133,12 @@ function applyPercentage(items: DiscountedItem[], promo: Promotion) {
   for (const rule of promo.promotion_rules) {
     if (!rule.discount_percent) continue;
 
-    const targets = rule.variant_id
-      ? items.filter((i) => i.variant_id === rule.variant_id)
-      : items; // no variant_id = applies to all items in cart
+    // Only items explicitly added via the POS "Promociones" tab for this promo are eligible —
+    // adding the same product from the regular catalog never triggers the discount.
+    const targets = items.filter((i) => {
+      if (i.promo_id !== promo.id) return false;
+      return rule.variant_id ? i.variant_id === rule.variant_id : true;
+    });
 
     for (const item of targets) {
       const discount = (item.unit_price * item.qty * rule.discount_percent) / 100;

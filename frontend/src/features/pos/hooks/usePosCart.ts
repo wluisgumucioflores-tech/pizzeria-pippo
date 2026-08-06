@@ -47,11 +47,11 @@ export function usePosCart(
           flavors,
         }];
       }
-      const existing = prev.find((i) => i.variant_id === variant.id && !i.flavors);
+      const existing = prev.find((i) => i.variant_id === variant.id && !i.flavors && !i.promo_id);
       const maxQty = getStockQty?.(variant.id) ?? null;
       const currentQty = existing?.qty ?? 0;
       if (maxQty !== null && currentQty >= maxQty) return prev;
-      if (existing) return prev.map((i) => i.variant_id === variant.id && !i.flavors ? { ...i, qty: i.qty + 1 } : i);
+      if (existing) return prev.map((i) => i.variant_id === variant.id && !i.flavors && !i.promo_id ? { ...i, qty: i.qty + 1 } : i);
       return [...prev, {
         variant_id: variant.id,
         qty: 1,
@@ -87,10 +87,11 @@ export function usePosCart(
           next = [...next, item];
           continue;
         }
-        const existing = next.find((i) => i.variant_id === item.variant_id && !i.flavors);
+        const sameOrigin = (i: CartItem) => (i.promo_id ?? null) === (item.promo_id ?? null);
+        const existing = next.find((i) => i.variant_id === item.variant_id && !i.flavors && sameOrigin(i));
         if (existing) {
           next = next.map((i) =>
-            i.variant_id === item.variant_id && !i.flavors ? { ...i, qty: i.qty + item.qty } : i
+            i.variant_id === item.variant_id && !i.flavors && sameOrigin(i) ? { ...i, qty: i.qty + item.qty } : i
           );
         } else {
           next = [...next, item];

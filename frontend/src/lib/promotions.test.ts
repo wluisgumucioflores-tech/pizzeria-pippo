@@ -127,22 +127,35 @@ describe("applyPromotions — BUY_X_GET_Y", () => {
 });
 
 describe("applyPromotions — PERCENTAGE", () => {
-  it("applies percentage to a specific variant", () => {
+  it("applies percentage to a specific variant when the item is tagged with the promo", () => {
     const promo = makePromo({
       promotion_rules: [makeRule({ variant_id: "v-pizza", discount_percent: 10 })],
     });
-    const [item] = applyPromotions([makeItem({ qty: 2, unit_price: 70 })], [promo]);
+    const [item] = applyPromotions([makeItem({ qty: 2, unit_price: 70, promo_id: promo.id })], [promo]);
     expect(item.discount_applied).toBeCloseTo(14);
     expect(item.final_price).toBeCloseTo(63);
     expect(getCartTotal([item])).toBeCloseTo(126);
   });
 
-  it("applies to the whole cart when rule has no variant", () => {
+  it("does NOT discount a matching item added without going through the promo (Ventas tab)", () => {
+    const promo = makePromo({
+      promotion_rules: [makeRule({ variant_id: "v-pizza", discount_percent: 10 })],
+    });
+    const [item] = applyPromotions([makeItem({ qty: 2, unit_price: 70 })], [promo]);
+    expect(item.discount_applied).toBe(0);
+    expect(item.final_price).toBe(70);
+    expect(item.promo_label).toBeNull();
+  });
+
+  it("applies to every tagged item when rule has no variant", () => {
     const promo = makePromo({
       promotion_rules: [makeRule({ discount_percent: 50 })],
     });
     const items = applyPromotions(
-      [makeItem({ unit_price: 70 }), makeItem({ variant_id: "v-coca", unit_price: 10, category: "bebida" })],
+      [
+        makeItem({ unit_price: 70, promo_id: promo.id }),
+        makeItem({ variant_id: "v-coca", unit_price: 10, category: "bebida", promo_id: promo.id }),
+      ],
       [promo]
     );
     expect(items[0].discount_applied).toBeCloseTo(35);
@@ -150,18 +163,29 @@ describe("applyPromotions — PERCENTAGE", () => {
     expect(getTotalDiscount(items)).toBeCloseTo(40);
   });
 
-  it("keeps the best discount instead of stacking (no acumulación)", () => {
-    const small = makePromo({
-      name: "Chica",
-      promotion_rules: [makeRule({ variant_id: "v-pizza", discount_percent: 10 })],
+  it("a whole-cart rule ignores items not tagged with the promo", () => {
+    const promo = makePromo({
+      promotion_rules: [makeRule({ discount_percent: 50 })],
     });
-    const big = makePromo({
-      name: "Grande",
-      promotion_rules: [makeRule({ variant_id: "v-pizza", discount_percent: 30 })],
+    const items = applyPromotions(
+      [makeItem({ unit_price: 70, promo_id: promo.id }), makeItem({ variant_id: "v-coca", unit_price: 10, category: "bebida" })],
+      [promo]
+    );
+    expect(items[0].discount_applied).toBeCloseTo(35);
+    expect(items[1].discount_applied).toBe(0);
+  });
+
+  it("keeps the best discount instead of stacking when multiple rules of the same promo match", () => {
+    const promo = makePromo({
+      name: "Promo variada",
+      promotion_rules: [
+        makeRule({ id: "r1", discount_percent: 10 }), // applies to everyone
+        makeRule({ id: "r2", variant_id: "v-pizza", discount_percent: 30 }), // more specific, higher discount
+      ],
     });
-    const [item] = applyPromotions([makeItem({ unit_price: 100 })], [small, big]);
-    expect(item.discount_applied).toBeCloseTo(30); // only the best one
-    expect(item.promo_label).toContain("Grande");
+    const [item] = applyPromotions([makeItem({ unit_price: 100, promo_id: promo.id })], [promo]);
+    expect(item.discount_applied).toBeCloseTo(30);
+    expect(item.promo_label).toContain("Promo variada");
   });
 });
 

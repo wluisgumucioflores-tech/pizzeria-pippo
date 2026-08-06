@@ -7,6 +7,7 @@ import type { Promotion } from "@/lib/promotions";
 import type { Product, Variant } from "../types/pos.types";
 import type { CartItem } from "@/lib/promotions";
 import { PromoComboModal } from "./PromoComboModal";
+import { PromoPercentageModal } from "./PromoPercentageModal";
 
 const { Text } = Typography;
 
@@ -65,6 +66,7 @@ function comboDescription(promo: Promotion): string {
 
 export function PromoTab({ promotions, products, branchId, getVariantPrice, onAddItems, onAddSingleVariant }: Props) {
   const [comboPromo, setComboPromo] = useState<Promotion | null>(null);
+  const [percentagePromo, setPercentagePromo] = useState<Promotion | null>(null);
 
   const handlePromoClick = (promo: Promotion) => {
     if (promo.type === "COMBO") {
@@ -80,7 +82,9 @@ export function PromoTab({ promotions, products, branchId, getVariantPrice, onAd
       }
       return;
     }
-    // PERCENTAGE: informational only — no action needed, discount applies automatically
+    if (promo.type === "PERCENTAGE") {
+      setPercentagePromo(promo);
+    }
   };
 
   if (promotions.length === 0) {
@@ -101,8 +105,6 @@ export function PromoTab({ promotions, products, branchId, getVariantPrice, onAd
         {promotions.map((promo) => {
           const config = TYPE_CONFIG[promo.type as keyof typeof TYPE_CONFIG] ?? TYPE_CONFIG.PERCENTAGE;
           const isCombo = promo.type === "COMBO";
-          const isPercentage = promo.type === "PERCENTAGE";
-          const isClickable = !isPercentage;
 
           let description = "";
           if (promo.type === "BUY_X_GET_Y") description = buyXGetYDescription(promo, products);
@@ -112,21 +114,21 @@ export function PromoTab({ promotions, products, branchId, getVariantPrice, onAd
           return (
             <div
               key={promo.id}
-              onClick={() => isClickable && handlePromoClick(promo)}
+              onClick={() => handlePromoClick(promo)}
               style={{
                 borderRadius: 12,
                 border: `1.5px solid ${config.border}`,
                 background: config.bg,
                 padding: "12px 14px",
-                cursor: isClickable ? "pointer" : "default",
+                cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
                 gap: 12,
                 transition: "box-shadow 0.15s",
                 boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
               }}
-              onMouseEnter={(e) => { if (isClickable) (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)"; }}
-              onMouseLeave={(e) => { if (isClickable) (e.currentTarget as HTMLDivElement).style.boxShadow = "0 1px 3px rgba(0,0,0,0.05)"; }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = "0 1px 3px rgba(0,0,0,0.05)"; }}
             >
               {/* Icon */}
               <div style={{ width: 40, height: 40, borderRadius: 10, background: config.color, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 18, flexShrink: 0 }}>
@@ -140,24 +142,15 @@ export function PromoTab({ promotions, products, branchId, getVariantPrice, onAd
                   <Tag color={config.color} style={{ margin: 0, fontSize: 10, border: "none" }}>{config.label}</Tag>
                 </div>
                 <Text type="secondary" style={{ fontSize: 12 }}>{description}</Text>
-                {isPercentage && (
-                  <div style={{ marginTop: 4 }}>
-                    <Tag style={{ fontSize: 10, background: "#f0fdf4", borderColor: "#bbf7d0", color: "#15803d", margin: 0 }}>
-                      Se aplica automáticamente al agregar al carrito
-                    </Tag>
-                  </div>
-                )}
               </div>
 
-              {/* Arrow for clickable */}
-              {isClickable && (
-                <div style={{ color: config.color, flexShrink: 0 }}>
-                  {isCombo
-                    ? <RightOutlined style={{ fontSize: 14 }} />
-                    : <Text style={{ fontSize: 12, color: config.color, fontWeight: 600 }}>Agregar</Text>
-                  }
-                </div>
-              )}
+              {/* Arrow / action hint */}
+              <div style={{ color: config.color, flexShrink: 0 }}>
+                {isCombo
+                  ? <RightOutlined style={{ fontSize: 14 }} />
+                  : <Text style={{ fontSize: 12, color: config.color, fontWeight: 600 }}>Agregar</Text>
+                }
+              </div>
             </div>
           );
         })}
@@ -170,6 +163,15 @@ export function PromoTab({ promotions, products, branchId, getVariantPrice, onAd
         getVariantPrice={getVariantPrice}
         onConfirm={onAddItems}
         onClose={() => setComboPromo(null)}
+      />
+
+      <PromoPercentageModal
+        promo={percentagePromo}
+        products={products}
+        branchId={branchId}
+        getVariantPrice={getVariantPrice}
+        onAddItems={onAddItems}
+        onClose={() => setPercentagePromo(null)}
       />
     </div>
   );
