@@ -153,7 +153,7 @@ export default function AdminLayout({
             warnWhenUnsavedChanges: true,
           }}
         >
-          <Authenticated key="admin-auth" redirectOnFail="/login">
+          <Authenticated key="admin-auth">
             <ThemedLayout Sider={() => <ThemedSider fixed Title={SiderTitle} />} Footer={AppFooter}>
               {children}
             </ThemedLayout>

@@ -1,5 +1,11 @@
 import { AuthProvider } from "@refinedev/core";
-import { getUserProfile, getToken, signIn, signOut } from "./auth";
+import { getUserProfile, getToken, signIn, signOut, UserRole } from "./auth";
+
+function redirectForRole(role: UserRole | undefined): string {
+  if (role === "cocinero") return "/kitchen";
+  if (role === "cajero") return "/pos";
+  return "/login";
+}
 
 export const authProvider: AuthProvider = {
   login: async ({ email, password }) => {
@@ -22,6 +28,12 @@ export const authProvider: AuthProvider = {
     if (!token) {
       return { authenticated: false, redirectTo: "/login" };
     }
+
+    const profile = await getUserProfile();
+    if (profile?.role !== "admin") {
+      return { authenticated: false, redirectTo: redirectForRole(profile?.role) };
+    }
+
     return { authenticated: true };
   },
 
