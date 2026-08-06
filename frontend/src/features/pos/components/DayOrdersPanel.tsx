@@ -1,7 +1,7 @@
 "use client";
 
-import { Button, Empty, Tag, Typography } from "antd";
-import { CheckCircleOutlined, StopOutlined } from "@ant-design/icons";
+import { Button, Empty, Tag, Tooltip, Typography } from "antd";
+import { CheckCircleOutlined, FileTextOutlined, StopOutlined } from "@ant-design/icons";
 import { formatTimeBolivia } from "@/lib/timezone";
 import { useIsMobile } from "@/lib/useIsMobile";
 import type { DayOrder } from "../types/pos.types";
@@ -67,6 +67,11 @@ export function DayOrdersPanel({ dayOrders, markingReady, onMarkReady, onCancel 
                     <Tag color={order.order_type === "takeaway" ? "blue" : "green"} style={{ margin: 0, fontSize: 11 }}>
                       {order.order_type === "takeaway" ? "🥡 Para llevar" : "🍽️ Local"}
                     </Tag>
+                    {order.notes && (
+                      <Tooltip title={order.notes}>
+                        <FileTextOutlined style={{ color: "#9ca3af", fontSize: 13 }} />
+                      </Tooltip>
+                    )}
                     <div style={{ flex: 1 }} />
                     {isCancelled ? (
                       <Tag color="red" icon={<StopOutlined />} style={{ margin: 0 }}>Anulada</Tag>
@@ -121,6 +126,11 @@ export function DayOrdersPanel({ dayOrders, markingReady, onMarkReady, onCancel 
                   <Tag color={order.order_type === "takeaway" ? "blue" : "green"} style={{ flexShrink: 0, margin: 0 }}>
                     {order.order_type === "takeaway" ? "🥡 Para llevar" : "🍽️ Local"}
                   </Tag>
+                  {order.notes && (
+                    <Tooltip title={order.notes}>
+                      <FileTextOutlined style={{ flexShrink: 0, color: "#9ca3af", fontSize: 14 }} />
+                    </Tooltip>
+                  )}
                   <span style={{ flexShrink: 0, fontSize: 14 }}>
                     {order.payment_method === "efectivo" ? "💵" : order.payment_method === "qr" ? "📱" : order.payment_method === "online" ? "🌐" : order.payment_method === "mixto" ? "🔀" : "—"}
                   </span>

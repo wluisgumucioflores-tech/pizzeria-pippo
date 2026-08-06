@@ -66,7 +66,8 @@ export const PosService = {
     orderType: OrderType,
     signal?: AbortSignal,
     idempotencyKey?: string,
-    payments?: SplitPayment[]
+    payments?: SplitPayment[],
+    notes?: string | null
   ): Promise<{ ok: boolean; order_id?: string; daily_number?: number; error?: string }> {
     try {
       const res = await nestFetch(API_ENDPOINTS.orders.base, {
@@ -79,6 +80,7 @@ export const PosService = {
           payment_provider: paymentProvider,
           payments: payments ?? null,
           order_type: orderType,
+          notes: notes?.trim() || null,
           idempotency_key: idempotencyKey ?? null,
           // The server recalculates prices, promos and physical units from
           // qty (paid units) — client-side amounts are only used to verify

@@ -10,6 +10,7 @@
 | # | Archivo | Qué hace |
 |---|---------|----------|
 | ⏳ | `046_employees_attendance.sql` | Fichaje de empleados con credencial QR: tablas `employees` y `attendance_records` + `branches.expected_start_time` (informativo) |
+| ⏳ | `047_orders_notes.sql` | Columna `notes` (texto opcional) en `orders` + rewrite de `create_order_atomic` para guardarla — nota de venta opcional en el POS |
 
 ## Aplicadas en producción
 

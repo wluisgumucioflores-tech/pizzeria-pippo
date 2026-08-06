@@ -83,7 +83,7 @@ export function OrdersMobileList({ orders, ordersTotal, ordersPage, ordersPageSi
                     </Text>
                   </div>
                 ),
-                children: <OrderItemsTable items={order.order_items} />,
+                children: <OrderItemsTable items={order.order_items} notes={order.notes} />,
               };
             })}
           />

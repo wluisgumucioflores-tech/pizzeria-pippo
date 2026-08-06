@@ -132,6 +132,7 @@ export class OrdersService {
       payment_provider: dto.payment_provider ?? null,
       payments: dto.payments ?? [],
       order_type: dto.order_type,
+      notes: dto.notes?.trim() || null,
       idempotency_key: dto.idempotency_key ?? null,
       day_start: dateRangeFrom(today),
       day_end: dateRangeTo(today),
@@ -196,6 +197,7 @@ export class OrdersService {
       payment_provider: order.paymentProvider,
       order_type: order.orderType,
       cancelled_at: order.cancelledAt?.toISOString() ?? null,
+      notes: order.notes,
       order_items: order.items.map((item) => ({
         qty: item.qty,
         product_variants: item.variant

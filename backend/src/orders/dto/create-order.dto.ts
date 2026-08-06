@@ -45,6 +45,11 @@ export class CreateOrderDto {
 
   @IsOptional()
   @IsString()
+  @Length(0, 300)
+  notes?: string | null;
+
+  @IsOptional()
+  @IsString()
   @Length(8, 64)
   idempotency_key?: string | null;
 

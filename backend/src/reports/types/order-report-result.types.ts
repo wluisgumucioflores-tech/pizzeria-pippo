@@ -23,6 +23,7 @@ export interface OrderReportResult {
   order_type: string;
   cancelled_at: string | null;
   cancel_reason: string | null;
+  notes: string | null;
   branches: { name: string } | null;
   order_items: OrderReportItemResult[];
   payments: OrderReportPaymentResult[];

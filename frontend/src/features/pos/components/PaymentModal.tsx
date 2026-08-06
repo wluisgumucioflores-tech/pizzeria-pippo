@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Modal, Button, Checkbox, InputNumber, Typography } from "antd";
+import { Modal, Button, Checkbox, InputNumber, Input, Typography } from "antd";
 import { CheckCircleFilled, ArrowRightOutlined } from "@ant-design/icons";
 import { PAYMENT_PROVIDERS } from "@pippo/shared";
 import { useIsMobile } from "@/lib/useIsMobile";
@@ -24,6 +24,7 @@ interface Props {
     paymentMethod: PaymentMethod,
     paymentProvider: string | null,
     payments: SplitPayment[] | null,
+    notes: string | null,
   ) => void;
 }
 
@@ -77,6 +78,7 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
   const [onlinePayment, setOnlinePayment] = useState(false);
   const [cashAmount, setCashAmount] = useState(0);
+  const [notes, setNotes] = useState("");
 
   const qrAmount = Math.round((total - cashAmount) * 100) / 100;
 
@@ -85,6 +87,7 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
     setPaymentMethod(null);
     setOnlinePayment(false);
     setCashAmount(0);
+    setNotes("");
   };
 
   const handleClose = () => {
@@ -118,7 +121,7 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
             { method: "qr", amount: qrAmount },
           ]
         : null;
-    onConfirm(orderType, onlinePayment ? "online" : paymentMethod, onlinePayment ? ONLINE_PROVIDER : null, payments);
+    onConfirm(orderType, onlinePayment ? "online" : paymentMethod, onlinePayment ? ONLINE_PROVIDER : null, payments, notes.trim() || null);
     reset();
   };
 
@@ -233,6 +236,26 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
     </div>
   );
 
+  const notesSection = (
+    <div>
+      <div className="flex justify-between items-center mb-2">
+        <div className="flex items-center gap-2">
+          <div style={{ width: 4, height: 16, background: "#9ca3af", borderRadius: 2 }} />
+          <Text strong>Nota de venta</Text>
+        </div>
+        <Text type="secondary" className="text-xs">(opcional)</Text>
+      </div>
+      <Input.TextArea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="Ej: sin cebolla, mesa 5, para Juan..."
+        maxLength={300}
+        rows={2}
+        showCount
+      />
+    </div>
+  );
+
   return (
     <Modal
       title={
@@ -257,6 +280,7 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
           {onlineShortcut}
           {orderTypeSection}
           {paymentMethodSection}
+          {notesSection}
         </div>
       ) : (
         <div className="flex gap-5 mt-3">
@@ -267,6 +291,7 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
           <div className="flex-1 flex flex-col gap-3">
             {orderTypeSection}
             {paymentMethodSection}
+            {notesSection}
           </div>
         </div>
       )}

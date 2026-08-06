@@ -169,7 +169,7 @@ export function OrdersTable({ orders, ordersTotal, ordersPage, ordersPageSize, l
             onChange: onPageChange,
           }}
           expandable={{
-            expandedRowRender: (order) => <OrderItemsTable items={order.order_items} />,
+            expandedRowRender: (order) => <OrderItemsTable items={order.order_items} notes={order.notes} />,
           }}
           columns={columns}
         />

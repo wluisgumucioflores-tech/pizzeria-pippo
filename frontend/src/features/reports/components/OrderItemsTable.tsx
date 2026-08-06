@@ -1,6 +1,7 @@
 "use client";
 
 import { Table, Tag, Typography, Space } from "antd";
+import { FileTextOutlined } from "@ant-design/icons";
 import { useIsMobile } from "@/lib/useIsMobile";
 import type { OrderItem } from "../types/reports.types";
 
@@ -55,14 +56,26 @@ export const orderItemColumns = [
 
 interface Props {
   items: OrderItem[];
+  notes?: string | null;
 }
 
-export function OrderItemsTable({ items }: Props) {
+function OrderNote({ notes }: { notes?: string | null }) {
+  if (!notes) return null;
+  return (
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 6, padding: "8px 10px", marginBottom: 8, background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 6 }}>
+      <FileTextOutlined style={{ color: "#b45309", marginTop: 2, flexShrink: 0 }} />
+      <Text style={{ fontSize: 12.5, color: "#92400e" }}>{notes}</Text>
+    </div>
+  );
+}
+
+export function OrderItemsTable({ items, notes }: Props) {
   const isMobile = useIsMobile();
 
   if (isMobile) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "4px 0" }}>
+        <OrderNote notes={notes} />
         {items.map((item, i) => {
           const cat = item.product_variants?.products?.category ?? "";
           const sub = (Number(item.unit_price) * item.qty) - Number(item.discount_applied);
@@ -93,12 +106,15 @@ export function OrderItemsTable({ items }: Props) {
   }
 
   return (
-    <Table
-      dataSource={items}
-      rowKey={(item) => `${item.product_variants?.name}-${item.qty}`}
-      size="small"
-      pagination={false}
-      columns={orderItemColumns}
-    />
+    <div>
+      <OrderNote notes={notes} />
+      <Table
+        dataSource={items}
+        rowKey={(item) => `${item.product_variants?.name}-${item.qty}`}
+        size="small"
+        pagination={false}
+        columns={orderItemColumns}
+      />
+    </div>
   );
 }

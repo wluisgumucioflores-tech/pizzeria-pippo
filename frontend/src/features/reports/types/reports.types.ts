@@ -66,6 +66,7 @@ export interface Order {
   order_type: "dine_in" | "takeaway";
   cancelled_at: string | null;
   cancel_reason: string | null;
+  notes: string | null;
   branches: { name: string } | null;
   order_items: OrderItem[];
   payments: OrderPayment[];

@@ -241,6 +241,7 @@ export class ReportsService {
     orderType: string;
     cancelledAt: Date | null;
     cancelReason: string | null;
+    notes: string | null;
     branch: { name: string } | null;
     cashier: { fullName: string | null } | null;
     items: {
@@ -264,6 +265,7 @@ export class ReportsService {
       order_type: order.orderType,
       cancelled_at: order.cancelledAt?.toISOString() ?? null,
       cancel_reason: order.cancelReason,
+      notes: order.notes,
       branches: order.branch ? { name: order.branch.name } : null,
       order_items: order.items.map((item) => ({
         qty: item.qty,

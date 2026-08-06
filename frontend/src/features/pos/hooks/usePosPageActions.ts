@@ -31,6 +31,7 @@ export function usePosPageActions({
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
   const [paymentProvider, setPaymentProvider] = useState<string | null>(null);
   const [payments, setPayments] = useState<SplitPayment[] | null>(null);
+  const [saleNotes, setSaleNotes] = useState<string | null>(null);
   const [ticket, setTicket] = useState<TicketData | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
@@ -74,10 +75,12 @@ export function usePosPageActions({
     method: PaymentMethod,
     provider: string | null,
     splitPayments: SplitPayment[] | null,
+    notes: string | null,
   ) => {
     setPaymentMethod(method);
     setPaymentProvider(provider);
     setPayments(splitPayments);
+    setSaleNotes(notes);
     cart.setOrderType(orderType);
     setIdempotencyKey(crypto.randomUUID());
     setPaymentModal(false);
@@ -97,7 +100,7 @@ export function usePosPageActions({
     const timeout = setTimeout(() => controller.abort(), 15000);
     setConfirmLoading(true);
     try {
-      const result = await PosService.confirmSale(branchId, cart.discountedCart, cart.total, paymentMethod, paymentProvider, cart.orderType, controller.signal, idempotencyKey ?? undefined, payments ?? undefined);
+      const result = await PosService.confirmSale(branchId, cart.discountedCart, cart.total, paymentMethod, paymentProvider, cart.orderType, controller.signal, idempotencyKey ?? undefined, payments ?? undefined, saleNotes);
 
       if (result.ok) {
         broadcast("ORDER_COMPLETE");
@@ -106,6 +109,7 @@ export function usePosPageActions({
         setPaymentMethod(null);
         setPaymentProvider(null);
         setPayments(null);
+        setSaleNotes(null);
         setIdempotencyKey(null);
         setActiveTab("sale");
         setTicket({ orderId: result.order_id!, dailyNumber: result.daily_number!, items: cart.discountedCart, total: cart.total, paymentMethod, paymentProvider, payments, orderType: cart.orderType });
