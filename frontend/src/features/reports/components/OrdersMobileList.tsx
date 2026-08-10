@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, Tag, Tooltip, Typography, Collapse, Button } from "antd";
+import { useTranslations } from "next-intl";
 import { formatDateTimeBolivia } from "@/lib/timezone";
 import { OrderItemsTable } from "./OrderItemsTable";
 import { OrdersStatsRow } from "./OrdersStatsRow";
@@ -27,6 +28,7 @@ interface Props {
 }
 
 export function OrdersMobileList({ orders, ordersTotal, ordersPage, ordersPageSize, loading, exporting, summary, onPageChange, onExport }: Props) {
+  const t = useTranslations("reports");
   return (
     <>
     <OrdersStatsRow summary={summary} loading={loading} />
@@ -34,14 +36,14 @@ export function OrdersMobileList({ orders, ordersTotal, ordersPage, ordersPageSi
       size="small"
       extra={
         <Button size="small" icon={<IconExcel />} loading={exporting} disabled={orders.length === 0} onClick={onExport}>
-          Exportar
+          {t("export")}
         </Button>
       }
     >
       {loading ? (
-        <div style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>Cargando...</div>
+        <div style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>{t("loading")}</div>
       ) : orders.length === 0 ? (
-        <div style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>Sin ventas en este período</div>
+        <div style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>{t("noSalesInPeriod")}</div>
       ) : (
         <>
           <Collapse
@@ -60,8 +62,8 @@ export function OrdersMobileList({ orders, ordersTotal, ordersPage, ordersPageSi
                       <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
                         <Text style={{ fontSize: 12, color: "#6b7280" }}>{fecha}</Text>
                         {order.order_type === "takeaway"
-                          ? <Tag color="purple" style={{ margin: 0, fontSize: 10 }}>🥡 Llevar</Tag>
-                          : <Tag color="orange" style={{ margin: 0, fontSize: 10 }}>🍽️ Local</Tag>}
+                          ? <Tag color="purple" style={{ margin: 0, fontSize: 10 }}>{t("orderType.takeawayShort")}</Tag>
+                          : <Tag color="orange" style={{ margin: 0, fontSize: 10 }}>{t("orderType.dineInShort")}</Tag>}
                         {order.payment_method === "efectivo"
                           ? <Tag color="green" style={{ margin: 0, fontSize: 10 }}>💵</Tag>
                           : order.payment_method === "qr"
@@ -88,22 +90,22 @@ export function OrdersMobileList({ orders, ordersTotal, ordersPage, ordersPageSi
             })}
           />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12, paddingTop: 12, borderTop: "1px solid #f0f0f0" }}>
-            <Text type="secondary" style={{ fontSize: 13 }}>{ordersTotal} ventas en total</Text>
+            <Text type="secondary" style={{ fontSize: 13 }}>{t("salesCount", { count: ordersTotal })}</Text>
             <div style={{ display: "flex", gap: 8 }}>
               <button
                 disabled={ordersPage === 1}
                 onClick={() => onPageChange(ordersPage - 1, ordersPageSize)}
                 style={{ padding: "4px 12px", borderRadius: 6, border: "1px solid #d9d9d9", background: ordersPage === 1 ? "#f5f5f5" : "#fff", cursor: ordersPage === 1 ? "not-allowed" : "pointer", color: ordersPage === 1 ? "#bfbfbf" : "#374151" }}
               >
-                ‹ Ant.
+                {t("prev")}
               </button>
-              <Text type="secondary" style={{ lineHeight: "30px", fontSize: 13 }}>Pág. {ordersPage}</Text>
+              <Text type="secondary" style={{ lineHeight: "30px", fontSize: 13 }}>{t("page", { page: ordersPage })}</Text>
               <button
                 disabled={ordersPage * 20 >= ordersTotal}
                 onClick={() => onPageChange(ordersPage + 1, ordersPageSize)}
                 style={{ padding: "4px 12px", borderRadius: 6, border: "1px solid #d9d9d9", background: ordersPage * 20 >= ordersTotal ? "#f5f5f5" : "#fff", cursor: ordersPage * 20 >= ordersTotal ? "not-allowed" : "pointer", color: ordersPage * 20 >= ordersTotal ? "#bfbfbf" : "#374151" }}
               >
-                Sig. ›
+                {t("next")}
               </button>
             </div>
           </div>

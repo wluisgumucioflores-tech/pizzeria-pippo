@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { Modal, Form, Input, Select } from "antd";
+import { useTranslations } from "next-intl";
 import type { Branch } from "@/features/branches/types/branch.types";
 import type { Device } from "../types/device.types";
 
@@ -16,6 +17,8 @@ interface Props {
 
 export function DeviceModal({ open, editing, branches, saving, onClose, onSubmit }: Props) {
   const [form] = Form.useForm<{ branch_id: string; name: string }>();
+  const t = useTranslations("common");
+  const td = useTranslations("devices.modal");
 
   useEffect(() => {
     if (open) {
@@ -32,32 +35,32 @@ export function DeviceModal({ open, editing, branches, saving, onClose, onSubmit
 
   return (
     <Modal
-      title={editing ? "Editar dispositivo" : "Agregar dispositivo"}
+      title={editing ? td("editTitle") : td("createTitle")}
       open={open}
       onOk={handleOk}
       onCancel={onClose}
       confirmLoading={saving}
-      okText={editing ? "Guardar" : "Crear"}
-      cancelText="Cancelar"
-      destroyOnClose
+      okText={editing ? t("save") : t("create")}
+      cancelText={t("cancel")}
+      destroyOnHidden
     >
       <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
         <Form.Item
           name="name"
-          label="Nombre"
-          rules={[{ required: true, message: "Ingresá un nombre" }]}
-          extra="Ej: Celular caja 1 - Sucursal Centro"
+          label={td("name")}
+          rules={[{ required: true, message: td("nameRequired") }]}
+          extra={td("nameHint")}
         >
-          <Input placeholder="Celular caja 1" />
+          <Input placeholder={td("namePlaceholder")} />
         </Form.Item>
 
         <Form.Item
           name="branch_id"
-          label="Sucursal"
-          rules={[{ required: true, message: "Seleccioná una sucursal" }]}
-          extra={editing ? "La sucursal no se puede cambiar después de crear el dispositivo." : undefined}
+          label={td("branch")}
+          rules={[{ required: true, message: td("branchRequired") }]}
+          extra={editing ? td("branchLockedHint") : undefined}
         >
-          <Select disabled={!!editing} placeholder="Seleccionar sucursal">
+          <Select disabled={!!editing} placeholder={td("branchPlaceholder")}>
             {branches.map((branch) => (
               <Select.Option key={branch.id} value={branch.id}>{branch.name}</Select.Option>
             ))}

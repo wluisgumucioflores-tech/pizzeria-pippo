@@ -2,6 +2,7 @@
 
 import { Table, Tag, Space, Button, Tooltip, Spin, Typography } from "antd";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { WarehouseRow } from "../types/warehouse.types";
 
 const { Text } = Typography;
@@ -52,15 +53,17 @@ export function WarehouseTable({
   sentinelRef, onPageChange, onAdjust, onEditMinQty, onDelete,
 }: Props) {
   const router = useRouter();
+  const t = useTranslations("common");
+  const tw = useTranslations("warehouse");
 
   const columns = [
     {
-      title: "Insumo",
+      title: tw("columns.ingredient"),
       key: "ingredient",
       render: (_: unknown, row: WarehouseRow) => (
         <Space>
           {row.quantity < row.min_quantity && (
-            <Tooltip title="Stock bajo el mínimo"><IconWarning /></Tooltip>
+            <Tooltip title={tw("lowStockTooltip")}><IconWarning /></Tooltip>
           )}
           <Text strong>{row.ingredient_name}</Text>
           <Tag>{row.unit}</Tag>
@@ -68,7 +71,7 @@ export function WarehouseTable({
       ),
     },
     {
-      title: "Stock bodega",
+      title: tw("columns.warehouseStock"),
       key: "quantity",
       render: (_: unknown, row: WarehouseRow) => (
         <Text strong style={{ color: row.quantity < row.min_quantity ? "#ef4444" : "#16a34a" }}>
@@ -77,7 +80,7 @@ export function WarehouseTable({
       ),
     },
     {
-      title: "Mínimo",
+      title: tw("columns.minimum"),
       key: "min_quantity",
       render: (_: unknown, row: WarehouseRow) => (
         <Button type="link" size="small" style={{ padding: 0 }} onClick={() => onEditMinQty(row)}>
@@ -86,21 +89,21 @@ export function WarehouseTable({
       ),
     },
     {
-      title: "Estado",
+      title: tw("columns.status"),
       key: "status",
       render: (_: unknown, row: WarehouseRow) =>
         row.quantity < row.min_quantity
-          ? <Tag color="red">Stock bajo</Tag>
-          : <Tag color="green">OK</Tag>,
+          ? <Tag color="red">{tw("statusLow")}</Tag>
+          : <Tag color="green">{tw("statusOk")}</Tag>,
     },
     {
-      title: "Acciones",
+      title: t("actions"),
       key: "action",
       render: (_: unknown, row: WarehouseRow) => (
         <Space>
-          <Button size="small" icon={<IconEdit />} onClick={() => onAdjust(row)}>Ajustar</Button>
-          <Button size="small" icon={<IconSwap />} onClick={() => router.push(`/warehouse/transfer?ingredientId=${row.ingredient_id}`)}>Transferir</Button>
-          <Tooltip title={row.has_movements ? "Tiene movimientos registrados" : "Eliminar"}>
+          <Button size="small" icon={<IconEdit />} onClick={() => onAdjust(row)}>{tw("adjust")}</Button>
+          <Button size="small" icon={<IconSwap />} onClick={() => router.push(`/warehouse/transfer?ingredientId=${row.ingredient_id}`)}>{tw("transfer")}</Button>
+          <Tooltip title={row.has_movements ? tw("hasMovementsTooltip") : t("delete")}>
             <Button size="small" danger icon={<IconDelete />} disabled={row.has_movements} onClick={() => onDelete(row)} />
           </Tooltip>
         </Space>
@@ -125,22 +128,22 @@ export function WarehouseTable({
                   <Text strong style={{ fontSize: 15 }}>{row.ingredient_name}</Text>
                   <Tag style={{ margin: 0 }}>{row.unit}</Tag>
                 </div>
-                {isLow ? <Tag color="red" style={{ margin: 0 }}>Stock bajo</Tag> : <Tag color="green" style={{ margin: 0 }}>OK</Tag>}
+                {isLow ? <Tag color="red" style={{ margin: 0 }}>{tw("statusLow")}</Tag> : <Tag color="green" style={{ margin: 0 }}>{tw("statusOk")}</Tag>}
               </div>
               <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 10 }}>
                 <div>
-                  <Text type="secondary" style={{ fontSize: 12 }}>Stock: </Text>
+                  <Text type="secondary" style={{ fontSize: 12 }}>{tw("stockLabel")}</Text>
                   <Text strong style={{ color: isLow ? "#ef4444" : "#16a34a" }}>{row.quantity}</Text>
                 </div>
                 <div>
-                  <Text type="secondary" style={{ fontSize: 12 }}>Mínimo: </Text>
+                  <Text type="secondary" style={{ fontSize: 12 }}>{tw("minLabel")}</Text>
                   <Button type="link" size="small" style={{ padding: 0, fontWeight: 600 }} onClick={() => onEditMinQty(row)}>{row.min_quantity}</Button>
                 </div>
               </div>
               <Space>
-                <Button size="small" icon={<IconEdit />} onClick={() => onAdjust(row)}>Ajustar</Button>
-                <Button size="small" icon={<IconSwap />} onClick={() => router.push(`/warehouse/transfer?ingredientId=${row.ingredient_id}`)}>Transferir</Button>
-                <Tooltip title={row.has_movements ? "Tiene movimientos registrados" : "Eliminar"}>
+                <Button size="small" icon={<IconEdit />} onClick={() => onAdjust(row)}>{tw("adjust")}</Button>
+                <Button size="small" icon={<IconSwap />} onClick={() => router.push(`/warehouse/transfer?ingredientId=${row.ingredient_id}`)}>{tw("transfer")}</Button>
+                <Tooltip title={row.has_movements ? tw("hasMovementsTooltip") : t("delete")}>
                   <Button size="small" danger icon={<IconDelete />} disabled={row.has_movements} onClick={() => onDelete(row)} />
                 </Tooltip>
               </Space>
@@ -151,7 +154,7 @@ export function WarehouseTable({
         {loadingMore && <div style={{ display: "flex", justifyContent: "center", padding: "16px 0" }}><Spin size="small" /></div>}
         {!hasMore && mobileRows.length > 0 && (
           <Text type="secondary" style={{ textAlign: "center", display: "block", padding: "8px 0", fontSize: 12 }}>
-            {mobileRows.length} insumos en total
+            {tw("totalIngredients", { count: mobileRows.length })}
           </Text>
         )}
       </div>
@@ -164,7 +167,7 @@ export function WarehouseTable({
       columns={columns}
       rowKey="ingredient_id"
       loading={isLoading}
-      pagination={{ current: page, pageSize: PAGE_SIZE, total, showTotal: (t) => `${t} insumos`, onChange: onPageChange, showSizeChanger: false }}
+      pagination={{ current: page, pageSize: PAGE_SIZE, total, showTotal: (count) => tw("totalIngredients", { count }), onChange: onPageChange, showSizeChanger: false }}
       rowClassName={(row) => row.quantity < row.min_quantity ? "bg-red-50" : ""}
       size="middle"
     />

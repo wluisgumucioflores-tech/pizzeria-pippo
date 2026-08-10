@@ -11,6 +11,7 @@ const SETTINGS_KEYS = [
   'telegram_enabled',
   'kitchen_late_threshold_minutes',
   'printer_paper_width',
+  'printer_business_name',
 ];
 
 @Injectable()
@@ -30,6 +31,7 @@ export class SettingsService {
       telegram_enabled: config.get('telegram_enabled') === 'true',
       kitchen_late_threshold_minutes: parseInt(config.get('kitchen_late_threshold_minutes') ?? '10', 10),
       printer_paper_width: parseInt(config.get('printer_paper_width') ?? '58', 10),
+      printer_business_name: config.get('printer_business_name')?.trim() || 'GU PIZZA',
     };
   }
 
@@ -42,6 +44,7 @@ export class SettingsService {
       ['telegram_enabled', String(dto.telegram_enabled ?? false)],
       ['kitchen_late_threshold_minutes', String(dto.kitchen_late_threshold_minutes ?? 10)],
       ['printer_paper_width', String(paperWidth)],
+      ['printer_business_name', dto.printer_business_name?.trim() || 'GU PIZZA'],
     ];
 
     if (dto.telegram_bot_token && !dto.telegram_bot_token.includes('***')) {
@@ -59,13 +62,17 @@ export class SettingsService {
     );
   }
 
-  async getPrinterPaperWidth(user: CurrentUserPayload): Promise<number> {
+  async getPrinterSettings(user: CurrentUserPayload): Promise<{ printer_paper_width: number; printer_business_name: string }> {
     const businessId = this.resolveBusinessId(user);
-    const row = await this.prisma.appSetting.findUnique({
-      where: { businessId_key: { businessId, key: 'printer_paper_width' } },
+    const rows = await this.prisma.appSetting.findMany({
+      where: { businessId, key: { in: ['printer_paper_width', 'printer_business_name'] } },
     });
-    const width = parseInt(row?.value ?? '58', 10);
-    return width === 80 ? 80 : 58;
+    const config = new Map(rows.map((row) => [row.key, row.value]));
+    const width = parseInt(config.get('printer_paper_width') ?? '58', 10);
+    return {
+      printer_paper_width: width === 80 ? 80 : 58,
+      printer_business_name: config.get('printer_business_name')?.trim() || 'GU PIZZA',
+    };
   }
 
   // No RolesGuard in the controller — any authenticated user can read this.

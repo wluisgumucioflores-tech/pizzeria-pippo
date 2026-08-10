@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { getActivePromotions } from '../orders/lib/promotions-engine';
+import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import type { ListPromotionsQueryDto } from './dto/list-promotions-query.dto';
 import type { CreatePromotionDto } from './dto/create-promotion.dto';
 import type { UpdatePromotionDto } from './dto/update-promotion.dto';
@@ -18,11 +19,12 @@ function toDateOnlyString(date: Date): string {
 export class PromotionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async list(query: ListPromotionsQueryDto): Promise<PromotionResult[]> {
+  async list(query: ListPromotionsQueryDto, user: CurrentUserPayload): Promise<PromotionResult[]> {
     const showInactive = query.showInactive === 'true';
+    const businessId = this.resolveBusinessId(user);
 
     const rows = await this.prisma.promotion.findMany({
-      where: showInactive ? {} : { isActive: true },
+      where: { businessId, ...(showInactive ? {} : { isActive: true }) },
       orderBy: { name: 'asc' },
       include: { rules: true },
     });
@@ -36,15 +38,19 @@ export class PromotionsService {
     return promotions;
   }
 
-  async getById(id: string): Promise<PromotionResult> {
+  async getById(id: string, user: CurrentUserPayload): Promise<PromotionResult> {
     const row = await this.prisma.promotion.findUnique({ where: { id }, include: { rules: true } });
-    if (!row) throw new NotFoundException('Promoción no encontrada');
+    if (!row || row.businessId !== this.resolveBusinessId(user)) {
+      throw new NotFoundException('Promoción no encontrada');
+    }
     return this.mapPromotion(row);
   }
 
-  async create(dto: CreatePromotionDto): Promise<{ id: string }> {
+  async create(dto: CreatePromotionDto, user: CurrentUserPayload): Promise<{ id: string }> {
+    const businessId = this.resolveBusinessId(user);
     const promo = await this.prisma.promotion.create({
       data: {
+        businessId,
         name: dto.name,
         type: dto.type,
         daysOfWeek: dto.days_of_week,
@@ -58,6 +64,7 @@ export class PromotionsService {
     if (dto.rules?.length) {
       await this.prisma.promotionRule.createMany({
         data: dto.rules.map((r) => ({
+          businessId,
           promotionId: promo.id,
           variantId: r.variant_id ?? null,
           buyQty: r.buy_qty ?? null,
@@ -73,8 +80,10 @@ export class PromotionsService {
     return { id: promo.id };
   }
 
-  async update(id: string, dto: UpdatePromotionDto): Promise<void> {
-    await this.prisma.promotion.update({
+  async update(id: string, dto: UpdatePromotionDto, user: CurrentUserPayload): Promise<void> {
+    await this.assertOwnership(id, user);
+
+    const promo = await this.prisma.promotion.update({
       where: { id },
       data: {
         name: dto.name,
@@ -87,12 +96,14 @@ export class PromotionsService {
       },
     });
 
-    // Rules: replaceable config, delete and recreate
+    // Rules: replaceable config, delete and recreate. Heredan el businessId
+    // de la promoción — no viene del caller.
     await this.prisma.promotionRule.deleteMany({ where: { promotionId: id } });
 
     if (dto.rules?.length) {
       await this.prisma.promotionRule.createMany({
         data: dto.rules.map((r) => ({
+          businessId: promo.businessId,
           promotionId: id,
           variantId: r.variant_id ?? null,
           buyQty: r.buy_qty ?? null,
@@ -106,7 +117,8 @@ export class PromotionsService {
     }
   }
 
-  async patch(id: string, dto: PatchPromotionDto): Promise<void> {
+  async patch(id: string, dto: PatchPromotionDto, user: CurrentUserPayload): Promise<void> {
+    await this.assertOwnership(id, user);
     // Accepts is_active (soft-delete) and/or active (POS toggle) — never a full update
     await this.prisma.promotion.update({
       where: { id },
@@ -117,8 +129,26 @@ export class PromotionsService {
     });
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, user: CurrentUserPayload): Promise<void> {
+    await this.assertOwnership(id, user);
     await this.prisma.promotion.update({ where: { id }, data: { isActive: false } });
+  }
+
+  private resolveBusinessId(user: CurrentUserPayload): string {
+    if (!user.business_id) {
+      throw new InternalServerErrorException('El usuario no tiene un negocio asociado');
+    }
+    return user.business_id;
+  }
+
+  // Evita que un admin del negocio B opere sobre una promoción del negocio A
+  // conociendo su UUID — 404 en vez de 403 para no revelar que el id existe.
+  private async assertOwnership(id: string, user: CurrentUserPayload): Promise<void> {
+    const businessId = this.resolveBusinessId(user);
+    const promo = await this.prisma.promotion.findUnique({ where: { id }, select: { businessId: true } });
+    if (!promo || promo.businessId !== businessId) {
+      throw new NotFoundException('Promoción no encontrada');
+    }
   }
 
   private mapPromotion(row: {

@@ -7,7 +7,8 @@ import {
   EditOutlined, StopOutlined, CheckCircleOutlined, DollarOutlined,
   DeleteOutlined, MoreOutlined,
 } from "@ant-design/icons";
-import { CATEGORY_OPTIONS, CATEGORY_COLORS } from "../constants/product.constants";
+import { useTranslations } from "next-intl";
+import { getCategoryOptions, CATEGORY_COLORS } from "../constants/product.constants";
 import { ProductImage } from "./ProductImage";
 import type { Product } from "../types/product.types";
 
@@ -33,27 +34,30 @@ function stopRowClick(e: MouseEvent) {
 
 export function ProductsDesktopTable({ products, loading, page, pageSize, total, onPageChange, onToggleActive, onDelete, onDuplicate }: Props) {
   const router = useRouter();
+  const t = useTranslations("common");
+  const tp = useTranslations("products");
+  const CATEGORY_OPTIONS = getCategoryOptions(tp);
 
   const confirmDelete = (record: Product) => {
     Modal.confirm({
-      title: "¿Eliminar este producto?",
-      content: "Solo se puede si no tiene ventas ni promociones asociadas. No se puede deshacer.",
-      okText: "Eliminar",
+      title: tp("deleteConfirmTitle"),
+      content: tp("deleteConfirmDesc"),
+      okText: t("delete"),
       okButtonProps: { danger: true },
-      cancelText: "Cancelar",
+      cancelText: t("cancel"),
       onOk: () => onDelete(record),
     });
   };
 
   const columns = [
     {
-      title: "Imagen",
+      title: tp("columns.image"),
       key: "image_url",
       width: 72,
       render: (_: unknown, record: Product) => <ProductImage url={record.image_url} category={record.category} />,
     },
     {
-      title: "Nombre",
+      title: tp("columns.name"),
       dataIndex: "name",
       key: "name",
       render: (name: string, record: Product) => (
@@ -61,12 +65,12 @@ export function ProductsDesktopTable({ products, loading, page, pageSize, total,
           <Text delete={!record.is_active} style={!record.is_active ? { color: "#9ca3af" } : {}}>
             {name}
           </Text>
-          {!record.is_active && <Tag color="default">Inactivo</Tag>}
+          {!record.is_active && <Tag color="default">{tp("inactiveTag")}</Tag>}
         </Space>
       ),
     },
     {
-      title: "Categoría",
+      title: tp("columns.category"),
       dataIndex: "category",
       key: "category",
       render: (cat: string) => (
@@ -74,15 +78,15 @@ export function ProductsDesktopTable({ products, loading, page, pageSize, total,
       ),
     },
     {
-      title: "Tipo",
+      title: tp("columns.type"),
       dataIndex: "product_type",
       key: "product_type",
       render: (type: string) => (
-        <Tag color={type === "resale" ? "purple" : "orange"}>{type === "resale" ? "Reventa" : "Elaboración"}</Tag>
+        <Tag color={type === "resale" ? "purple" : "orange"}>{type === "resale" ? tp("typeResale") : tp("typeMade")}</Tag>
       ),
     },
     {
-      title: "Variantes",
+      title: tp("columns.variants"),
       key: "variants",
       render: (_: unknown, record: Product) => (
         <Space>
@@ -91,15 +95,15 @@ export function ProductsDesktopTable({ products, loading, page, pageSize, total,
       ),
     },
     {
-      title: "Acciones",
+      title: t("actions"),
       key: "actions",
       width: 120,
       render: (_: unknown, record: Product) => (
         <Space onClick={stopRowClick}>
-          <Tooltip title="Precios por sucursal">
+          <Tooltip title={tp("branchPricesTooltip")}>
             <Button icon={<DollarOutlined />} size="small" onClick={() => router.push(`/products/${record.id}/prices`)} />
           </Tooltip>
-          <Tooltip title="Editar">
+          <Tooltip title={t("edit")}>
             <Button icon={<EditOutlined />} size="small" onClick={() => router.push(`/products/${record.id}/edit`)} />
           </Tooltip>
           <Dropdown
@@ -108,11 +112,11 @@ export function ProductsDesktopTable({ products, loading, page, pageSize, total,
               items: [
                 {
                   key: "toggle",
-                  label: record.is_active ? "Desactivar" : "Activar",
+                  label: record.is_active ? tp("deactivate") : tp("activate"),
                   icon: record.is_active ? <StopOutlined /> : <CheckCircleOutlined />,
                 },
                 { type: "divider" },
-                { key: "delete", label: "Eliminar", icon: <DeleteOutlined />, danger: true },
+                { key: "delete", label: t("delete"), icon: <DeleteOutlined />, danger: true },
               ],
               onClick: ({ key }) => {
                 if (key === "duplicate") onDuplicate(record);
@@ -121,7 +125,7 @@ export function ProductsDesktopTable({ products, loading, page, pageSize, total,
               },
             }}
           >
-            <Tooltip title="Más opciones">
+            <Tooltip title={tp("moreOptionsTooltip")}>
               <Button icon={<MoreOutlined />} size="small" />
             </Tooltip>
           </Dropdown>
@@ -145,7 +149,7 @@ export function ProductsDesktopTable({ products, loading, page, pageSize, total,
         pageSize,
         total,
         showSizeChanger: false,
-        showTotal: (t) => `${t} productos`,
+        showTotal: (count) => tp("totalProducts", { count }),
         onChange: onPageChange,
       }}
     />

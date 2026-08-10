@@ -3,6 +3,7 @@
 import { Button, Select, InputNumber, Typography, Switch } from "antd";
 import type { FocusEvent } from "react";
 import { PlusOutlined, MinusCircleOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import { VariantBranchPrices } from "./VariantBranchPrices";
 import type { Variant, VariantTypeOption, Branch } from "../types/product.types";
 
@@ -39,15 +40,17 @@ export function ProductStepVariants({
   onPrev, onNext, nextLabel, saving,
 }: Props) {
   const simpleVariant = variants[0];
+  const tf = useTranslations("products.form");
+  const tv = useTranslations("products.variants");
 
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20, padding: "12px 16px", background: "#f9fafb", borderRadius: 10, border: "1px solid #e5e7eb" }}>
         <Switch checked={hasVariants} onChange={onToggleVariants} />
         <div>
-          <Text strong style={{ fontSize: 14 }}>Este producto tiene tamaños o presentaciones</Text>
+          <Text strong style={{ fontSize: 14 }}>{tf("hasVariantsLabel")}</Text>
           <Text type="secondary" style={{ fontSize: 12, display: "block" }}>
-            {hasVariants ? "Ej: Personal / Mediana / Familiar" : "Se vende como unidad única con un solo precio"}
+            {hasVariants ? tf("hasVariantsHintOn") : tf("hasVariantsHintOff")}
           </Text>
         </div>
       </div>
@@ -55,7 +58,7 @@ export function ProductStepVariants({
       {!hasVariants && simpleVariant && (
         <div style={{ padding: "16px 20px", background: "#f9fafb", borderRadius: 10, border: "1px solid #e5e7eb" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <Text type="secondary" style={{ whiteSpace: "nowrap" }}>Precio base</Text>
+            <Text type="secondary" style={{ whiteSpace: "nowrap" }}>{tv("basePrice")}</Text>
             <InputNumber
               prefix="Bs"
               value={simpleVariant.base_price}
@@ -78,7 +81,7 @@ export function ProductStepVariants({
         <>
           {variantTypeOptions.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              No hay tipos de variante configurados. Creá uno primero en <strong>Tipos de variante</strong>.
+              {tf("noVariantTypes")}
             </div>
           ) : (
             <>
@@ -97,7 +100,7 @@ export function ProductStepVariants({
                           onClick={() => onReactivateVariant(vi)}
                           style={{ position: "absolute", top: 8, right: 8, background: "none", border: "1px solid #d1d5db", borderRadius: 6, cursor: "pointer", fontSize: 11, color: "#6b7280", padding: "2px 8px" }}
                         >
-                          Reactivar
+                          {tf("reactivate")}
                         </button>
                       ) : (
                         activeCount > 1 && (
@@ -109,7 +112,7 @@ export function ProductStepVariants({
                           </button>
                         )
                       )}
-                      <Text type="secondary" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>Tamaño</Text>
+                      <Text type="secondary" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>{tf("sizeLabel")}</Text>
                       <Select
                         value={variant.name}
                         options={variantTypeOptions.filter(
@@ -119,7 +122,7 @@ export function ProductStepVariants({
                         style={{ width: "100%", marginTop: 4, marginBottom: 10 }}
                         disabled={inactive}
                       />
-                      <Text type="secondary" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>Precio base</Text>
+                      <Text type="secondary" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>{tv("basePrice")}</Text>
                       <InputNumber
                         prefix="Bs"
                         value={variant.base_price}
@@ -147,7 +150,7 @@ export function ProductStepVariants({
                     style={{ padding: "14px 16px", borderRadius: 10, border: "2px dashed #d1d5db", background: "#fff", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, color: "#6b7280", minHeight: 120 }}
                   >
                     <PlusOutlined style={{ fontSize: 20 }} />
-                    <Text type="secondary" style={{ fontSize: 12 }}>Agregar variante</Text>
+                    <Text type="secondary" style={{ fontSize: 12 }}>{tf("addVariant")}</Text>
                   </button>
                 )}
               </div>
@@ -157,9 +160,9 @@ export function ProductStepVariants({
       )}
 
       <div className="flex justify-between mt-4">
-        <Button onClick={onPrev}>Anterior</Button>
+        <Button onClick={onPrev}>{tf("previous")}</Button>
         <Button type="primary" onClick={onNext} disabled={variants.length === 0} loading={saving}>
-          {nextLabel ?? "Siguiente"}
+          {nextLabel ?? tf("next")}
         </Button>
       </div>
     </div>

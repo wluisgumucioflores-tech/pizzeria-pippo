@@ -2,6 +2,7 @@
 
 import { Collapse, InputNumber, Typography } from "antd";
 import type { FocusEvent } from "react";
+import { useTranslations } from "next-intl";
 import type { Branch, BranchPrice } from "../types/product.types";
 
 const { Text } = Typography;
@@ -24,6 +25,7 @@ function selectOnFocus(e: FocusEvent<HTMLInputElement>) {
 // fillMissingBranchPrices en useProductForm), así que no tocar nada acá sigue
 // dejando el producto visible en el POS de todas las sucursales.
 export function VariantBranchPrices({ branches, basePrice, branchPrices, onChange }: Props) {
+  const tf = useTranslations("products.form");
   if (branches.length === 0) return null;
 
   return (
@@ -33,7 +35,7 @@ export function VariantBranchPrices({ branches, basePrice, branchPrices, onChang
       items={[
         {
           key: "branch-prices",
-          label: `Precios por sucursal (${branches.length})`,
+          label: tf("branchPricesCollapse", { count: branches.length }),
           children: (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {branches.map((branch) => {

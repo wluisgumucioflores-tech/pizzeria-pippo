@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Tabs } from "antd";
+import { useTranslations } from "next-intl";
 import { useWarehouse } from "@/features/warehouse/hooks/useWarehouse";
 import { WarehousePageHeader } from "@/features/warehouse/components/WarehousePageHeader";
 import { WarehouseIngredientsTab } from "@/features/warehouse/components/WarehouseIngredientsTab";
@@ -10,6 +11,7 @@ import { WarehouseAdjustModal, WarehouseMinQtyModal } from "@/features/warehouse
 
 export default function WarehousePage() {
   const [activeTab, setActiveTab] = useState("ingredients");
+  const t = useTranslations("warehouse");
   const {
     filteredRows, displayMobileRows, total, isLoading,
     isMobile, mobileRows, loadingMore, hasMore,
@@ -34,7 +36,7 @@ export default function WarehousePage() {
         items={[
           {
             key: "ingredients",
-            label: "🧂 Insumos",
+            label: t("tabIngredients"),
             children: (
               <WarehouseIngredientsTab
                 isMobile={isMobile}
@@ -61,7 +63,7 @@ export default function WarehousePage() {
           },
           {
             key: "products",
-            label: "📦 Reventa",
+            label: t("tabProducts"),
             children: <WarehouseProductTable isMobile={isMobile} />,
           },
         ]}

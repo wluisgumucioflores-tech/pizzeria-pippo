@@ -2,11 +2,21 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DevicesService } from './devices.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PasswordHasherService } from '../auth/password/password-hasher.service';
+import type { CurrentUserPayload } from '../auth/types/jwt.types';
 
 describe('DevicesService', () => {
   let service: DevicesService;
   let prisma: { device: { findMany: jest.Mock; create: jest.Mock; update: jest.Mock } };
   let passwordHasher: { hash: jest.Mock; compare: jest.Mock };
+
+  const admin: CurrentUserPayload = {
+    id: 'u1',
+    email: 'admin@pippo.local',
+    role: 'admin',
+    branch_id: null,
+    full_name: 'Admin',
+    business_id: 'biz1',
+  };
 
   const device = (overrides: Partial<Record<string, unknown>> = {}) => ({
     id: 'd1',
@@ -38,12 +48,12 @@ describe('DevicesService', () => {
     it('genera un API key crudo, hashea y lo devuelve solo esta vez', async () => {
       prisma.device.create.mockResolvedValue(device());
 
-      const result = await service.create({ branch_id: 'b1', name: 'Celular caja 1' });
+      const result = await service.create({ branch_id: 'b1', name: 'Celular caja 1' }, admin);
 
       expect(passwordHasher.hash).toHaveBeenCalledWith(result.apiKey);
       expect(result.apiKey.startsWith('pippo_dev_')).toBe(true);
       expect(prisma.device.create).toHaveBeenCalledWith({
-        data: { branchId: 'b1', name: 'Celular caja 1', apiKeyHash: 'hashed-key' },
+        data: { businessId: 'biz1', branchId: 'b1', name: 'Celular caja 1', apiKeyHash: 'hashed-key' },
       });
       expect(result.device).toEqual({
         id: 'd1',

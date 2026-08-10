@@ -1,6 +1,7 @@
 "use client";
 
 import { Card } from "antd";
+import { useTranslations } from "next-intl";
 import {
   PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer,
 } from "recharts";
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function TopProductsChart({ topProducts }: Props) {
+  const t = useTranslations("reports");
   const categoryData = topProducts.reduce((acc, p) => {
     const existing = acc.find((a) => a.name === p.category);
     if (existing) { existing.value += p.revenue; }
@@ -25,7 +27,7 @@ export function TopProductsChart({ topProducts }: Props) {
   }, [] as { name: string; value: number }[]);
 
   return (
-    <Card title="Por categoría" size="small">
+    <Card title={t("salesByCategory")} size="small">
       {categoryData.length > 0 ? (
         <ResponsiveContainer width="100%" height={220}>
           <PieChart>
@@ -50,7 +52,7 @@ export function TopProductsChart({ topProducts }: Props) {
         </ResponsiveContainer>
       ) : (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 192, color: "#9ca3af" }}>
-          Sin datos
+          {t("summary.noDataPeriod")}
         </div>
       )}
     </Card>

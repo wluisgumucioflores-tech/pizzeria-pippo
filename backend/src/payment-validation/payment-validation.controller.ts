@@ -18,7 +18,7 @@ export class PaymentValidationController {
   @UseGuards(JwtAuthGuard)
   @Post('start')
   start(@Body() dto: StartPaymentValidationDto, @CurrentUser() user: CurrentUserPayload) {
-    return this.paymentValidationService.start(dto.branch_id, user.id, dto.amount);
+    return this.paymentValidationService.start(dto.branch_id, user, dto.amount);
   }
 
   @UseGuards(JwtAuthGuard)

@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import type { Server, Socket } from 'socket.io';
 import { AuthService } from '../../auth/auth.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 // Replaces supabase.channel() for kitchen/POS live updates (Fase 4). Clients
 // join a room per branch on connect; OrdersService emits into that room
@@ -13,7 +14,10 @@ export class OrdersGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   async handleConnection(client: Socket): Promise<void> {
     const token = client.handshake.auth?.token as string | undefined;
@@ -24,7 +28,27 @@ export class OrdersGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     try {
       const user = await this.authService.resolveUserFromToken(token);
-      const branchId = (client.handshake.query.branchId as string | undefined) ?? user.branch_id ?? undefined;
+      const requestedBranchId = client.handshake.query.branchId as string | undefined;
+
+      // Un no-admin siempre queda atado a su propia sucursal — el branchId
+      // que mande el cliente se ignora por completo, nunca se confía en él.
+      // Un admin puede pedir cualquier sucursal, pero solo dentro de su
+      // propio negocio (antes esto no se validaba: cualquier autenticado
+      // podía pasar cualquier branchId y unirse al room de otro negocio).
+      let branchId: string | undefined;
+      if (user.role === 'admin') {
+        branchId = requestedBranchId ?? user.branch_id ?? undefined;
+        if (branchId) {
+          const branch = await this.prisma.branch.findUnique({ where: { id: branchId }, select: { businessId: true } });
+          if (!branch || branch.businessId !== user.business_id) {
+            client.disconnect();
+            return;
+          }
+        }
+      } else {
+        branchId = user.branch_id ?? undefined;
+      }
+
       if (!branchId) {
         client.disconnect();
         return;

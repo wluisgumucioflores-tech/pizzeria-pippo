@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Row, Col, Card, Statistic } from "antd";
+import { useTranslations } from "next-intl";
 import type { SalesSummary } from "../types/dashboard.types";
 
 const IconDollar = () => (
@@ -42,12 +43,13 @@ interface Props {
 }
 
 export function DashboardSummaryCards({ summary, stockAlertsCount, loading, showingYesterday }: Props) {
+  const t = useTranslations("dashboard");
   return (
     <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
       <Col xs={24} sm={12} lg={6}>
         <Card>
           <Statistic
-            title={showingYesterday ? "Ventas de ayer" : "Ventas hoy"}
+            title={showingYesterday ? t("salesYesterday") : t("salesToday")}
             value={summary?.total ?? 0}
             prefix={<IconDollar />}
             suffix="Bs"
@@ -60,7 +62,7 @@ export function DashboardSummaryCards({ summary, stockAlertsCount, loading, show
       <Col xs={24} sm={12} lg={6}>
         <Card>
           <Statistic
-            title={showingYesterday ? "Órdenes de ayer" : "Órdenes hoy"}
+            title={showingYesterday ? t("ordersYesterday") : t("ordersToday")}
             value={summary?.count ?? 0}
             prefix={<IconShopping />}
             loading={loading}
@@ -71,7 +73,7 @@ export function DashboardSummaryCards({ summary, stockAlertsCount, loading, show
       <Col xs={24} sm={12} lg={6}>
         <Card>
           <Statistic
-            title="Ticket promedio"
+            title={t("averageTicket")}
             value={summary?.avg ?? 0}
             prefix={<IconChart />}
             suffix="Bs"
@@ -84,7 +86,7 @@ export function DashboardSummaryCards({ summary, stockAlertsCount, loading, show
       <Col xs={24} sm={12} lg={6}>
         <Card>
           <Statistic
-            title="Alertas de stock"
+            title={t("stockAlerts")}
             value={stockAlertsCount}
             prefix={<IconWarning color={stockAlertsCount > 0 ? "#ef4444" : "#22c55e"} />}
             loading={loading}

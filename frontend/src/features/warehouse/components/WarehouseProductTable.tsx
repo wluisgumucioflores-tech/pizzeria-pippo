@@ -2,6 +2,7 @@
 
 import { Table, Tag, Space, Button, Tooltip, Typography, Spin, Modal, Form, InputNumber, Input } from "antd";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useWarehouseProductTable } from "../hooks/useWarehouseProductTable";
 
 const { Text } = Typography;
@@ -31,53 +32,55 @@ function variantLabel(row: { product_variants: { name: string; products: { name:
 
 export function WarehouseProductTable({ isMobile }: { isMobile: boolean }) {
   const router = useRouter();
+  const t = useTranslations("common");
+  const tw = useTranslations("warehouse");
   const { rows, loading, adjustingRow, adjustLoading, adjustForm, alertCount, openAdjust, closeAdjust, handleAdjust } = useWarehouseProductTable();
 
   const columns = [
     {
-      title: "Producto",
+      title: tw("columns.product"),
       key: "product",
       render: (_: unknown, row: ReturnType<typeof useWarehouseProductTable>["rows"][0]) => (
         <Space>
           {row.quantity < row.min_quantity && (
-            <Tooltip title="Stock bajo el mínimo"><IconWarning /></Tooltip>
+            <Tooltip title={tw("lowStockTooltip")}><IconWarning /></Tooltip>
           )}
           <Text strong>{variantLabel(row)}</Text>
         </Space>
       ),
     },
     {
-      title: "Stock bodega",
+      title: tw("columns.warehouseStock"),
       key: "quantity",
       render: (_: unknown, row: ReturnType<typeof useWarehouseProductTable>["rows"][0]) => (
         <Text strong style={{ color: row.quantity < row.min_quantity ? "#ef4444" : "#16a34a" }}>
-          {row.quantity} unid.
+          {row.quantity} {tw("unitAbbrev")}
         </Text>
       ),
     },
     {
-      title: "Mínimo",
+      title: tw("columns.minimum"),
       key: "min_quantity",
       render: (_: unknown, row: ReturnType<typeof useWarehouseProductTable>["rows"][0]) => (
-        <Text>{row.min_quantity} unid.</Text>
+        <Text>{row.min_quantity} {tw("unitAbbrev")}</Text>
       ),
     },
     {
-      title: "Estado",
+      title: tw("columns.status"),
       key: "status",
       render: (_: unknown, row: ReturnType<typeof useWarehouseProductTable>["rows"][0]) =>
         row.quantity < row.min_quantity
-          ? <Tag color="red">Stock bajo</Tag>
-          : <Tag color="green">OK</Tag>,
+          ? <Tag color="red">{tw("statusLow")}</Tag>
+          : <Tag color="green">{tw("statusOk")}</Tag>,
     },
     {
-      title: "Acciones",
+      title: t("actions"),
       key: "action",
       render: (_: unknown, row: ReturnType<typeof useWarehouseProductTable>["rows"][0]) => (
         <Space>
-          <Button size="small" icon={<IconEdit />} onClick={() => openAdjust(row)}>Ajustar</Button>
+          <Button size="small" icon={<IconEdit />} onClick={() => openAdjust(row)}>{tw("adjust")}</Button>
           <Button size="small" icon={<IconSwap />} onClick={() => router.push(`/warehouse/transfer?variantId=${row.variant_id}`)}>
-            Transferir
+            {tw("transfer")}
           </Button>
         </Space>
       ),
@@ -93,7 +96,7 @@ export function WarehouseProductTable({ isMobile }: { isMobile: boolean }) {
       {alertCount > 0 && (
         <div style={{ marginBottom: 12 }}>
           <Tag color="orange" icon={<IconWarning />}>
-            {alertCount} producto{alertCount > 1 ? "s" : ""} bajo mínimo
+            {tw("lowStockAlertProduct", { count: alertCount })}
           </Tag>
         </div>
       )}
@@ -109,22 +112,22 @@ export function WarehouseProductTable({ isMobile }: { isMobile: boolean }) {
                     {isLow && <IconWarning />}
                     <Text strong style={{ fontSize: 15 }}>{variantLabel(row)}</Text>
                   </div>
-                  {isLow ? <Tag color="red" style={{ margin: 0 }}>Stock bajo</Tag> : <Tag color="green" style={{ margin: 0 }}>OK</Tag>}
+                  {isLow ? <Tag color="red" style={{ margin: 0 }}>{tw("statusLow")}</Tag> : <Tag color="green" style={{ margin: 0 }}>{tw("statusOk")}</Tag>}
                 </div>
                 <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 10 }}>
                   <div>
-                    <Text type="secondary" style={{ fontSize: 12 }}>Stock: </Text>
-                    <Text strong style={{ color: isLow ? "#ef4444" : "#16a34a" }}>{row.quantity} unid.</Text>
+                    <Text type="secondary" style={{ fontSize: 12 }}>{tw("stockLabel")}</Text>
+                    <Text strong style={{ color: isLow ? "#ef4444" : "#16a34a" }}>{row.quantity} {tw("unitAbbrev")}</Text>
                   </div>
                   <div>
-                    <Text type="secondary" style={{ fontSize: 12 }}>Mínimo: </Text>
-                    <Text strong>{row.min_quantity} unid.</Text>
+                    <Text type="secondary" style={{ fontSize: 12 }}>{tw("minLabel")}</Text>
+                    <Text strong>{row.min_quantity} {tw("unitAbbrev")}</Text>
                   </div>
                 </div>
                 <Space>
-                  <Button size="small" icon={<IconEdit />} onClick={() => openAdjust(row)}>Ajustar</Button>
+                  <Button size="small" icon={<IconEdit />} onClick={() => openAdjust(row)}>{tw("adjust")}</Button>
                   <Button size="small" icon={<IconSwap />} onClick={() => router.push(`/warehouse/transfer?variantId=${row.variant_id}`)}>
-                    Transferir
+                    {tw("transfer")}
                   </Button>
                 </Space>
               </div>
@@ -132,7 +135,7 @@ export function WarehouseProductTable({ isMobile }: { isMobile: boolean }) {
           })}
           {rows.length === 0 && !loading && (
             <Text type="secondary" style={{ textAlign: "center", display: "block", padding: 32 }}>
-              Sin productos de reventa en bodega. Registrá una compra primero.
+              {tw("noResaleProducts")}
             </Text>
           )}
         </div>
@@ -142,30 +145,30 @@ export function WarehouseProductTable({ isMobile }: { isMobile: boolean }) {
           columns={columns}
           rowKey="id"
           loading={loading}
-          pagination={{ pageSize: 20, showTotal: (t) => `${t} productos` }}
+          pagination={{ pageSize: 20, showTotal: (count) => tw("totalProducts", { count }) }}
           rowClassName={(row) => row.quantity < row.min_quantity ? "bg-red-50" : ""}
           size="middle"
-          locale={{ emptyText: "Sin productos de reventa en bodega. Registrá una compra primero." }}
+          locale={{ emptyText: tw("noResaleProducts") }}
         />
       )}
 
       <Modal
         open={!!adjustingRow}
-        title={`Ajustar stock — ${adjustingRow ? variantLabel(adjustingRow) : ""}`}
+        title={tw("adjustModalTitle", { name: adjustingRow ? variantLabel(adjustingRow) : "" })}
         onCancel={closeAdjust}
         footer={null}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={adjustForm} layout="vertical" onFinish={handleAdjust}>
-          <Form.Item label="Cantidad real en bodega (unid.)" name="real_quantity" rules={[{ required: true, message: "Ingresá la cantidad real" }]}>
+          <Form.Item label={tw("realQuantityUnits")} name="real_quantity" rules={[{ required: true, message: tw("requiredQuantity") }]}>
             <InputNumber min={0} style={{ width: "100%" }} />
           </Form.Item>
-          <Form.Item label="Motivo del ajuste" name="notes">
-            <Input.TextArea rows={2} placeholder="Ej: Conteo físico, merma, etc." />
+          <Form.Item label={tw("adjustReason")} name="notes">
+            <Input.TextArea rows={2} placeholder={tw("adjustReasonPlaceholderShort")} />
           </Form.Item>
           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-            <Button onClick={closeAdjust}>Cancelar</Button>
-            <Button type="primary" htmlType="submit" loading={adjustLoading}>Confirmar ajuste</Button>
+            <Button onClick={closeAdjust}>{t("cancel")}</Button>
+            <Button type="primary" htmlType="submit" loading={adjustLoading}>{tw("confirmAdjust")}</Button>
           </div>
         </Form>
       </Modal>

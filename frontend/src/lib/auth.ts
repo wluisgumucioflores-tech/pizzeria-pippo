@@ -1,4 +1,4 @@
-export type UserRole = "admin" | "cajero" | "cocinero";
+export type UserRole = "admin" | "cajero" | "cocinero" | "superadmin";
 
 const TOKEN_STORAGE_KEY = "pippo_auth_token";
 const NEST_API_URL = process.env.NEXT_PUBLIC_NEST_API_URL;
@@ -9,6 +9,7 @@ export interface UserProfile {
   role: UserRole;
   branch_id: string | null;
   full_name: string | null;
+  business_name: string | null;
 }
 
 function decodeJwtExpiry(token: string): number | null {

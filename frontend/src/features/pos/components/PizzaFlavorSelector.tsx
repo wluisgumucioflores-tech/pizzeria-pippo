@@ -2,6 +2,7 @@
 
 import { Button, Typography, Select } from "antd";
 import { PlusOutlined, MinusOutlined, DeleteOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import type { FlavorEntry } from "../hooks/useVariantSelector";
 
 const { Text } = Typography;
@@ -20,12 +21,14 @@ interface Props {
 export function PizzaFlavorSelector({
   flavors, totalParts, flavorOptions, onAddFlavor, onUpdateParts, onRemoveFlavor, onConfirm, confirmLabel,
 }: Props) {
+  const t = useTranslations("pos.flavors");
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex justify-between items-center">
-        <Text type="secondary" className="text-xs uppercase tracking-wide">Sabores</Text>
+        <Text type="secondary" className="text-xs uppercase tracking-wide">{t("title")}</Text>
         <Text type="secondary" className="text-xs">
-          Total: {totalParts} {totalParts === 1 ? "parte" : "partes"}
+          {t("totalParts", { count: totalParts })}
         </Text>
       </div>
 
@@ -66,7 +69,7 @@ export function PizzaFlavorSelector({
                 <PlusOutlined style={{ fontSize: 11 }} />
               </button>
               <Text type="secondary" className="text-xs ml-1">
-                {flavor.parts === 1 ? "parte" : "partes"}
+                {t("partsCount", { count: flavor.parts })}
               </Text>
             </div>
           </div>
@@ -75,7 +78,7 @@ export function PizzaFlavorSelector({
 
       {flavorOptions.length > 0 && (
         <Select
-          placeholder="+ Agregar otro sabor"
+          placeholder={t("addAnother")}
           value={undefined}
           onChange={(val: string) => onAddFlavor(val)}
           options={flavorOptions}

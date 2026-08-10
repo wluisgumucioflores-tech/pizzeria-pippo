@@ -1,17 +1,23 @@
-export const ROLE_OPTIONS = [
-  { value: "cajero", label: "Cajero" },
-  { value: "cocinero", label: "Cocinero" },
-  { value: "admin", label: "Admin" },
-];
+type Translate = (key: string) => string;
+
+export function getRoleOptions(t: Translate) {
+  return [
+    { value: "cajero", label: t("roles.cajero") },
+    { value: "cocinero", label: t("roles.cocinero") },
+    { value: "admin", label: t("roles.admin") },
+  ];
+}
+
+export function getRoleLabels(t: Translate): Record<string, string> {
+  return {
+    admin: t("roles.admin"),
+    cocinero: t("roles.cocinero"),
+    cajero: t("roles.cajero"),
+  };
+}
 
 export const ROLE_COLORS: Record<string, string> = {
   admin: "blue",
   cocinero: "orange",
   cajero: "green",
-};
-
-export const ROLE_LABELS: Record<string, string> = {
-  admin: "Admin",
-  cocinero: "Cocinero",
-  cajero: "Cajero",
 };

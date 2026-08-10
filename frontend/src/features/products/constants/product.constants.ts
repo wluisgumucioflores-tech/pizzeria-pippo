@@ -1,8 +1,10 @@
-export const CATEGORY_OPTIONS = [
-  { value: "pizza", label: "Pizza" },
-  { value: "bebida", label: "Bebida" },
-  { value: "otro", label: "Otro" },
-];
+export function getCategoryOptions(t: (key: string) => string) {
+  return [
+    { value: "pizza", label: t("categories.pizza") },
+    { value: "bebida", label: t("categories.bebida") },
+    { value: "otro", label: t("categories.otro") },
+  ];
+}
 
 export const CATEGORY_COLORS: Record<string, string> = {
   pizza: "red",

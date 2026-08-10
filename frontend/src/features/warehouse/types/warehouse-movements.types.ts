@@ -51,6 +51,11 @@ export interface UnifiedMovement {
 export const MOVEMENT_TYPE_COLORS: Record<string, string> = {
   compra: "green", transferencia: "blue", ajuste: "orange",
 };
-export const MOVEMENT_TYPE_LABELS: Record<string, string> = {
-  compra: "Compra", transferencia: "Transferencia", ajuste: "Ajuste",
-};
+
+export function getMovementTypeLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    compra: t("types.compra"),
+    transferencia: t("types.transferencia"),
+    ajuste: t("types.ajuste"),
+  };
+}

@@ -2,6 +2,7 @@
 
 import { Table, Button, Space, Switch, Typography, Popconfirm } from "antd";
 import { PlusOutlined, EditOutlined, QrcodeOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import type { Branch } from "@/features/branches/types/branch.types";
 import type { Employee } from "../types/employee.types";
 
@@ -16,14 +17,16 @@ interface Props {
 }
 
 export function EmployeesTable({ employees, branches, loading, onCreate, onEdit, onToggleActive, onRegenerateCredential }: Props) {
+  const t = useTranslations("common");
+  const te = useTranslations("employees");
   const branchName = (branchId: string) => branches.find((b) => b.id === branchId)?.name ?? "—";
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <Typography.Title level={5} style={{ margin: 0 }}>Empleados</Typography.Title>
+        <Typography.Title level={5} style={{ margin: 0 }}>{te("title")}</Typography.Title>
         <Button type="primary" icon={<PlusOutlined />} onClick={onCreate}>
-          Agregar empleado
+          {te("new")}
         </Button>
       </div>
 
@@ -34,15 +37,15 @@ export function EmployeesTable({ employees, branches, loading, onCreate, onEdit,
         size="small"
         pagination={false}
         columns={[
-          { title: "Nombre", dataIndex: "full_name" },
-          { title: "Puesto", dataIndex: "position" },
+          { title: te("columns.name"), dataIndex: "full_name" },
+          { title: te("columns.position"), dataIndex: "position" },
           {
-            title: "Sucursal",
+            title: te("columns.branch"),
             dataIndex: "branch_id",
             render: (branchId: string) => branchName(branchId),
           },
           {
-            title: "Activo",
+            title: te("columns.active"),
             dataIndex: "is_active",
             width: 80,
             render: (_: unknown, row: Employee) => (
@@ -50,19 +53,19 @@ export function EmployeesTable({ employees, branches, loading, onCreate, onEdit,
             ),
           },
           {
-            title: "Acciones",
+            title: t("actions"),
             width: 140,
             render: (_: unknown, row: Employee) => (
               <Space>
                 <Button size="small" icon={<EditOutlined />} onClick={() => onEdit(row)} />
                 <Popconfirm
-                  title="¿Regenerar la credencial?"
-                  description="La tarjeta QR y el código actuales dejarán de funcionar."
+                  title={te("regenerateConfirmTitle")}
+                  description={te("regenerateConfirmDesc")}
                   onConfirm={() => onRegenerateCredential(row)}
-                  okText="Regenerar"
-                  cancelText="Cancelar"
+                  okText={te("regenerate")}
+                  cancelText={t("cancel")}
                 >
-                  <Button size="small" icon={<QrcodeOutlined />} title="Regenerar credencial QR" />
+                  <Button size="small" icon={<QrcodeOutlined />} title={te("regenerateTooltip")} />
                 </Popconfirm>
               </Space>
             ),

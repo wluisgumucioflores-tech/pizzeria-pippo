@@ -25,28 +25,28 @@ export class BranchesController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Post()
-  create(@Body() dto: CreateBranchDto) {
-    return this.branchesService.create(dto);
+  create(@Body() dto: CreateBranchDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.branchesService.create(dto, user);
   }
 
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Put(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateBranchDto) {
-    return this.branchesService.update(id, dto);
+  update(@Param('id') id: string, @Body() dto: UpdateBranchDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.branchesService.update(id, dto, user);
   }
 
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Patch(':id')
-  patch(@Param('id') id: string, @Body() dto: PatchBranchDto) {
-    return this.branchesService.setActive(id, dto.is_active);
+  patch(@Param('id') id: string, @Body() dto: PatchBranchDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.branchesService.setActive(id, dto.is_active, user);
   }
 
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.branchesService.remove(id);
+  remove(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    return this.branchesService.remove(id, user);
   }
 }

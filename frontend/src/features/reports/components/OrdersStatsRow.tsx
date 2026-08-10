@@ -1,6 +1,7 @@
 "use client";
 
 import { Typography, Skeleton } from "antd";
+import { useTranslations } from "next-intl";
 import type { SalesSummary } from "../types/reports.types";
 
 const { Text } = Typography;
@@ -33,6 +34,8 @@ function StatTile({ label, value, count, accent }: { label: string; value: numbe
 }
 
 export function OrdersStatsRow({ summary, loading }: Props) {
+  const t = useTranslations("reports");
+
   if (loading && !summary) {
     return <Skeleton active paragraph={{ rows: 1 }} style={{ marginBottom: 16 }} />;
   }
@@ -42,15 +45,15 @@ export function OrdersStatsRow({ summary, loading }: Props) {
 
   return (
     <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
-      <StatTile label="Total del período" value={summary.total} count={summary.count} accent />
-      <StatTile label="🍽️ Comer aquí" value={by_order_type.dine_in.total} count={by_order_type.dine_in.count} />
-      <StatTile label="🥡 Para llevar" value={by_order_type.takeaway.total} count={by_order_type.takeaway.count} />
-      <StatTile label="💵 Efectivo" value={by_payment_method.efectivo.total} count={by_payment_method.efectivo.count} />
-      <StatTile label="📱 QR" value={by_payment_method.qr.total} count={by_payment_method.qr.count} />
-      <StatTile label="🌐 Online" value={by_payment_method.online.total} count={by_payment_method.online.count} />
+      <StatTile label={t("totalPeriod")} value={summary.total} count={summary.count} accent />
+      <StatTile label={t("orderType.dineIn")} value={by_order_type.dine_in.total} count={by_order_type.dine_in.count} />
+      <StatTile label={t("orderType.takeaway")} value={by_order_type.takeaway.total} count={by_order_type.takeaway.count} />
+      <StatTile label={t("payment.cash")} value={by_payment_method.efectivo.total} count={by_payment_method.efectivo.count} />
+      <StatTile label={t("payment.qr")} value={by_payment_method.qr.total} count={by_payment_method.qr.count} />
+      <StatTile label={t("payment.online")} value={by_payment_method.online.total} count={by_payment_method.online.count} />
       {by_payment_method.sin_especificar.count > 0 && (
         <StatTile
-          label="Sin especificar"
+          label={t("payment.unspecified")}
           value={by_payment_method.sin_especificar.total}
           count={by_payment_method.sin_especificar.count}
         />

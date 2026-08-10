@@ -1,6 +1,7 @@
 "use client";
 
 import { Modal, Button, Tag, Typography, Space } from "antd";
+import { useTranslations } from "next-intl";
 import { useVariantSelector } from "../hooks/useVariantSelector";
 import { PizzaFlavorSelector } from "./PizzaFlavorSelector";
 import type { Product, Variant } from "../types/pos.types";
@@ -22,6 +23,7 @@ export function VariantSelectorModal({
   product, branchId, allProducts, getVariantPrice, getPromoLabel, onSelect, onClose,
 }: Props) {
   const { selectedSize, flavors, totalParts, handleSelectSize, addFlavor, updateParts, removeFlavor } = useVariantSelector(product);
+  const t = useTranslations("pos.variantModal");
 
   if (!product) return null;
 
@@ -89,7 +91,7 @@ export function VariantSelectorModal({
     <Modal title={product.name} open={!!product} onCancel={onClose} footer={null} style={{ maxWidth: "calc(100vw - 32px)" }} width={420}>
       <div className="flex flex-col gap-4 mt-4">
         <div>
-          <Text type="secondary" className="block mb-2 text-xs uppercase tracking-wide">Tamaño</Text>
+          <Text type="secondary" className="block mb-2 text-xs uppercase tracking-wide">{t("size")}</Text>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))", gap: 8 }}>
             {variants.map((variant) => {
               const price = getVariantPrice(variant, branchId);
@@ -123,8 +125,8 @@ export function VariantSelectorModal({
             onConfirm={handleConfirm}
             confirmLabel={
               flavors.length === 1
-                ? `Agregar al carrito — Bs ${getVariantPrice(selectedSize, branchId)}`
-                : `Agregar pizza mixta — Bs ${getVariantPrice(selectedSize, branchId)}`
+                ? t("addToCart", { price: getVariantPrice(selectedSize, branchId) })
+                : t("addMixedPizza", { price: getVariantPrice(selectedSize, branchId) })
             }
           />
         )}

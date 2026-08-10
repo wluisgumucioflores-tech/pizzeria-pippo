@@ -29,13 +29,13 @@ export class OrdersController {
   }
 
   @Get()
-  getDayOrders(@Query() query: GetDayOrdersQueryDto) {
-    return this.ordersService.getDayOrders(query.branchId, query.date);
+  getDayOrders(@Query() query: GetDayOrdersQueryDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.ordersService.getDayOrders(query.branchId, query.date, user);
   }
 
   @Get('kitchen')
-  getPendingKitchenOrders(@Query() query: GetKitchenOrdersQueryDto) {
-    return this.ordersService.getPendingKitchenOrders(query.branchId);
+  getPendingKitchenOrders(@Query() query: GetKitchenOrdersQueryDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.ordersService.getPendingKitchenOrders(query.branchId, user);
   }
 
   @Post(':id/ready')

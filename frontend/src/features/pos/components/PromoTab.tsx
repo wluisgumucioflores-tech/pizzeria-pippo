@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Tag, Typography, Empty } from "antd";
 import { GiftOutlined, PercentageOutlined, SwapOutlined, RightOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import type { Promotion } from "@/lib/promotions";
 import type { Product, Variant } from "../types/pos.types";
 import type { CartItem } from "@/lib/promotions";
@@ -10,6 +11,8 @@ import { PromoComboModal } from "./PromoComboModal";
 import { PromoPercentageModal } from "./PromoPercentageModal";
 
 const { Text } = Typography;
+
+type PosTranslator = ReturnType<typeof useTranslations>;
 
 interface Props {
   promotions: Promotion[];
@@ -20,13 +23,7 @@ interface Props {
   onAddSingleVariant: (variantId: string, qty: number) => void;
 }
 
-const TYPE_CONFIG = {
-  BUY_X_GET_Y: { icon: <SwapOutlined />, color: "#7c3aed", bg: "#f5f3ff", border: "#ddd6fe", label: "2×1 / N+1" },
-  PERCENTAGE: { icon: <PercentageOutlined />, color: "#0369a1", bg: "#f0f9ff", border: "#bae6fd", label: "% Descuento" },
-  COMBO: { icon: <GiftOutlined />, color: "#b45309", bg: "#fff7ed", border: "#fed7aa", label: "Combo" },
-};
-
-function buyXGetYDescription(promo: Promotion, products: Product[]): string {
+function buyXGetYDescription(promo: Promotion, products: Product[], t: PosTranslator): string {
   const lines: string[] = [];
   for (const rule of promo.promotion_rules) {
     if (!rule.variant_id || !rule.buy_qty || !rule.get_qty) continue;
@@ -35,38 +32,44 @@ function buyXGetYDescription(promo: Promotion, products: Product[]): string {
       const v = p.product_variants.find((pv) => pv.id === rule.variant_id);
       if (v) { name = `${p.name} ${v.name}`; break; }
     }
-    lines.push(`Compra ${rule.buy_qty} llévate ${rule.buy_qty + rule.get_qty} — ${name}`);
+    lines.push(t("promoDesc.buyXGetY", { buy: rule.buy_qty, total: rule.buy_qty + rule.get_qty, name }));
   }
   return lines.join(" · ") || promo.name;
 }
 
-function percentageDescription(promo: Promotion, products: Product[]): string {
+function percentageDescription(promo: Promotion, products: Product[], t: PosTranslator): string {
   const lines: string[] = [];
   for (const rule of promo.promotion_rules) {
     if (!rule.discount_percent) continue;
     if (!rule.variant_id) {
-      lines.push(`${rule.discount_percent}% OFF en todos los productos`);
+      lines.push(t("promoDesc.percentageAll", { percent: rule.discount_percent }));
     } else {
       let name = rule.variant_id;
       for (const p of products) {
         const v = p.product_variants.find((pv) => pv.id === rule.variant_id);
         if (v) { name = `${p.name} ${v.name}`; break; }
       }
-      lines.push(`${rule.discount_percent}% OFF — ${name}`);
+      lines.push(t("promoDesc.percentageSpecific", { percent: rule.discount_percent, name }));
     }
   }
   return lines.join(" · ") || promo.name;
 }
 
-function comboDescription(promo: Promotion): string {
+function comboDescription(promo: Promotion, t: PosTranslator): string {
   const comboPrice = promo.promotion_rules[0]?.combo_price;
   const count = promo.promotion_rules.length;
-  return `${count} producto${count !== 1 ? "s" : ""} por Bs ${comboPrice?.toFixed(2) ?? "—"}`;
+  return t("promoDesc.combo", { count, price: comboPrice?.toFixed(2) ?? "—" });
 }
 
 export function PromoTab({ promotions, products, branchId, getVariantPrice, onAddItems, onAddSingleVariant }: Props) {
   const [comboPromo, setComboPromo] = useState<Promotion | null>(null);
   const [percentagePromo, setPercentagePromo] = useState<Promotion | null>(null);
+  const t = useTranslations("pos");
+  const TYPE_CONFIG = {
+    BUY_X_GET_Y: { icon: <SwapOutlined />, color: "#7c3aed", bg: "#f5f3ff", border: "#ddd6fe", label: t("promoType.buyXGetY") },
+    PERCENTAGE: { icon: <PercentageOutlined />, color: "#0369a1", bg: "#f0f9ff", border: "#bae6fd", label: t("promoType.percentage") },
+    COMBO: { icon: <GiftOutlined />, color: "#b45309", bg: "#fff7ed", border: "#fed7aa", label: t("promoType.combo") },
+  };
 
   const handlePromoClick = (promo: Promotion) => {
     if (promo.type === "COMBO") {
@@ -90,7 +93,7 @@ export function PromoTab({ promotions, products, branchId, getVariantPrice, onAd
   if (promotions.length === 0) {
     return (
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", background: "#f5f5f5" }}>
-        <Empty description="No hay promociones activas hoy." />
+        <Empty description={t("promos.empty")} />
       </div>
     );
   }
@@ -98,7 +101,7 @@ export function PromoTab({ promotions, products, branchId, getVariantPrice, onAd
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: 16, background: "#f5f5f5" }}>
       <Text strong style={{ fontSize: 15, color: "#374151", display: "block", marginBottom: 12 }}>
-        Promociones activas hoy ({promotions.length})
+        {t("promos.title", { count: promotions.length })}
       </Text>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -107,9 +110,9 @@ export function PromoTab({ promotions, products, branchId, getVariantPrice, onAd
           const isCombo = promo.type === "COMBO";
 
           let description = "";
-          if (promo.type === "BUY_X_GET_Y") description = buyXGetYDescription(promo, products);
-          else if (promo.type === "PERCENTAGE") description = percentageDescription(promo, products);
-          else if (promo.type === "COMBO") description = comboDescription(promo);
+          if (promo.type === "BUY_X_GET_Y") description = buyXGetYDescription(promo, products, t);
+          else if (promo.type === "PERCENTAGE") description = percentageDescription(promo, products, t);
+          else if (promo.type === "COMBO") description = comboDescription(promo, t);
 
           return (
             <div
@@ -148,7 +151,7 @@ export function PromoTab({ promotions, products, branchId, getVariantPrice, onAd
               <div style={{ color: config.color, flexShrink: 0 }}>
                 {isCombo
                   ? <RightOutlined style={{ fontSize: 14 }} />
-                  : <Text style={{ fontSize: 12, color: config.color, fontWeight: 600 }}>Agregar</Text>
+                  : <Text style={{ fontSize: 12, color: config.color, fontWeight: 600 }}>{t("promos.add")}</Text>
                 }
               </div>
             </div>

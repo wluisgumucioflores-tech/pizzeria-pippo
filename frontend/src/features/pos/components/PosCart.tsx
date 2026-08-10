@@ -1,6 +1,7 @@
 "use client";
 
 import { ShoppingCartOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import type { DiscountedItem } from "@/lib/promotions";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { PosCartItemsList } from "./PosCartItemsList";
@@ -19,12 +20,13 @@ interface Props {
 
 export function PosCart({ discountedCart, total, totalDiscount, onUpdateQty, onRemove, onConfirm, onClear, getStockQty }: Props) {
   const isMobile = useIsMobile();
+  const t = useTranslations("pos.cartPanel");
 
   return (
     <div style={{ width: isMobile ? "100%" : 380, minWidth: isMobile ? 0 : 380, background: "#fff", borderLeft: isMobile ? "none" : "1px solid #e5e7eb", display: "flex", flexDirection: "column", boxShadow: isMobile ? "none" : "-4px 0 16px rgba(0,0,0,0.06)", flex: isMobile ? 1 : undefined }}>
       <div style={{ padding: "14px 20px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", gap: 8, background: "#ea580c" }}>
         <ShoppingCartOutlined style={{ color: "#fff", fontSize: 18 }} />
-        <span style={{ color: "#fff", fontWeight: 700, fontSize: 16 }}>Pedido actual</span>
+        <span style={{ color: "#fff", fontWeight: 700, fontSize: 16 }}>{t("title")}</span>
         {discountedCart.length > 0 && (
           <span style={{ marginLeft: "auto", background: "#fff", color: "#ea580c", fontSize: 12, fontWeight: 700, borderRadius: 12, padding: "1px 8px" }}>
             {discountedCart.reduce((s, i) => s + i.qty_physical, 0)}

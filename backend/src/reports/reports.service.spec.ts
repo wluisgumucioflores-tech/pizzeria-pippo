@@ -1,8 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReportsService } from './reports.service';
 import { PrismaService } from '../prisma/prisma.service';
+import type { CurrentUserPayload } from '../auth/types/jwt.types';
 
 const decimal = (value: number) => ({ toNumber: () => value }) as never;
+
+const admin: CurrentUserPayload = {
+  id: 'u1',
+  email: 'admin@pippo.local',
+  role: 'admin',
+  branch_id: null,
+  full_name: 'Admin',
+  business_id: 'biz1',
+};
 
 describe('ReportsService', () => {
   let service: ReportsService;
@@ -36,7 +46,7 @@ describe('ReportsService', () => {
         { total: decimal(25), orderType: 'takeaway', paymentMethod: null },
       ]);
 
-      const result = await service.getSales({});
+      const result = await service.getSales({}, admin);
 
       expect(result.total).toBe(175);
       expect(result.count).toBe(3);
@@ -53,7 +63,7 @@ describe('ReportsService', () => {
         { total: decimal(25), orderType: 'takeaway', paymentMethod: null },
       ]);
 
-      const result = await service.getSales({});
+      const result = await service.getSales({}, admin);
 
       expect(result.by_payment_method).toEqual({
         efectivo: { total: 100, count: 1 },
@@ -74,7 +84,7 @@ describe('ReportsService', () => {
         { method: 'qr', amount: decimal(30) },
       ]);
 
-      const result = await service.getSales({});
+      const result = await service.getSales({}, admin);
 
       expect(result.by_payment_method).toEqual({
         efectivo: { total: 120, count: 1 },
@@ -92,7 +102,7 @@ describe('ReportsService', () => {
     it('returns zeroed summary when there are no orders', async () => {
       prisma.order.findMany.mockResolvedValue([]);
 
-      const result = await service.getSales({});
+      const result = await service.getSales({}, admin);
 
       expect(result).toEqual({
         total: 0,
@@ -120,7 +130,7 @@ describe('ReportsService', () => {
         { total: decimal(50), createdAt: new Date('2026-07-01T23:30:00.000Z') },
       ]);
 
-      const result = await service.getDaily({});
+      const result = await service.getDaily({}, admin);
 
       expect(result).toEqual([{ date: '2026-07-01', total: 150 }]);
     });
@@ -135,7 +145,7 @@ describe('ReportsService', () => {
         { qty: 1, unitPrice: decimal(50), discountApplied: decimal(10), variant },
       ]);
 
-      const result = await service.getTopProducts({});
+      const result = await service.getTopProducts({}, admin);
 
       expect(prisma.orderItem.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ where: expect.objectContaining({ variantId: { in: ['v1'] } }) }),
@@ -148,7 +158,7 @@ describe('ReportsService', () => {
     it('no consulta detalle si no hay ventas en el período (groupBy vacío)', async () => {
       prisma.orderItem.groupBy.mockResolvedValue([]);
 
-      const result = await service.getTopProducts({});
+      const result = await service.getTopProducts({}, admin);
 
       expect(result).toEqual([]);
       expect(prisma.orderItem.findMany).not.toHaveBeenCalled();
@@ -166,7 +176,7 @@ describe('ReportsService', () => {
         })),
       );
 
-      const result = await service.getTopProducts({});
+      const result = await service.getTopProducts({}, admin);
 
       expect(prisma.orderItem.groupBy).toHaveBeenCalledWith(
         expect.objectContaining({ by: ['variantId'], take: 5, orderBy: { _sum: { qty: 'desc' } } }),
@@ -188,7 +198,7 @@ describe('ReportsService', () => {
         },
       ]);
 
-      const result = await service.getCashiers({});
+      const result = await service.getCashiers({}, admin);
 
       expect(result).toEqual([
         {
@@ -231,7 +241,7 @@ describe('ReportsService', () => {
       ]);
       prisma.order.count.mockResolvedValue(1);
 
-      const result = await service.getOrders({ page: 1, pageSize: 20 });
+      const result = await service.getOrders({ page: 1, pageSize: 20 }, admin);
 
       expect(prisma.$transaction).toHaveBeenCalled();
       expect(result.total).toBe(1);
@@ -282,7 +292,7 @@ describe('ReportsService', () => {
       ]);
       prisma.order.count.mockResolvedValue(1);
 
-      const result = await service.getOrders({});
+      const result = await service.getOrders({}, admin);
 
       expect(result.data[0].cashier_name).toBe('—');
       expect(result.data[0].branches).toBeNull();

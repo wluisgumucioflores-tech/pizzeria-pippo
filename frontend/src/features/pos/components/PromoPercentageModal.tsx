@@ -1,6 +1,7 @@
 "use client";
 
 import { Modal, Typography, Empty, message } from "antd";
+import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/lib/useIsMobile";
 import type { Promotion, CartItem } from "@/lib/promotions";
 import type { Product, Variant } from "../types/pos.types";
@@ -65,6 +66,7 @@ interface Props {
 
 export function PromoPercentageModal({ promo, products, branchId, getVariantPrice, onAddItems, onClose }: Props) {
   const isMobile = useIsMobile();
+  const t = useTranslations("pos.percentageModal");
 
   if (!promo) return null;
 
@@ -80,7 +82,7 @@ export function PromoPercentageModal({ promo, products, branchId, getVariantPric
       category: option.product.category,
       promo_id: promo.id,
     }]);
-    message.success(`${option.product.name} agregado con ${option.discountPercent}% OFF`);
+    message.success(t("addedToast", { name: option.product.name, percent: option.discountPercent }));
   };
 
   return (
@@ -94,7 +96,7 @@ export function PromoPercentageModal({ promo, products, branchId, getVariantPric
       destroyOnHidden
     >
       {options.length === 0 ? (
-        <Empty description="No hay productos elegibles para esta promoción." />
+        <Empty description={t("noEligible")} />
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10, maxHeight: 480, overflowY: "auto", paddingTop: 4 }}>
           {options.map((option) => {

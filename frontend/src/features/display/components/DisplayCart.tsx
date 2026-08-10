@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { DisplayCartItem } from "../types/display.types";
 
 interface Props {
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export function DisplayCart({ cartItems, cartTotal }: Props) {
+  const t = useTranslations("display");
   const totalSaved = cartItems.reduce((sum, i) => sum + i.discount_applied, 0);
 
   return (
@@ -16,7 +18,7 @@ export function DisplayCart({ cartItems, cartTotal }: Props) {
       {/* Items list */}
       <div style={{ flex: 1, padding: "28px 32px", overflowY: "auto" }}>
         <p style={{ fontSize: 13, fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 20, marginTop: 0 }}>
-          Detalle del pedido
+          {t("orderDetail")}
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {cartItems.map((item, i) => (
@@ -42,7 +44,7 @@ export function DisplayCart({ cartItems, cartTotal }: Props) {
                   <p style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>{item.product_name}</p>
                   <p style={{ fontSize: 14, color: "#9ca3af", margin: "2px 0 0" }}>
                     {item.flavors?.length
-                      ? `Mit. ${item.flavors[0].product_name} / Mit. ${item.flavors[1].product_name}`
+                      ? t("halfAndHalf", { first: item.flavors[0].product_name, second: item.flavors[1].product_name })
                       : item.variant_name}
                   </p>
                   {item.promo_label && (
@@ -70,14 +72,14 @@ export function DisplayCart({ cartItems, cartTotal }: Props) {
       {/* Total panel */}
       <div style={{ width: 300, background: "#111827", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 24px", borderLeft: "1px solid #1f2937", flexShrink: 0 }}>
         <p style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 12, marginTop: 0 }}>
-          Total a pagar
+          {t("totalToPay")}
         </p>
         <p style={{ fontSize: 60, fontWeight: 800, color: "#fb923c", margin: "0 0 8px", lineHeight: 1 }}>
           Bs {cartTotal.toFixed(2)}
         </p>
         {totalSaved > 0 && (
           <div style={{ marginTop: 16, background: "#14532d", borderRadius: 10, padding: "10px 20px", textAlign: "center" }}>
-            <p style={{ color: "#86efac", fontSize: 13, margin: "0 0 4px" }}>Ahorrás</p>
+            <p style={{ color: "#86efac", fontSize: 13, margin: "0 0 4px" }}>{t("youSave")}</p>
             <p style={{ color: "#4ade80", fontWeight: 700, fontSize: 20, margin: 0 }}>
               Bs {totalSaved.toFixed(2)}
             </p>

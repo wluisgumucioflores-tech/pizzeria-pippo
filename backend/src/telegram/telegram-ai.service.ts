@@ -9,6 +9,7 @@ import type { AiProviderName } from './ai-providers/ai-provider.factory';
 import type { AiCompletionConfig } from './ai-providers/ai-completion-config.types';
 import { buildSystemPrompt } from './lib/build-system-prompt';
 import { todayInBolivia } from '../common/utils/timezone';
+import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import type { TelegramAiParams, TelegramAiResult, TelegramResponse } from './types/telegram-ai.types';
 
 const SETTINGS_KEYS = [
@@ -85,6 +86,22 @@ export class TelegramAiService {
     }
   }
 
+  // Same "first business" pattern as SettingsService.getRawSettingsForFirstBusiness:
+  // the Telegram bot has no user JWT, and only one business exists today, so a
+  // synthetic admin payload scoped to that business stands in for a real user
+  // when calling services that require CurrentUserPayload for tenant scoping.
+  private async resolveFirstBusinessUser(): Promise<CurrentUserPayload> {
+    const business = await this.prisma.business.findFirst();
+    return {
+      id: 'telegram-bot',
+      email: '',
+      role: 'admin',
+      branch_id: null,
+      full_name: null,
+      business_id: business?.id ?? null,
+    };
+  }
+
   private async resolveBranches(): Promise<{ id: string; name: string }[]> {
     return this.prisma.branch.findMany({ select: { id: true, name: true } });
   }
@@ -113,7 +130,8 @@ export class TelegramAiService {
   }
 
   private async handleStockQuery(params: TelegramAiParams): Promise<string> {
-    const { data } = await this.stockService.list({ branchId: params.branch_id, page: 1, pageSize: 9999 });
+    const user = await this.resolveFirstBusinessUser();
+    const { data } = await this.stockService.list({ branchId: params.branch_id, page: 1, pageSize: 9999 }, user);
     const rows = params.ingredient_name
       ? data.filter((r) => r.ingredients.name.toLowerCase().includes(params.ingredient_name!.toLowerCase()))
       : data;
@@ -140,7 +158,8 @@ export class TelegramAiService {
   }
 
   private async handleStockAlerts(params: TelegramAiParams): Promise<string> {
-    const alerts = await this.stockService.getAlerts({ branchId: params.branch_id });
+    const user = await this.resolveFirstBusinessUser();
+    const alerts = await this.stockService.getAlerts({ branchId: params.branch_id }, user);
     if (!alerts.length) return '✅ Todo el stock está sobre el mínimo.';
 
     const byBranch: Record<string, typeof alerts> = {};
@@ -161,7 +180,8 @@ export class TelegramAiService {
   private async handleSalesSummary(params: TelegramAiParams): Promise<string> {
     const from = params.from ?? todayInBolivia();
     const to = params.to ?? todayInBolivia();
-    const { total, count, avg } = await this.reportsService.getSales({ branchId: params.branch_id, from, to });
+    const user = await this.resolveFirstBusinessUser();
+    const { total, count, avg } = await this.reportsService.getSales({ branchId: params.branch_id, from, to }, user);
 
     return `💰 *Ventas — ${dateLabel(from, to)}*\n\nTotal vendido: Bs ${total.toFixed(2)}\nÓrdenes: ${count}\nTicket promedio: Bs ${avg.toFixed(2)}`;
   }
@@ -169,7 +189,8 @@ export class TelegramAiService {
   private async handleTopProducts(params: TelegramAiParams): Promise<string> {
     const from = params.from ?? todayInBolivia();
     const to = params.to ?? todayInBolivia();
-    const products = await this.reportsService.getTopProducts({ branchId: params.branch_id, from, to });
+    const user = await this.resolveFirstBusinessUser();
+    const products = await this.reportsService.getTopProducts({ branchId: params.branch_id, from, to }, user);
 
     if (!products.length) return 'No hubo ventas en ese período.';
 
@@ -183,8 +204,10 @@ export class TelegramAiService {
 
   private async handlePromotionsQuery(params: TelegramAiParams): Promise<string> {
     const today = new Date(todayInBolivia());
+    const user = await this.resolveFirstBusinessUser();
     const promotions = await this.prisma.promotion.findMany({
       where: {
+        businessId: user.business_id ?? undefined,
         startDate: { lte: today },
         endDate: { gte: today },
         ...(params.branch_id && { branchId: params.branch_id }),
@@ -207,13 +230,11 @@ export class TelegramAiService {
   private async handleSalesExcel(params: TelegramAiParams): Promise<TelegramResponse> {
     const from = params.from ?? todayInBolivia();
     const to = params.to ?? todayInBolivia();
-    const { data: allOrders } = await this.reportsService.getOrders({
-      branchId: params.branch_id,
-      from,
-      to,
-      page: 1,
-      pageSize: 9999,
-    });
+    const user = await this.resolveFirstBusinessUser();
+    const { data: allOrders } = await this.reportsService.getOrders(
+      { branchId: params.branch_id, from, to, page: 1, pageSize: 9999 },
+      user,
+    );
     const orders = allOrders.filter((o) => !o.cancelled_at);
 
     if (!orders.length) return { type: 'text', content: 'No hay ventas en ese período.' };

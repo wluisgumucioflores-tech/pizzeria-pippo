@@ -3,6 +3,7 @@ import { NotFoundException } from '@nestjs/common';
 import { VariantTypesService } from './variant-types.service';
 import { VariantTypeInUseException } from '../common/exceptions/variant-type-in-use.exception';
 import { PrismaService } from '../prisma/prisma.service';
+import type { CurrentUserPayload } from '../auth/types/jwt.types';
 
 describe('VariantTypesService', () => {
   let service: VariantTypesService;
@@ -11,9 +12,18 @@ describe('VariantTypesService', () => {
     productVariant: { count: jest.Mock };
   };
 
+  const admin: CurrentUserPayload = {
+    id: 'u1',
+    email: 'admin@pippo.local',
+    role: 'admin',
+    branch_id: null,
+    full_name: 'Admin',
+    business_id: 'biz1',
+  };
+
   beforeEach(async () => {
     prisma = {
-      variantType: { findMany: jest.fn(), findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
+      variantType: { findMany: jest.fn(), findUnique: jest.fn().mockResolvedValue({ businessId: 'biz1', name: 'Mediana' }), create: jest.fn(), update: jest.fn() },
       productVariant: { count: jest.fn() },
     };
 
@@ -28,10 +38,10 @@ describe('VariantTypesService', () => {
     it('por defecto solo trae tipos activos, ordenados por created_at', async () => {
       prisma.variantType.findMany.mockResolvedValue([]);
 
-      await service.list({});
+      await service.list({}, admin);
 
       expect(prisma.variantType.findMany).toHaveBeenCalledWith({
-        where: { isActive: true },
+        where: { businessId: 'biz1', isActive: true },
         orderBy: { createdAt: 'asc' },
       });
     });
@@ -39,10 +49,10 @@ describe('VariantTypesService', () => {
     it('con onlyActive=false trae también los inactivos', async () => {
       prisma.variantType.findMany.mockResolvedValue([]);
 
-      await service.list({ onlyActive: 'false' });
+      await service.list({ onlyActive: 'false' }, admin);
 
       expect(prisma.variantType.findMany).toHaveBeenCalledWith({
-        where: {},
+        where: { businessId: 'biz1' },
         orderBy: { createdAt: 'asc' },
       });
     });
@@ -50,15 +60,13 @@ describe('VariantTypesService', () => {
 
   describe('setActive', () => {
     it('bloquea la desactivación si hay variantes activas usando el tipo', async () => {
-      prisma.variantType.findUnique.mockResolvedValue({ id: 't1', name: 'Mediana' });
       prisma.productVariant.count.mockResolvedValue(3);
 
-      await expect(service.setActive('t1', false)).rejects.toThrow(VariantTypeInUseException);
+      await expect(service.setActive('t1', false, admin)).rejects.toThrow(VariantTypeInUseException);
       expect(prisma.variantType.update).not.toHaveBeenCalled();
     });
 
     it('permite la desactivación si no hay variantes en uso', async () => {
-      prisma.variantType.findUnique.mockResolvedValue({ id: 't1', name: 'Mediana' });
       prisma.productVariant.count.mockResolvedValue(0);
       prisma.variantType.update.mockResolvedValue({
         id: 't1',
@@ -68,15 +76,16 @@ describe('VariantTypesService', () => {
         createdAt: new Date(),
       });
 
-      await service.setActive('t1', false);
+      await service.setActive('t1', false, admin);
 
       expect(prisma.variantType.update).toHaveBeenCalledWith({ where: { id: 't1' }, data: { isActive: false } });
     });
 
-    it('lanza NotFoundException si el tipo no existe', async () => {
-      prisma.variantType.findUnique.mockResolvedValue(null);
+    it('rechaza con 404 si el tipo pertenece a otro negocio', async () => {
+      prisma.variantType.findUnique.mockResolvedValue({ businessId: 'otro-negocio', name: 'Mediana' });
 
-      await expect(service.setActive('missing', false)).rejects.toThrow(NotFoundException);
+      await expect(service.setActive('t1', false, admin)).rejects.toThrow(NotFoundException);
+      expect(prisma.variantType.update).not.toHaveBeenCalled();
     });
 
     it('no chequea uso al reactivar', async () => {
@@ -88,7 +97,7 @@ describe('VariantTypesService', () => {
         createdAt: new Date(),
       });
 
-      await service.setActive('t1', true);
+      await service.setActive('t1', true, admin);
 
       expect(prisma.productVariant.count).not.toHaveBeenCalled();
       expect(prisma.variantType.update).toHaveBeenCalledWith({ where: { id: 't1' }, data: { isActive: true } });

@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProductHasSalesException } from '../common/exceptions/product-has-sales.exception';
+import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import type { Product, ProductVariant } from '@pippo/shared';
 import type { ListProductsQueryDto } from './dto/list-products-query.dto';
 import type { CreateProductDto } from './dto/create-product.dto';
@@ -16,12 +17,13 @@ import type { UpsertBranchPriceDto } from './dto/upsert-branch-price.dto';
 export class ProductsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async list(query: ListProductsQueryDto): Promise<ProductListResult> {
+  async list(query: ListProductsQueryDto, user: CurrentUserPayload): Promise<ProductListResult> {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 10;
     const showInactive = query.showInactive === 'true';
 
     const where = {
+      businessId: this.resolveBusinessId(user),
       ...(showInactive ? {} : { isActive: true }),
       ...(query.search ? { name: { contains: query.search, mode: 'insensitive' as const } } : {}),
       ...(query.category ? { category: query.category } : {}),
@@ -43,7 +45,7 @@ export class ProductsService {
 
   // Rich shape (with denormalized branch/ingredient names) — used by the product
   // detail view; the edit view only needs the basic subset, via `list()`/mapProduct().
-  async getDetail(id: string): Promise<ProductDetailResult | null> {
+  async getDetail(id: string, user: CurrentUserPayload): Promise<ProductDetailResult | null> {
     const row = await this.prisma.product.findUnique({
       where: { id },
       include: {
@@ -55,7 +57,7 @@ export class ProductsService {
         },
       },
     });
-    if (!row) return null;
+    if (!row || row.businessId !== this.resolveBusinessId(user)) return null;
 
     return {
       id: row.id,
@@ -93,9 +95,9 @@ export class ProductsService {
   // (resale ones don't need a branch_price), + stock_quantity embedded
   // for resale variants. Exact replica of the old /api/products?branchId=
   // route (isPOS branch), which is different from the list() above.
-  async getPosCatalog(branchId: string): Promise<PosCatalogProduct[]> {
+  async getPosCatalog(branchId: string, user: CurrentUserPayload): Promise<PosCatalogProduct[]> {
     const rows = await this.prisma.product.findMany({
-      where: { isActive: true },
+      where: { businessId: this.resolveBusinessId(user), isActive: true },
       orderBy: { name: 'asc' },
       include: {
         variants: { include: { branchPrices: true, recipes: true } },
@@ -160,8 +162,9 @@ export class ProductsService {
   // Flat list of variants across all products (name + product), used by the
   // promotions combo builder to pick which variant each rule applies to —
   // doesn't need prices or recipes, just id/name.
-  async listAllVariants(): Promise<VariantOption[]> {
+  async listAllVariants(user: CurrentUserPayload): Promise<VariantOption[]> {
     const variants = await this.prisma.productVariant.findMany({
+      where: { businessId: this.resolveBusinessId(user) },
       orderBy: { name: 'asc' },
       include: { product: true },
     });
@@ -175,14 +178,15 @@ export class ProductsService {
 
   // Replica of the old /api/products/[id]/branch-prices route — the
   // per-branch price editing page in the admin.
-  async getBranchPrices(productId: string): Promise<BranchPricesResult> {
+  async getBranchPrices(productId: string, user: CurrentUserPayload): Promise<BranchPricesResult> {
+    const businessId = this.resolveBusinessId(user);
     const [variants, branches] = await Promise.all([
       this.prisma.productVariant.findMany({
-        where: { productId, isActive: true },
+        where: { productId, businessId, isActive: true },
         orderBy: { name: 'asc' },
         include: { branchPrices: { include: { branch: true } } },
       }),
-      this.prisma.branch.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } }),
+      this.prisma.branch.findMany({ where: { businessId, isActive: true }, orderBy: { name: 'asc' } }),
     ]);
 
     return {
@@ -201,7 +205,16 @@ export class ProductsService {
     };
   }
 
-  async upsertBranchPrice(dto: UpsertBranchPriceDto): Promise<void> {
+  async upsertBranchPrice(dto: UpsertBranchPriceDto, user: CurrentUserPayload): Promise<void> {
+    const businessId = this.resolveBusinessId(user);
+    const [variant, branch] = await Promise.all([
+      this.prisma.productVariant.findUnique({ where: { id: dto.variant_id }, select: { businessId: true } }),
+      this.prisma.branch.findUnique({ where: { id: dto.branch_id }, select: { businessId: true } }),
+    ]);
+    if (!variant || variant.businessId !== businessId || !branch || branch.businessId !== businessId) {
+      throw new NotFoundException('Variante o sucursal no encontrada');
+    }
+
     const existing = await this.prisma.branchPrice.findFirst({
       where: { variantId: dto.variant_id, branchId: dto.branch_id },
     });
@@ -215,9 +228,9 @@ export class ProductsService {
     }
   }
 
-  async getVariantsWithDetails(productId: string): Promise<ProductVariant[]> {
+  async getVariantsWithDetails(productId: string, user: CurrentUserPayload): Promise<ProductVariant[]> {
     const variants = await this.prisma.productVariant.findMany({
-      where: { productId },
+      where: { productId, businessId: this.resolveBusinessId(user) },
       include: { branchPrices: true, recipes: { include: { ingredient: true } } },
     });
 
@@ -242,10 +255,12 @@ export class ProductsService {
     }));
   }
 
-  async create(dto: CreateProductDto): Promise<{ id: string }> {
+  async create(dto: CreateProductDto, user: CurrentUserPayload): Promise<{ id: string }> {
+    const businessId = this.resolveBusinessId(user);
     const productType = dto.product_type ?? 'made';
     const product = await this.prisma.product.create({
       data: {
+        businessId,
         name: dto.name,
         category: dto.category,
         description: dto.description,
@@ -256,7 +271,7 @@ export class ProductsService {
 
     for (const variant of dto.variants) {
       const createdVariant = await this.prisma.productVariant.create({
-        data: { productId: product.id, name: variant.name, basePrice: variant.base_price },
+        data: { businessId, productId: product.id, name: variant.name, basePrice: variant.base_price },
       });
       await this.replaceVariantExtras(createdVariant.id, variant, productType);
     }
@@ -266,16 +281,19 @@ export class ProductsService {
 
   // Copia el producto completo (variantes, recetas, precios por sucursal)
   // como borrador inactivo, para que el admin lo revise y active a mano.
-  async duplicate(id: string): Promise<{ id: string }> {
+  async duplicate(id: string, user: CurrentUserPayload): Promise<{ id: string }> {
     const original = await this.prisma.product.findUnique({
       where: { id },
       include: { variants: { include: { branchPrices: true, recipes: true } } },
     });
-    if (!original) throw new NotFoundException('Producto no encontrado');
+    if (!original || original.businessId !== this.resolveBusinessId(user)) {
+      throw new NotFoundException('Producto no encontrado');
+    }
 
     return this.prisma.$transaction(async (tx) => {
       const copy = await tx.product.create({
         data: {
+          businessId: original.businessId,
           name: `${original.name} (copia)`,
           category: original.category,
           description: original.description,
@@ -287,7 +305,13 @@ export class ProductsService {
 
       for (const variant of original.variants) {
         const newVariant = await tx.productVariant.create({
-          data: { productId: copy.id, name: variant.name, basePrice: variant.basePrice, isActive: variant.isActive },
+          data: {
+            businessId: original.businessId,
+            productId: copy.id,
+            name: variant.name,
+            basePrice: variant.basePrice,
+            isActive: variant.isActive,
+          },
         });
 
         if (variant.branchPrices.length) {
@@ -311,7 +335,13 @@ export class ProductsService {
     });
   }
 
-  async update(id: string, dto: UpdateProductDto): Promise<void> {
+  async update(id: string, dto: UpdateProductDto, user: CurrentUserPayload): Promise<void> {
+    const businessId = this.resolveBusinessId(user);
+    const existingProduct = await this.prisma.product.findUnique({ where: { id }, select: { businessId: true, productType: true } });
+    if (!existingProduct || existingProduct.businessId !== businessId) {
+      throw new NotFoundException('Producto no encontrado');
+    }
+
     await this.prisma.product.update({
       where: { id },
       data: {
@@ -325,10 +355,7 @@ export class ProductsService {
 
     // dto.product_type isn't always sent — fall back to the row's current
     // value so a partial update can't accidentally let stale recipes through.
-    const productType =
-      dto.product_type ??
-      (await this.prisma.product.findUnique({ where: { id }, select: { productType: true } }))?.productType ??
-      'made';
+    const productType = dto.product_type ?? existingProduct.productType;
 
     const existingVariants = await this.prisma.productVariant.findMany({
       where: { productId: id },
@@ -354,7 +381,7 @@ export class ProductsService {
         });
       } else {
         const created = await this.prisma.productVariant.create({
-          data: { productId: id, name: variant.name, basePrice: variant.base_price },
+          data: { businessId, productId: id, name: variant.name, basePrice: variant.base_price },
         });
         variantId = created.id;
       }
@@ -363,7 +390,8 @@ export class ProductsService {
     }
   }
 
-  async setActive(id: string, isActive: boolean): Promise<void> {
+  async setActive(id: string, isActive: boolean, user: CurrentUserPayload): Promise<void> {
+    await this.assertOwnership(id, user);
     await this.prisma.productVariant.updateMany({ where: { productId: id }, data: { isActive } });
     await this.prisma.product.update({ where: { id }, data: { isActive } });
   }
@@ -373,7 +401,8 @@ export class ProductsService {
   // o está referenciada por una regla de promoción — lo demás
   // (branch_prices, recipes, stock) es config desechable, igual que en
   // replaceVariantExtras().
-  async remove(id: string): Promise<void> {
+  async remove(id: string, user: CurrentUserPayload): Promise<void> {
+    await this.assertOwnership(id, user);
     const variants = await this.prisma.productVariant.findMany({ where: { productId: id }, select: { id: true } });
     const variantIds = variants.map((v) => v.id);
 
@@ -391,6 +420,23 @@ export class ProductsService {
       }
       await tx.product.delete({ where: { id } });
     });
+  }
+
+  private resolveBusinessId(user: CurrentUserPayload): string {
+    if (!user.business_id) {
+      throw new InternalServerErrorException('El usuario no tiene un negocio asociado');
+    }
+    return user.business_id;
+  }
+
+  // Evita que un admin del negocio B opere sobre un producto del negocio A
+  // conociendo su UUID — 404 en vez de 403 para no revelar que el id existe.
+  private async assertOwnership(id: string, user: CurrentUserPayload): Promise<void> {
+    const businessId = this.resolveBusinessId(user);
+    const product = await this.prisma.product.findUnique({ where: { id }, select: { businessId: true } });
+    if (!product || product.businessId !== businessId) {
+      throw new NotFoundException('Producto no encontrado');
+    }
   }
 
   private async assertNoSalesOrPromoLinks(variantIds: string[]): Promise<void> {

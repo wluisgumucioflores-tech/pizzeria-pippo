@@ -2,6 +2,7 @@
 
 import { Table, Button, Tag, Space, Popconfirm, Switch, Typography } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import { AuthorizedChat } from "@/features/telegram-bot/types";
 import { UsageIndicator } from "./UsageIndicator";
 
@@ -11,12 +12,6 @@ const PLAN_COLORS: Record<string, string> = {
   basic: "default",
   pro: "blue",
   unlimited: "gold",
-};
-
-const PLAN_LABELS: Record<string, string> = {
-  basic: "Básico",
-  pro: "Pro",
-  unlimited: "Sin límite",
 };
 
 interface Props {
@@ -29,12 +24,19 @@ interface Props {
 }
 
 export function AuthorizedChatsTable({ chats, loading, onCreate, onEdit, onToggleActive, onDelete }: Props) {
+  const t = useTranslations("common");
+  const tc = useTranslations("settings.chats");
+  const planLabels: Record<string, string> = {
+    basic: tc("planBasic"),
+    pro: tc("planPro"),
+    unlimited: tc("planUnlimited"),
+  };
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <Typography.Title level={5} style={{ margin: 0 }}>Chats autorizados</Typography.Title>
+        <Typography.Title level={5} style={{ margin: 0 }}>{tc("title")}</Typography.Title>
         <Button type="primary" icon={<PlusOutlined />} onClick={onCreate}>
-          Agregar chat
+          {tc("add")}
         </Button>
       </div>
 
@@ -46,7 +48,7 @@ export function AuthorizedChatsTable({ chats, loading, onCreate, onEdit, onToggl
         pagination={false}
         columns={[
           {
-            title: "Nombre",
+            title: tc("columns.name"),
             dataIndex: "label",
             render: (label: string, row: AuthorizedChat) => (
               <div>
@@ -56,28 +58,28 @@ export function AuthorizedChatsTable({ chats, loading, onCreate, onEdit, onToggl
             ),
           },
           {
-            title: "Tipo",
+            title: tc("columns.type"),
             dataIndex: "type",
             width: 90,
             render: (type: string) => (
-              <Tag>{type === "group" ? "Grupo" : "Personal"}</Tag>
+              <Tag>{type === "group" ? tc("typeGroup") : tc("typePersonal")}</Tag>
             ),
           },
           {
-            title: "Plan",
+            title: tc("columns.plan"),
             dataIndex: "plan",
             width: 110,
             render: (plan: string) => (
-              <Tag color={PLAN_COLORS[plan]}>{PLAN_LABELS[plan]}</Tag>
+              <Tag color={PLAN_COLORS[plan]}>{planLabels[plan]}</Tag>
             ),
           },
           {
-            title: "Uso hoy",
+            title: tc("columns.usageToday"),
             width: 110,
             render: (_: unknown, row: AuthorizedChat) => <UsageIndicator chat={row} />,
           },
           {
-            title: "Activo",
+            title: tc("columns.active"),
             dataIndex: "is_active",
             width: 80,
             render: (_: unknown, row: AuthorizedChat) => (
@@ -85,16 +87,16 @@ export function AuthorizedChatsTable({ chats, loading, onCreate, onEdit, onToggl
             ),
           },
           {
-            title: "Acciones",
+            title: t("actions"),
             width: 100,
             render: (_: unknown, row: AuthorizedChat) => (
               <Space>
                 <Button size="small" icon={<EditOutlined />} onClick={() => onEdit(row)} />
                 <Popconfirm
-                  title="¿Revocar acceso de este chat?"
+                  title={tc("revokeConfirm")}
                   onConfirm={() => onDelete(row.id)}
-                  okText="Revocar"
-                  cancelText="Cancelar"
+                  okText={tc("revoke")}
+                  cancelText={t("cancel")}
                   okButtonProps={{ danger: true }}
                 >
                   <Button size="small" danger icon={<DeleteOutlined />} />

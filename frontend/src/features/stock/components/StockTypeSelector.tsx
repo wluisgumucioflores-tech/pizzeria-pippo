@@ -1,6 +1,7 @@
 "use client";
 
 import { Radio } from "antd";
+import { useTranslations } from "next-intl";
 import type { StockType } from "../types/stock.types";
 
 interface Props {
@@ -9,6 +10,8 @@ interface Props {
 }
 
 export function StockTypeSelector({ value, onChange }: Props) {
+  const t = useTranslations("stock.typeSelector");
+
   return (
     <div style={{ marginBottom: 20 }}>
       <Radio.Group
@@ -17,8 +20,8 @@ export function StockTypeSelector({ value, onChange }: Props) {
         optionType="button"
         buttonStyle="solid"
       >
-        <Radio.Button value="ingredient">🧂 Insumos</Radio.Button>
-        <Radio.Button value="product">📦 Reventa</Radio.Button>
+        <Radio.Button value="ingredient">{t("ingredients")}</Radio.Button>
+        <Radio.Button value="product">{t("products")}</Radio.Button>
       </Radio.Group>
     </div>
   );

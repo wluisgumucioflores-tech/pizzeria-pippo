@@ -1,6 +1,7 @@
 "use client";
 
 import { Input, Select } from "antd";
+import { useTranslations } from "next-intl";
 import { WarehouseTable } from "./WarehouseTable";
 import { IconSearch } from "./WarehouseIcons";
 import type { WarehouseRow } from "../types/warehouse.types";
@@ -32,11 +33,13 @@ export function WarehouseIngredientsTab({
   filteredRows, displayMobileRows, mobileRows, total, isLoading, loadingMore, hasMore,
   page, pageSize, sentinelRef, onPageChange, onAdjust, onEditMinQty, onDelete,
 }: Props) {
+  const t = useTranslations("warehouse");
+
   return (
     <>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
         <Input
-          placeholder="Buscar insumo..."
+          placeholder={t("searchIngredient")}
           prefix={<IconSearch />}
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
@@ -44,12 +47,12 @@ export function WarehouseIngredientsTab({
           style={{ width: isMobile ? "100%" : 220 }}
         />
         <Select
-          placeholder="Estado"
+          placeholder={t("status")}
           allowClear
           value={filterStatus}
           onChange={onStatusFilterChange}
           style={{ width: isMobile ? "100%" : 140 }}
-          options={[{ value: "low", label: "Stock bajo" }, { value: "ok", label: "OK" }]}
+          options={[{ value: "low", label: t("statusLow") }, { value: "ok", label: t("statusOk") }]}
         />
       </div>
       <WarehouseTable

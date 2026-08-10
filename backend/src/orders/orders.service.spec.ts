@@ -29,6 +29,7 @@ describe('OrdersService', () => {
     $queryRaw: jest.Mock;
     $transaction: jest.Mock;
     order: { findMany: jest.Mock; findUnique: jest.Mock; update: jest.Mock };
+    branch: { findUnique: jest.Mock };
   };
   let promotionsService: { list: jest.Mock };
   let lowStockAlertService: { checkAndNotify: jest.Mock };
@@ -88,6 +89,7 @@ describe('OrdersService', () => {
       $queryRaw: jest.fn(),
       $transaction: jest.fn(async (cb: (tx: TxMock) => unknown) => cb(tx)),
       order: { findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
+      branch: { findUnique: jest.fn().mockResolvedValue({ businessId: 'biz1' }) },
     };
     promotionsService = { list: jest.fn().mockResolvedValue([]) };
     lowStockAlertService = { checkAndNotify: jest.fn() };
@@ -155,14 +157,18 @@ describe('OrdersService', () => {
     expect(lowStockAlertService.checkAndNotify).toHaveBeenCalledWith('biz1', 'b1', ['i-masa'], []);
   });
 
-  it('no dispara la alerta de stock si el usuario no tiene business_id', async () => {
-    prisma.productVariant.findMany.mockResolvedValue([madeVariant]);
-    prisma.$queryRaw.mockResolvedValue([{ create_order_atomic: { order_id: 'o1', daily_number: 1, duplicate: false } }]);
-
+  it('rechaza con 404 si el usuario no tiene business_id (no puede ser dueño de ninguna sucursal)', async () => {
     const sinNegocio: CurrentUserPayload = { ...cashier, business_id: null };
-    await service.create(baseDto({ total: 75 }), sinNegocio);
 
-    expect(lowStockAlertService.checkAndNotify).not.toHaveBeenCalled();
+    await expect(service.create(baseDto({ total: 75 }), sinNegocio)).rejects.toThrow(NotFoundException);
+    expect(prisma.$queryRaw).not.toHaveBeenCalled();
+  });
+
+  it('rechaza con 404 si el branch_id del pedido es de otro negocio', async () => {
+    prisma.branch.findUnique.mockResolvedValue({ businessId: 'otro-negocio' });
+
+    await expect(service.create(baseDto(), cashier)).rejects.toThrow(NotFoundException);
+    expect(prisma.$queryRaw).not.toHaveBeenCalled();
   });
 
   it('dispara la alerta de stock con deducciones de reventa cuando la venta es solo de reventa', async () => {
@@ -231,7 +237,7 @@ describe('OrdersService', () => {
         },
       ]);
 
-      const result = await service.getDayOrders('b1', '2026-07-05');
+      const result = await service.getDayOrders('b1', '2026-07-05', cashier);
 
       expect(prisma.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ where: expect.objectContaining({ branchId: 'b1' }) }),
@@ -255,7 +261,7 @@ describe('OrdersService', () => {
     it('usa el día de hoy en Bolivia cuando no se especifica fecha', async () => {
       prisma.order.findMany.mockResolvedValue([]);
 
-      await service.getDayOrders('b1');
+      await service.getDayOrders('b1', undefined, cashier);
 
       expect(prisma.order.findMany).toHaveBeenCalled();
     });
@@ -279,7 +285,7 @@ describe('OrdersService', () => {
         },
       ]);
 
-      const result = await service.getDayOrders('b1', '2026-07-05');
+      const result = await service.getDayOrders('b1', '2026-07-05', cashier);
 
       expect(result[0].payments).toEqual([
         { method: 'efectivo', amount: 10 },
@@ -315,7 +321,7 @@ describe('OrdersService', () => {
         },
       ]);
 
-      const result = await service.getPendingKitchenOrders('b1');
+      const result = await service.getPendingKitchenOrders('b1', cashier);
 
       expect(prisma.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -347,7 +353,7 @@ describe('OrdersService', () => {
 
   describe('markReady', () => {
     it('marca la orden como lista cuando el cajero es de la misma sucursal', async () => {
-      prisma.order.findUnique.mockResolvedValue({ branchId: 'b1', cancelledAt: null });
+      prisma.order.findUnique.mockResolvedValue({ branchId: 'b1', cancelledAt: null, branch: { businessId: 'biz1' } });
 
       await service.markReady('o1', cashier);
 
@@ -362,8 +368,8 @@ describe('OrdersService', () => {
       });
     });
 
-    it('permite a un admin marcar lista una orden de cualquier sucursal', async () => {
-      prisma.order.findUnique.mockResolvedValue({ branchId: 'otra-sucursal', cancelledAt: null });
+    it('permite a un admin marcar lista una orden de cualquier sucursal de su propio negocio', async () => {
+      prisma.order.findUnique.mockResolvedValue({ branchId: 'otra-sucursal', cancelledAt: null, branch: { businessId: 'biz1' } });
       const admin: CurrentUserPayload = { ...cashier, role: 'admin' };
 
       await expect(service.markReady('o1', admin)).resolves.toBeUndefined();
@@ -376,15 +382,23 @@ describe('OrdersService', () => {
       expect(prisma.order.update).not.toHaveBeenCalled();
     });
 
+    it('rechaza con 404 si la orden pertenece a otro negocio (ni siquiera un admin la ve)', async () => {
+      prisma.order.findUnique.mockResolvedValue({ branchId: 'b1', cancelledAt: null, branch: { businessId: 'otro-negocio' } });
+      const admin: CurrentUserPayload = { ...cashier, role: 'admin' };
+
+      await expect(service.markReady('o1', admin)).rejects.toThrow(NotFoundException);
+      expect(prisma.order.update).not.toHaveBeenCalled();
+    });
+
     it('rechaza con 409 si la orden está anulada', async () => {
-      prisma.order.findUnique.mockResolvedValue({ branchId: 'b1', cancelledAt: new Date() });
+      prisma.order.findUnique.mockResolvedValue({ branchId: 'b1', cancelledAt: new Date(), branch: { businessId: 'biz1' } });
 
       await expect(service.markReady('o1', cashier)).rejects.toThrow(ConflictException);
       expect(prisma.order.update).not.toHaveBeenCalled();
     });
 
     it('rechaza con 403 si el cajero no es de la sucursal de la orden', async () => {
-      prisma.order.findUnique.mockResolvedValue({ branchId: 'otra-sucursal', cancelledAt: null });
+      prisma.order.findUnique.mockResolvedValue({ branchId: 'otra-sucursal', cancelledAt: null, branch: { businessId: 'biz1' } });
 
       await expect(service.markReady('o1', cashier)).rejects.toThrow(ForbiddenException);
       expect(prisma.order.update).not.toHaveBeenCalled();
@@ -403,6 +417,7 @@ describe('OrdersService', () => {
         kitchenStatus: 'pending',
         createdAt: today,
         cancelledAt: null,
+        branch: { businessId: 'biz1' },
         items: [{ variantId: 'v-pizza', qtyPhysical: 1, flavors: [] }],
         ...overrides,
       };
@@ -417,6 +432,13 @@ describe('OrdersService', () => {
       prisma.order.findUnique.mockResolvedValue(null);
 
       await expect(service.cancelOrder('o404', { reason: 'motivo' }, cashier)).rejects.toThrow(NotFoundException);
+    });
+
+    it('rechaza con 404 si la orden pertenece a otro negocio (ni siquiera un admin la ve)', async () => {
+      prisma.order.findUnique.mockResolvedValue(orderWithItems({ branch: { businessId: 'otro-negocio' } }));
+      const admin: CurrentUserPayload = { ...cashier, role: 'admin' };
+
+      await expect(service.cancelOrder('o1', { reason: 'motivo' }, admin)).rejects.toThrow(NotFoundException);
     });
 
     it('rechaza con 409 si la orden ya está anulada', async () => {

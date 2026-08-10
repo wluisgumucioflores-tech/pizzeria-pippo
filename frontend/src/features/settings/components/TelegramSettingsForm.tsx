@@ -2,12 +2,15 @@
 
 import { Card, Form, Input, Switch, Button, Space, Divider, Typography, Skeleton } from "antd";
 import { SaveOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import { TestConnectionButton } from "./TestConnectionButton";
 import { useSettings } from "@/features/settings/hooks/useSettings";
 
 const { Title, Text } = Typography;
 
 export function TelegramSettingsForm() {
+  const t = useTranslations("settings.telegram");
+  const tc = useTranslations("common");
   const {
     settings,
     loading,
@@ -27,15 +30,15 @@ export function TelegramSettingsForm() {
 
   return (
     <Card style={{ maxWidth: 560 }}>
-      <Title level={4} style={{ marginBottom: 4 }}>Notificaciones Telegram</Title>
+      <Title level={4} style={{ marginBottom: 4 }}>{t("title")}</Title>
       <Text type="secondary" style={{ display: "block", marginBottom: 24 }}>
-        Recibe alertas automáticas en Telegram cuando el stock de un insumo baje del mínimo.
+        {t("description")}
       </Text>
 
       <Form layout="vertical" onFinish={handleSave}>
         <Form.Item
-          label="Bot Token"
-          extra="Obtenlo creando un bot con @BotFather en Telegram."
+          label={t("botTokenLabel")}
+          extra={t("botTokenExtra")}
         >
           <Input.Password
             value={settings.telegram_bot_token}
@@ -46,8 +49,8 @@ export function TelegramSettingsForm() {
         </Form.Item>
 
         <Form.Item
-          label="Chat ID"
-          extra="ID numérico del chat o grupo. Para que varios admins reciban alertas, crea un grupo, agregá el bot y usá el ID del grupo."
+          label={t("chatIdLabel")}
+          extra={t("chatIdExtra")}
         >
           <Input
             value={settings.telegram_chat_id}
@@ -56,7 +59,7 @@ export function TelegramSettingsForm() {
           />
         </Form.Item>
 
-        <Form.Item label="Notificaciones habilitadas">
+        <Form.Item label={t("enabledLabel")}>
           <Switch
             checked={settings.telegram_enabled}
             onChange={(checked) => handleChange("telegram_enabled", checked)}
@@ -81,7 +84,7 @@ export function TelegramSettingsForm() {
             disabled={!canSave}
             onClick={handleSave}
           >
-            Guardar
+            {tc("save")}
           </Button>
         </Space>
       </Form>

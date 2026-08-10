@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { dateRangeFrom, dateRangeTo, toBoliviaDate } from '../common/utils/timezone';
+import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import type { ReportQueryDto } from './dto/report-query.dto';
 import type { CashierReportQueryDto } from './dto/cashier-report-query.dto';
 import type { OrdersReportQueryDto } from './dto/orders-report-query.dto';
@@ -11,9 +12,10 @@ import type { OrderReportResult } from './types/order-report-result.types';
 export class ReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private buildWhere(query: ReportQueryDto) {
+  private buildWhere(query: ReportQueryDto, user: CurrentUserPayload) {
     return {
       cancelledAt: null,
+      branch: { businessId: this.resolveBusinessId(user) },
       ...(query.branchId && { branchId: query.branchId }),
       ...((query.from || query.to) && {
         createdAt: {
@@ -24,9 +26,16 @@ export class ReportsService {
     };
   }
 
-  async getSales(query: ReportQueryDto) {
+  private resolveBusinessId(user: CurrentUserPayload): string {
+    if (!user.business_id) {
+      throw new InternalServerErrorException('El usuario no tiene un negocio asociado');
+    }
+    return user.business_id;
+  }
+
+  async getSales(query: ReportQueryDto, user: CurrentUserPayload) {
     const orders = await this.prisma.order.findMany({
-      where: this.buildWhere(query),
+      where: this.buildWhere(query, user),
       select: { id: true, total: true, orderType: true, paymentMethod: true },
     });
 
@@ -80,9 +89,9 @@ export class ReportsService {
     };
   }
 
-  async getDaily(query: ReportQueryDto): Promise<{ date: string; total: number }[]> {
+  async getDaily(query: ReportQueryDto, user: CurrentUserPayload): Promise<{ date: string; total: number }[]> {
     const orders = await this.prisma.order.findMany({
-      where: this.buildWhere(query),
+      where: this.buildWhere(query, user),
       select: { total: true, createdAt: true },
       orderBy: { createdAt: 'asc' },
     });
@@ -99,14 +108,14 @@ export class ReportsService {
       .sort((a, b) => a.date.localeCompare(b.date));
   }
 
-  async getTopProducts(query: ReportQueryDto): Promise<TopProductResult[]> {
+  async getTopProducts(query: ReportQueryDto, user: CurrentUserPayload): Promise<TopProductResult[]> {
     // Rank in the DB first (GROUP BY + LIMIT) instead of pulling every order_item
     // of the period into Node just to sort and slice — this is what made the
     // endpoint the slowest of the reports page (it scaled with total monthly
     // sales, not with the 5 rows actually shown).
     const topVariants = await this.prisma.orderItem.groupBy({
       by: ['variantId'],
-      where: { order: this.buildWhere(query) },
+      where: { order: this.buildWhere(query, user) },
       _sum: { qty: true },
       orderBy: { _sum: { qty: 'desc' } },
       take: 5,
@@ -115,7 +124,7 @@ export class ReportsService {
 
     const variantIds = topVariants.map((v) => v.variantId);
     const items = await this.prisma.orderItem.findMany({
-      where: { order: this.buildWhere(query), variantId: { in: variantIds } },
+      where: { order: this.buildWhere(query, user), variantId: { in: variantIds } },
       include: { variant: { include: { product: true } } },
     });
 
@@ -140,10 +149,10 @@ export class ReportsService {
     return variantIds.map((id) => map[id]).filter(Boolean);
   }
 
-  async getCashiers(query: CashierReportQueryDto): Promise<CashierReportResult[]> {
+  async getCashiers(query: CashierReportQueryDto, user: CurrentUserPayload): Promise<CashierReportResult[]> {
     const orders = await this.prisma.order.findMany({
       where: {
-        ...this.buildWhere(query),
+        ...this.buildWhere(query, user),
         ...(query.cashierId && { cashierId: query.cashierId }),
       },
       include: {
@@ -191,10 +200,10 @@ export class ReportsService {
     return Object.values(cashierMap).sort((a, b) => b.total - a.total);
   }
 
-  async getOrders(query: OrdersReportQueryDto): Promise<{ data: OrderReportResult[]; total: number }> {
+  async getOrders(query: OrdersReportQueryDto, user: CurrentUserPayload): Promise<{ data: OrderReportResult[]; total: number }> {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 20;
-    const where = this.buildOrdersHistoryWhere(query);
+    const where = this.buildOrdersHistoryWhere(query, user);
 
     const [orders, total] = await this.prisma.$transaction([
       this.prisma.order.findMany({
@@ -218,8 +227,9 @@ export class ReportsService {
   // Unlike buildWhere (used by the aggregate reports), the order history
   // shows cancelled orders too — the UI displays their cancel reason instead
   // of hiding them.
-  private buildOrdersHistoryWhere(query: OrdersReportQueryDto) {
+  private buildOrdersHistoryWhere(query: OrdersReportQueryDto, user: CurrentUserPayload) {
     return {
+      branch: { businessId: this.resolveBusinessId(user) },
       ...(query.branchId && { branchId: query.branchId }),
       ...((query.from || query.to) && {
         createdAt: {

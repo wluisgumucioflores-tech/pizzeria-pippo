@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Steps, Button, Typography } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import { ProductStepGeneral } from "./ProductStepGeneral";
 import { ProductStepVariants } from "./ProductStepVariants";
 import { ProductStepRecipes } from "./ProductStepRecipes";
@@ -12,26 +13,27 @@ import type { Product } from "../types/product.types";
 
 const { Title } = Typography;
 
-const STEPS_WITH_RECIPES = [
-  { title: "Datos generales" },
-  { title: "Variantes y precios" },
-  { title: "Recetas" },
-];
-
-const STEPS_WITHOUT_RECIPES = [
-  { title: "Datos generales" },
-  { title: "Variantes y precios" },
-];
-
 interface Props {
   editing?: Product;
 }
 
 export function ProductFormPage({ editing }: Props) {
   const router = useRouter();
+  const t = useTranslations("common");
+  const tp = useTranslations("products");
+  const ts = useTranslations("products.steps");
   const form = useProductForm(() => router.push("/products"));
   const isMade = form.step1Data.product_type === "made";
-  const steps = isMade ? STEPS_WITH_RECIPES : STEPS_WITHOUT_RECIPES;
+  const stepsWithRecipes = [
+    { title: ts("generalData") },
+    { title: ts("variantsAndPrices") },
+    { title: ts("recipes") },
+  ];
+  const stepsWithoutRecipes = [
+    { title: ts("generalData") },
+    { title: ts("variantsAndPrices") },
+  ];
+  const steps = isMade ? stepsWithRecipes : stepsWithoutRecipes;
 
   useEffect(() => {
     if (editing) {
@@ -46,10 +48,10 @@ export function ProductFormPage({ editing }: Props) {
     <div style={{ padding: 24, maxWidth: 960, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
         <Button icon={<ArrowLeftOutlined />} onClick={() => router.push("/products")}>
-          Volver
+          {t("back")}
         </Button>
         <Title level={4} style={{ margin: 0 }}>
-          {editing ? `Editar — ${editing.name}` : "Nuevo producto"}
+          {editing ? ts("editTitle", { name: editing.name }) : tp("new")}
         </Title>
       </div>
 
@@ -85,7 +87,7 @@ export function ProductFormPage({ editing }: Props) {
           onReactivateVariant={form.reactivateVariant}
           onPrev={() => form.setCurrentStep(0)}
           onNext={() => (isMade ? form.setCurrentStep(2) : form.handleSave(editing ?? null))}
-          nextLabel={isMade ? undefined : editing ? "Guardar" : "Crear"}
+          nextLabel={isMade ? undefined : editing ? t("save") : t("create")}
           saving={!isMade ? form.saving : false}
         />
       )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { Progress, Tooltip } from "antd";
+import { useTranslations } from "next-intl";
 import { AuthorizedChat } from "@/features/telegram-bot/types";
 
 const PLAN_LIMITS: Record<string, number> = {
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function UsageIndicator({ chat }: Props) {
+  const t = useTranslations("settings.chats");
   const limit = PLAN_LIMITS[chat.plan] ?? 10;
   const used = chat.messages_today;
 
@@ -25,7 +27,7 @@ export function UsageIndicator({ chat }: Props) {
   const color = pct >= 100 ? "#ff4d4f" : pct >= 80 ? "#fa8c16" : "#52c41a";
 
   return (
-    <Tooltip title={`${used} de ${limit} mensajes hoy`}>
+    <Tooltip title={t("usageTooltip", { used, limit })}>
       <div style={{ minWidth: 80 }}>
         <div style={{ fontSize: 12, color: "#595959", marginBottom: 2 }}>{used} / {limit}</div>
         <Progress percent={pct} showInfo={false} strokeColor={color} size="small" />

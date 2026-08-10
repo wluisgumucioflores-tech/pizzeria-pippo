@@ -3,6 +3,7 @@ import { NotFoundException } from '@nestjs/common';
 import { EmployeesService } from './employees.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PasswordHasherService } from '../auth/password/password-hasher.service';
+import type { CurrentUserPayload } from '../auth/types/jwt.types';
 
 describe('EmployeesService', () => {
   let service: EmployeesService;
@@ -11,8 +12,18 @@ describe('EmployeesService', () => {
   };
   let passwordHasher: { hash: jest.Mock; compare: jest.Mock };
 
+  const admin: CurrentUserPayload = {
+    id: 'u1',
+    email: 'admin@pippo.local',
+    role: 'admin',
+    branch_id: null,
+    full_name: 'Admin',
+    business_id: 'biz1',
+  };
+
   const employee = (overrides: Partial<Record<string, unknown>> = {}) => ({
     id: 'e1',
+    businessId: 'biz1',
     branchId: 'b1',
     fullName: 'Juan Pérez',
     position: 'Delivery',
@@ -47,13 +58,14 @@ describe('EmployeesService', () => {
     it('genera token y código crudos, hashea ambos y los devuelve solo esta vez', async () => {
       prisma.employee.create.mockResolvedValue(employee());
 
-      const result = await service.create({ branch_id: 'b1', full_name: 'Juan Pérez', position: 'Delivery' });
+      const result = await service.create({ branch_id: 'b1', full_name: 'Juan Pérez', position: 'Delivery' }, admin);
 
       expect(result.credential.token.startsWith('pippo_emp_')).toBe(true);
       expect(result.credential.manual_code).toMatch(/^\d{6}$/);
       expect(result.credential.qr_image_data_url.startsWith('data:image/png;base64,')).toBe(true);
       expect(prisma.employee.create).toHaveBeenCalledWith({
         data: {
+          businessId: 'biz1',
           branchId: 'b1',
           fullName: 'Juan Pérez',
           position: 'Delivery',
@@ -77,7 +89,7 @@ describe('EmployeesService', () => {
       prisma.employee.findUnique.mockResolvedValue(employee());
       prisma.employee.update.mockResolvedValue(employee({ credentialHash: 'new-hash' }));
 
-      const result = await service.regenerateCredential('e1');
+      const result = await service.regenerateCredential('e1', admin);
 
       expect(prisma.employee.update).toHaveBeenCalledWith({
         where: { id: 'e1' },
@@ -89,7 +101,14 @@ describe('EmployeesService', () => {
     it('lanza NotFoundException si el empleado no existe', async () => {
       prisma.employee.findUnique.mockResolvedValue(null);
 
-      await expect(service.regenerateCredential('nope')).rejects.toThrow(NotFoundException);
+      await expect(service.regenerateCredential('nope', admin)).rejects.toThrow(NotFoundException);
+    });
+
+    it('lanza NotFoundException si el empleado pertenece a otro negocio', async () => {
+      prisma.employee.findUnique.mockResolvedValue(employee({ businessId: 'otro-negocio' }));
+
+      await expect(service.regenerateCredential('e1', admin)).rejects.toThrow(NotFoundException);
+      expect(prisma.employee.update).not.toHaveBeenCalled();
     });
   });
 

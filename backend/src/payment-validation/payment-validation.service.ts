@@ -1,6 +1,8 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { PrismaService } from '../prisma/prisma.service';
 import { OrdersGateway } from '../orders/realtime/orders.gateway';
+import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import type { BufferedNotification, PendingPaymentRequest } from './types/pending-request.types';
 
 const REQUEST_TTL_MS = (Number(process.env.PAYMENT_VALIDATION_WINDOW_MINUTES) || 5) * 60 * 1000;
@@ -18,15 +20,28 @@ export class PaymentValidationService {
   private readonly pendingRequestsByBranch = new Map<string, PendingPaymentRequest[]>();
   private readonly bufferedNotificationsByBranch = new Map<string, BufferedNotification[]>();
 
-  constructor(private readonly ordersGateway: OrdersGateway) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly ordersGateway: OrdersGateway,
+  ) {}
 
-  start(branchId: string, cashierId: string, amount: number): { requestId: string } {
+  // El branch_id viaja en el body del cajero — sin este chequeo, un cajero
+  // del negocio B podría registrar una espera de pago sobre una sucursal
+  // del negocio A pasando su UUID directamente.
+  async start(branchId: string, user: CurrentUserPayload, amount: number): Promise<{ requestId: string }> {
+    if (user.business_id) {
+      const branch = await this.prisma.branch.findUnique({ where: { id: branchId }, select: { businessId: true } });
+      if (!branch || branch.businessId !== user.business_id) {
+        throw new NotFoundException('Sucursal no encontrada');
+      }
+    }
+
     this.pruneExpired(branchId);
 
     const request: PendingPaymentRequest = {
       id: randomUUID(),
       branchId,
-      cashierId,
+      cashierId: user.id,
       amount,
       createdAt: Date.now(),
       rejectedNotificationIds: new Set(),

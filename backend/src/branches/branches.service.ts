@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BranchHasCashiersException } from '../common/exceptions/branch-has-cashiers.exception';
 import { BranchHasDependenciesException } from '../common/exceptions/branch-has-dependencies.exception';
@@ -16,8 +16,9 @@ export class BranchesService {
     const showInactive = query.showInactive === 'true';
 
     const where = {
+      businessId: this.resolveBusinessId(user),
       ...(showInactive ? {} : { isActive: true }),
-      // Replicates the real RLS: admin sees all, everyone else only their own branch
+      // Replicates the real RLS: admin sees all of their business, everyone else only their own branch
       ...(user.role === 'admin' ? {} : { id: user.branch_id ?? '' }),
     };
 
@@ -25,21 +26,29 @@ export class BranchesService {
     return rows.map((row) => this.mapBranch(row));
   }
 
-  async create(dto: CreateBranchDto): Promise<Branch> {
+  async create(dto: CreateBranchDto, user: CurrentUserPayload): Promise<Branch> {
     const row = await this.prisma.branch.create({
-      data: { name: dto.name, address: dto.address, phone: dto.phone, expectedStartTime: dto.expected_start_time },
+      data: {
+        businessId: this.resolveBusinessId(user),
+        name: dto.name,
+        address: dto.address,
+        phone: dto.phone,
+        expectedStartTime: dto.expected_start_time,
+      },
     });
     return this.mapBranch(row);
   }
 
-  async update(id: string, dto: UpdateBranchDto): Promise<void> {
+  async update(id: string, dto: UpdateBranchDto, user: CurrentUserPayload): Promise<void> {
+    await this.assertOwnership(id, user);
     await this.prisma.branch.update({
       where: { id },
       data: { name: dto.name, address: dto.address, phone: dto.phone, expectedStartTime: dto.expected_start_time },
     });
   }
 
-  async setActive(id: string, isActive: boolean): Promise<void> {
+  async setActive(id: string, isActive: boolean, user: CurrentUserPayload): Promise<void> {
+    await this.assertOwnership(id, user);
     if (!isActive) {
       await this.assertNoActiveCashiers(id);
     }
@@ -49,9 +58,20 @@ export class BranchesService {
   // Hard delete real: a diferencia de setActive(false), esto borra la fila.
   // Solo se permite si la sucursal no tiene ningún dato asociado — de lo
   // contrario se rompería la integridad referencial de ventas/stock históricos.
-  async remove(id: string): Promise<void> {
+  async remove(id: string, user: CurrentUserPayload): Promise<void> {
+    await this.assertOwnership(id, user);
     await this.assertNoDependencies(id);
     await this.prisma.branch.delete({ where: { id } });
+  }
+
+  // Evita que un admin del negocio B opere sobre una sucursal del negocio A
+  // conociendo su UUID — 404 en vez de 403 para no revelar que el id existe.
+  private async assertOwnership(id: string, user: CurrentUserPayload): Promise<void> {
+    const businessId = this.resolveBusinessId(user);
+    const branch = await this.prisma.branch.findUnique({ where: { id }, select: { businessId: true } });
+    if (!branch || branch.businessId !== businessId) {
+      throw new NotFoundException('Sucursal no encontrada');
+    }
   }
 
   private async assertNoActiveCashiers(branchId: string): Promise<void> {
@@ -89,6 +109,13 @@ export class BranchesService {
         'No se puede eliminar la sucursal: tiene datos asociados (ventas, stock, precios, usuarios, etc). Desactívala en su lugar.',
       );
     }
+  }
+
+  private resolveBusinessId(user: CurrentUserPayload): string {
+    if (!user.business_id) {
+      throw new InternalServerErrorException('El usuario no tiene un negocio asociado');
+    }
+    return user.business_id;
   }
 
   private mapBranch(row: { id: string; name: string; address: string | null; phone: string | null; createdAt: Date; isActive: boolean; expectedStartTime: string | null }): Branch {

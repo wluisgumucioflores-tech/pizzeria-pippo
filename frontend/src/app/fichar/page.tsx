@@ -1,11 +1,13 @@
 "use client";
 
 import { Input, Button, Spin, Typography } from "antd";
+import { useTranslations } from "next-intl";
 import { useAttendanceScan } from "@/features/attendance/hooks/useAttendanceScan";
 
 const { Title, Text } = Typography;
 
 export default function FicharPage() {
+  const t = useTranslations("attendance.scan");
   const { status, message, resultType, manualCode, setManualCode, submitManualCode } = useAttendanceScan();
   const isSalida = resultType === "salida";
 
@@ -17,7 +19,7 @@ export default function FicharPage() {
         {status === "loading" && (
           <div style={{ marginTop: 24 }}>
             <Spin size="large" />
-            <Text style={{ display: "block", marginTop: 16 }}>Registrando...</Text>
+            <Text style={{ display: "block", marginTop: 16 }}>{t("registering")}</Text>
           </div>
         )}
 
@@ -44,19 +46,19 @@ export default function FicharPage() {
         {(status === "idle" || status === "error") && (
           <div style={{ marginTop: 24 }}>
             <Text type="secondary" style={{ display: "block", marginBottom: 12 }}>
-              Ingresá tu código de respaldo para registrar tu entrada o salida
+              {t("manualCodeHint")}
             </Text>
             <div style={{ display: "flex", gap: 8 }}>
               <Input
                 value={manualCode}
                 onChange={(e) => setManualCode(e.target.value)}
                 onPressEnter={submitManualCode}
-                placeholder="Código"
+                placeholder={t("codePlaceholder")}
                 size="large"
                 maxLength={6}
               />
               <Button type="primary" size="large" onClick={submitManualCode} style={{ background: "#ea580c", borderColor: "#ea580c" }}>
-                Registrar
+                {t("register")}
               </Button>
             </div>
           </div>

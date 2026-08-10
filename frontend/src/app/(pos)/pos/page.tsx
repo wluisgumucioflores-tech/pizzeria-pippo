@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { usePosIdentity } from "@/features/pos/hooks/usePosIdentity";
 import { usePosProducts } from "@/features/pos/hooks/usePosProducts";
@@ -21,6 +22,7 @@ import { usePrinter } from "@/features/printing/hooks/usePrinter";
 import { getActivePromotions } from "@/lib/promotions";
 
 export default function PosPage() {
+  const t = useTranslations("pos");
   const { identity, branches, effectiveBranchId, isAdminChoosingBranch, selectBranch, handleLogout } = usePosIdentity();
   const { broadcast } = usePosBroadcast();
   const { products, promotions, loading, getVariantPrice, getPromoLabel, getStockQty, refresh: refreshProducts } = usePosProducts(effectiveBranchId ?? undefined);
@@ -47,7 +49,7 @@ export default function PosPage() {
   if (!identity) {
     return (
       <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f5f5f5" }}>
-        <div style={{ color: "#9ca3af" }}>Cargando...</div>
+        <div style={{ color: "#9ca3af" }}>{t("loading")}</div>
       </div>
     );
   }

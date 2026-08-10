@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Modal, Button, Checkbox, InputNumber, Input, Typography } from "antd";
 import { CheckCircleFilled, ArrowRightOutlined } from "@ant-design/icons";
 import { PAYMENT_PROVIDERS } from "@pippo/shared";
+import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/lib/useIsMobile";
 import type { PaymentMethod, SplitPayment } from "../types/pos.types";
 
@@ -74,6 +75,8 @@ function OptionCard({ selected, emoji, label, accent, onClick }: OptionCardProps
 
 export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
   const isMobile = useIsMobile();
+  const t = useTranslations("pos");
+  const tm = useTranslations("pos.paymentModal");
   const [orderType, setOrderType] = useState<OrderType | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
   const [onlinePayment, setOnlinePayment] = useState(false);
@@ -127,7 +130,7 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
 
   const totalBlock = (
     <div>
-      <Text type="secondary" className="text-xs block" style={{ letterSpacing: 1 }}>TOTAL DEL PEDIDO</Text>
+      <Text type="secondary" className="text-xs block" style={{ letterSpacing: 1 }}>{tm("orderTotal")}</Text>
       <Text strong className="!text-orange-700" style={{ fontSize: 34, lineHeight: 1.2 }}>Bs {total.toFixed(2)}</Text>
     </div>
   );
@@ -137,10 +140,10 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
       <Checkbox checked={onlinePayment} onChange={(e) => handleToggleOnlinePayment(e.target.checked)} className="mt-0.5" />
       <div>
         <Text strong className="block text-sm">
-          Pedido de {PAYMENT_PROVIDERS[ONLINE_PROVIDER].label} (pago ya recibido)
+          {tm("onlineOrder", { provider: PAYMENT_PROVIDERS[ONLINE_PROVIDER].label })}
         </Text>
         <Text type="secondary" className="text-xs block">
-          Se registra para llevar, con pago online — sin pasar por validación de QR.
+          {tm("onlineHint")}
         </Text>
       </div>
     </div>
@@ -150,26 +153,26 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
     <div style={onlinePayment ? { opacity: 0.4, pointerEvents: "none" } : undefined}>
       <div className="flex items-center gap-2 mb-2">
         <div style={{ width: 4, height: 16, background: "#ea580c", borderRadius: 2 }} />
-        <Text strong>¿Cómo va el pedido? <Text type="danger">*</Text></Text>
+        <Text strong>{tm("howIsOrder")} <Text type="danger">*</Text></Text>
       </div>
       <div className="flex gap-3">
         <OptionCard
           selected={orderType === "dine_in"}
           emoji="🍽️"
-          label="Comer aquí"
+          label={t("orderType.dineIn")}
           accent="orange"
           onClick={() => setOrderType("dine_in")}
         />
         <OptionCard
           selected={orderType === "takeaway"}
           emoji="🥡"
-          label="Para llevar"
+          label={t("orderType.takeaway")}
           accent="orange"
           onClick={() => setOrderType("takeaway")}
         />
       </div>
       {!orderType && (
-        <Text type="secondary" className="text-xs mt-1 block">Seleccioná una opción para continuar</Text>
+        <Text type="secondary" className="text-xs mt-1 block">{tm("selectToContinue")}</Text>
       )}
     </div>
   );
@@ -179,40 +182,40 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center gap-2">
           <div style={{ width: 4, height: 16, background: "#2563eb", borderRadius: 2 }} />
-          <Text strong>¿Cómo pagó el cliente?</Text>
+          <Text strong>{tm("howDidPay")}</Text>
         </div>
-        <Text type="secondary" className="text-xs">(opcional)</Text>
+        <Text type="secondary" className="text-xs">{t("optional")}</Text>
       </div>
       <div className="flex gap-3">
         <OptionCard
           selected={paymentMethod === "efectivo"}
           emoji="💵"
-          label="Efectivo"
+          label={t("paymentMethod.cash")}
           accent="blue"
           onClick={() => setPaymentMethod(paymentMethod === "efectivo" ? null : "efectivo")}
         />
         <OptionCard
           selected={paymentMethod === "qr"}
           emoji="📱"
-          label="QR"
+          label={t("paymentMethod.qr")}
           accent="blue"
           onClick={() => setPaymentMethod(paymentMethod === "qr" ? null : "qr")}
         />
         <OptionCard
           selected={paymentMethod === "mixto"}
           emoji="🔀"
-          label="Mixto"
+          label={t("paymentMethod.mixed")}
           accent="blue"
           onClick={handleSelectMixto}
         />
       </div>
-      <Text type="secondary" className="text-xs mt-1 block">Toca de nuevo para quitar la selección</Text>
+      <Text type="secondary" className="text-xs mt-1 block">{tm("toggleHint")}</Text>
 
       {paymentMethod === "mixto" && (
         <div className="mt-3 bg-gray-50 rounded-lg p-3">
           <div className="flex gap-3">
             <div className="flex-1">
-              <Text type="secondary" className="text-xs block mb-1" style={{ letterSpacing: 0.5 }}>EFECTIVO RECIBIDO</Text>
+              <Text type="secondary" className="text-xs block mb-1" style={{ letterSpacing: 0.5 }}>{tm("cashReceived")}</Text>
               <InputNumber
                 value={cashAmount}
                 min={0}
@@ -222,14 +225,14 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
               />
             </div>
             <div className="flex-1">
-              <Text type="secondary" className="text-xs block mb-1" style={{ letterSpacing: 0.5 }}>RESTANTE QR</Text>
+              <Text type="secondary" className="text-xs block mb-1" style={{ letterSpacing: 0.5 }}>{tm("remainingQr")}</Text>
               <div style={{ height: 32, display: "flex", alignItems: "center" }}>
                 <Text strong className="text-base">Bs {qrAmount.toFixed(2)}</Text>
               </div>
             </div>
           </div>
           {!mixtoValid && (
-            <Text type="danger" className="text-xs mt-2 block">Ambos montos deben ser mayores a 0</Text>
+            <Text type="danger" className="text-xs mt-2 block">{tm("bothMustBeGreater")}</Text>
           )}
         </div>
       )}
@@ -241,14 +244,14 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center gap-2">
           <div style={{ width: 4, height: 16, background: "#9ca3af", borderRadius: 2 }} />
-          <Text strong>Nota de venta</Text>
+          <Text strong>{tm("note")}</Text>
         </div>
-        <Text type="secondary" className="text-xs">(opcional)</Text>
+        <Text type="secondary" className="text-xs">{t("optional")}</Text>
       </div>
       <Input.TextArea
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
-        placeholder="Ej: sin cebolla, mesa 5, para Juan..."
+        placeholder={tm("notePlaceholder")}
         maxLength={300}
         rows={2}
         showCount
@@ -260,12 +263,12 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
     <Modal
       title={
         <div className="flex items-center justify-between pr-6">
-          <span>Tipo de pedido y pago</span>
+          <span>{tm("title")}</span>
           <span
             className="text-xs font-normal"
             style={{ background: "#fff7ed", color: "#ea580c", borderRadius: 999, padding: "2px 10px" }}
           >
-            PASO 1 DE 2
+            {tm("step1")}
           </span>
         </div>
       }
@@ -309,7 +312,7 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
             : { height: 48, fontSize: 16 }),
         }}
       >
-        Continuar <ArrowRightOutlined />
+        {t("continueAction")} <ArrowRightOutlined />
       </Button>
     </Modal>
   );

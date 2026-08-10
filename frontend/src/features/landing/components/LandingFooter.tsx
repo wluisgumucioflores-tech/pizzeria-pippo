@@ -10,7 +10,7 @@ export function LandingFooter({ phone }: Props) {
     <footer className="bg-[#1c1b1b] text-white/70 py-10 px-5 md:px-10">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-2">
-          <Image src="/pippo.jpg" alt="Pippo Pizza" width={32} height={32} className="rounded-full object-cover" />
+          <Image src="/logo.png" alt="Pippo Pizza" width={32} height={32} className="rounded-full object-cover" />
           <span className="font-[var(--font-landing-heading)] font-bold text-white">Pippo Pizza</span>
         </div>
         <div className="font-[var(--font-landing-body)] text-sm text-center">

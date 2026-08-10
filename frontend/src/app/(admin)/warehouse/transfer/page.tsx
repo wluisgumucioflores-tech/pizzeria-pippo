@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Form, Select, InputNumber, Input, Button, Typography, Space, Alert, Radio } from "antd";
+import { useTranslations } from "next-intl";
 import { useWarehouseTransfer } from "@/features/warehouse/hooks/useWarehouseTransfer";
 
 const { Title, Text } = Typography;
@@ -22,6 +23,9 @@ export default function WarehouseTransferPage() {
   const searchParams = useSearchParams();
   const preselectedIngredient = searchParams.get("ingredientId");
   const preselectedVariant = searchParams.get("variantId");
+  const t = useTranslations("common");
+  const tw = useTranslations("warehouse");
+  const tt = useTranslations("warehouse.transferPage");
 
   const {
     form, transferType, ingredients, branches, variants,
@@ -32,31 +36,31 @@ export default function WarehouseTransferPage() {
   return (
     <div style={{ padding: 24, maxWidth: 520 }}>
       <Space style={{ marginBottom: 20 }}>
-        <Button icon={<IconArrowLeft />} type="text" onClick={() => router.push("/warehouse")}>Volver</Button>
+        <Button icon={<IconArrowLeft />} type="text" onClick={() => router.push("/warehouse")}>{t("back")}</Button>
       </Space>
 
-      <Title level={4} style={{ marginBottom: 20 }}>Transferir a sucursal</Title>
+      <Title level={4} style={{ marginBottom: 20 }}>{tt("title")}</Title>
 
       <Radio.Group value={transferType} onChange={(e) => handleTypeChange(e.target.value)}
         optionType="button" buttonStyle="solid" style={{ marginBottom: 24 }}>
-        <Radio.Button value="ingredient">🧂 Insumos</Radio.Button>
-        <Radio.Button value="product">📦 Reventa</Radio.Button>
+        <Radio.Button value="ingredient">{tw("tabIngredients")}</Radio.Button>
+        <Radio.Button value="product">{tw("tabProducts")}</Radio.Button>
       </Radio.Group>
 
-      {success && <Alert type="success" message="Transferencia realizada correctamente" style={{ marginBottom: 16 }} showIcon />}
+      {success && <Alert type="success" message={tt("success")} style={{ marginBottom: 16 }} showIcon />}
       {error && <Alert type="error" message={error} style={{ marginBottom: 16 }} showIcon closable onClose={() => setError(null)} />}
 
       <Form form={form} layout="vertical" onFinish={(values) => handleSubmit(values, () => router.push("/warehouse"))}>
         {transferType === "ingredient" ? (
-          <Form.Item label="Insumo" name="ingredient_id" rules={[{ required: true, message: "Seleccioná un insumo" }]}>
-            <Select showSearch placeholder="Seleccionar insumo" onChange={handleIngredientChange}
+          <Form.Item label={tw("purchase.ingredientLabel")} name="ingredient_id" rules={[{ required: true, message: tw("purchase.ingredientRequired") }]}>
+            <Select showSearch placeholder={tw("purchase.ingredientPlaceholder")} onChange={handleIngredientChange}
               options={ingredients.map((i) => ({ value: i.id, label: `${i.name} (${i.unit})` }))}
               filterOption={(input, option) => (option?.label ?? "").toLowerCase().includes(input.toLowerCase())}
             />
           </Form.Item>
         ) : (
-          <Form.Item label="Producto" name="variant_id" rules={[{ required: true, message: "Seleccioná un producto" }]}>
-            <Select showSearch placeholder="Seleccionar producto" onChange={handleVariantChange}
+          <Form.Item label={tw("purchase.productLabel")} name="variant_id" rules={[{ required: true, message: tw("purchase.productRequired") }]}>
+            <Select showSearch placeholder={tw("purchase.productPlaceholder")} onChange={handleVariantChange}
               options={variants.map((v) => ({
                 value: v.id,
                 label: v.name === "Unidad" ? (v.products?.name ?? v.id) : `${v.products?.name ?? ""} — ${v.name}`,
@@ -68,26 +72,26 @@ export default function WarehouseTransferPage() {
 
         {available !== null && (
           <div style={{ marginBottom: 16, padding: "8px 12px", background: "#f9fafb", borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 14 }}>
-            Disponible en bodega: <Text strong style={{ color: available === 0 ? "#ef4444" : "#16a34a" }}>{available} {selectedUnit}</Text>
+            {tt("available")}<Text strong style={{ color: available === 0 ? "#ef4444" : "#16a34a" }}>{available} {selectedUnit}</Text>
           </div>
         )}
 
-        <Form.Item label={`Cantidad${selectedUnit ? ` (${selectedUnit})` : ""}`} name="quantity"
-          rules={[{ required: true, message: "Ingresá la cantidad" }]}>
-          <InputNumber min={0.001} max={available ?? undefined} style={{ width: "100%" }} placeholder="Ej: 12" addonAfter={selectedUnit || undefined} />
+        <Form.Item label={`${tt("quantityLabel")}${selectedUnit ? ` (${selectedUnit})` : ""}`} name="quantity"
+          rules={[{ required: true, message: tt("quantityRequired") }]}>
+          <InputNumber min={0.001} max={available ?? undefined} style={{ width: "100%" }} placeholder={tt("quantityPlaceholder")} addonAfter={selectedUnit || undefined} />
         </Form.Item>
 
-        <Form.Item label="Destino" name="branch_id" rules={[{ required: true, message: "Seleccioná una sucursal" }]}>
-          <Select placeholder="Seleccionar sucursal" options={branches.map((b) => ({ value: b.id, label: b.name }))} />
+        <Form.Item label={tt("destinationLabel")} name="branch_id" rules={[{ required: true, message: tt("destinationRequired") }]}>
+          <Select placeholder={tt("destinationPlaceholder")} options={branches.map((b) => ({ value: b.id, label: b.name }))} />
         </Form.Item>
 
-        <Form.Item label="Notas" name="notes">
-          <Input.TextArea rows={2} placeholder="Opcional" />
+        <Form.Item label={tt("notes")} name="notes">
+          <Input.TextArea rows={2} placeholder={tt("notesPlaceholder")} />
         </Form.Item>
 
         <div style={{ display: "flex", gap: 8 }}>
-          <Button onClick={() => router.push("/warehouse")}>Cancelar</Button>
-          <Button type="primary" htmlType="submit" loading={loading} icon={<IconSwap />}>Confirmar transferencia</Button>
+          <Button onClick={() => router.push("/warehouse")}>{t("cancel")}</Button>
+          <Button type="primary" htmlType="submit" loading={loading} icon={<IconSwap />}>{tt("submit")}</Button>
         </div>
       </Form>
     </div>

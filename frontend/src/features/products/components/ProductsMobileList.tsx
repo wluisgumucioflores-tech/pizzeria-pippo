@@ -7,7 +7,8 @@ import {
   EditOutlined, StopOutlined, CheckCircleOutlined, DollarOutlined,
   DeleteOutlined, CopyOutlined, MoreOutlined,
 } from "@ant-design/icons";
-import { CATEGORY_OPTIONS, CATEGORY_COLORS } from "../constants/product.constants";
+import { useTranslations } from "next-intl";
+import { getCategoryOptions, CATEGORY_COLORS } from "../constants/product.constants";
 import { ProductImage } from "./ProductImage";
 import type { Product } from "../types/product.types";
 
@@ -31,25 +32,28 @@ function stopCardClick(e: MouseEvent) {
 
 export function ProductsMobileList({ products, loading, total, page, pageSize, onPageChange, onToggleActive, onDelete, onDuplicate }: Props) {
   const router = useRouter();
+  const t = useTranslations("common");
+  const tp = useTranslations("products");
+  const CATEGORY_OPTIONS = getCategoryOptions(tp);
 
   const confirmDelete = (record: Product) => {
     Modal.confirm({
-      title: "¿Eliminar este producto?",
-      content: "Solo se puede si no tiene ventas ni promociones asociadas. No se puede deshacer.",
-      okText: "Eliminar",
+      title: tp("deleteConfirmTitle"),
+      content: tp("deleteConfirmDesc"),
+      okText: t("delete"),
       okButtonProps: { danger: true },
-      cancelText: "Cancelar",
+      cancelText: t("cancel"),
       onOk: () => onDelete(record),
     });
   };
 
   if (loading) {
-    return <div style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>Cargando...</div>;
+    return <div style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>{t("loading")}</div>;
   }
 
   return (
     <>
-      <div style={{ marginBottom: 8, color: "#6b7280", fontSize: 13 }}>{total} productos</div>
+      <div style={{ marginBottom: 8, color: "#6b7280", fontSize: 13 }}>{tp("totalProducts", { count: total })}</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {products.map((product) => (
           <div
@@ -64,14 +68,14 @@ export function ProductsMobileList({ products, loading, total, page, pageSize, o
                   <Text strong style={{ fontSize: 15, textDecoration: product.is_active ? "none" : "line-through" }}>
                     {product.name}
                   </Text>
-                  {!product.is_active && <Tag color="default" style={{ margin: 0 }}>Inactivo</Tag>}
+                  {!product.is_active && <Tag color="default" style={{ margin: 0 }}>{tp("inactiveTag")}</Tag>}
                 </div>
                 <div style={{ marginTop: 4, display: "flex", gap: 4, flexWrap: "wrap" }}>
                   <Tag color={CATEGORY_COLORS[product.category]} style={{ margin: 0 }}>
                     {CATEGORY_OPTIONS.find((c) => c.value === product.category)?.label ?? product.category}
                   </Tag>
                   <Tag color={product.product_type === "resale" ? "purple" : "orange"} style={{ margin: 0 }}>
-                    {product.product_type === "resale" ? "Reventa" : "Elaboración"}
+                    {product.product_type === "resale" ? tp("typeResale") : tp("typeMade")}
                   </Tag>
                   {product.product_variants?.filter((v) => v.is_active).map((v) => (
                     <Tag key={v.id} style={{ margin: 0 }}>{v.name}</Tag>
@@ -80,24 +84,24 @@ export function ProductsMobileList({ products, loading, total, page, pageSize, o
               </div>
             </div>
             <div style={{ display: "flex", gap: 6, marginTop: 12, borderTop: "1px solid #f3f4f6", paddingTop: 10 }} onClick={stopCardClick}>
-              <Tooltip title="Precios por sucursal">
+              <Tooltip title={tp("branchPricesTooltip")}>
                 <Button size="small" icon={<DollarOutlined />} onClick={() => router.push(`/products/${product.id}/prices`)} style={{ flex: 1 }} />
               </Tooltip>
-              <Tooltip title="Editar">
+              <Tooltip title={t("edit")}>
                 <Button size="small" icon={<EditOutlined />} onClick={() => router.push(`/products/${product.id}/edit`)} style={{ flex: 1 }} />
               </Tooltip>
               <Dropdown
                 trigger={["click"]}
                 menu={{
                   items: [
-                    { key: "duplicate", label: "Duplicar", icon: <CopyOutlined /> },
+                    { key: "duplicate", label: tp("duplicate"), icon: <CopyOutlined /> },
                     {
                       key: "toggle",
-                      label: product.is_active ? "Desactivar" : "Activar",
+                      label: product.is_active ? tp("deactivate") : tp("activate"),
                       icon: product.is_active ? <StopOutlined /> : <CheckCircleOutlined />,
                     },
                     { type: "divider" },
-                    { key: "delete", label: "Eliminar", icon: <DeleteOutlined />, danger: true },
+                    { key: "delete", label: t("delete"), icon: <DeleteOutlined />, danger: true },
                   ],
                   onClick: ({ key }) => {
                     if (key === "duplicate") onDuplicate(product);
@@ -106,7 +110,7 @@ export function ProductsMobileList({ products, loading, total, page, pageSize, o
                   },
                 }}
               >
-                <Tooltip title="Más opciones">
+                <Tooltip title={tp("moreOptionsTooltip")}>
                   <Button size="small" icon={<MoreOutlined />} style={{ flex: 1 }} />
                 </Tooltip>
               </Dropdown>
@@ -116,9 +120,9 @@ export function ProductsMobileList({ products, loading, total, page, pageSize, o
       </div>
       {total > pageSize && (
         <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 16 }}>
-          <Button size="small" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>Anterior</Button>
-          <span style={{ lineHeight: "24px", color: "#6b7280", fontSize: 13 }}>Pág. {page} / {Math.ceil(total / pageSize)}</span>
-          <Button size="small" disabled={page >= Math.ceil(total / pageSize)} onClick={() => onPageChange(page + 1)}>Siguiente</Button>
+          <Button size="small" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>{tp("previous")}</Button>
+          <span style={{ lineHeight: "24px", color: "#6b7280", fontSize: 13 }}>{tp("pageOf", { page, total: Math.ceil(total / pageSize) })}</span>
+          <Button size="small" disabled={page >= Math.ceil(total / pageSize)} onClick={() => onPageChange(page + 1)}>{tp("next")}</Button>
         </div>
       )}
     </>

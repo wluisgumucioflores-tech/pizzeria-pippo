@@ -5,6 +5,10 @@ export const API_ENDPOINTS = {
     base: "/branches",
     byId: (id: string) => `/branches/${id}`,
   },
+  businesses: {
+    base: "/businesses",
+    byId: (id: string) => `/businesses/${id}`,
+  },
   ingredients: {
     list: (qs: string) => `/ingredients?${qs}`,
     base: "/ingredients",

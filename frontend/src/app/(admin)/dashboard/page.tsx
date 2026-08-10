@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import dynamic from "next/dynamic";
 import { Button, Alert } from "antd";
 import { ShoppingCartOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import { DashboardSummaryCards } from "@/features/dashboard/components/DashboardSummaryCards";
 import { DashboardStockAlerts } from "@/features/dashboard/components/DashboardStockAlerts";
 import { useDashboard } from "@/features/dashboard/hooks/useDashboard";
@@ -14,14 +15,16 @@ const DashboardCharts = dynamic(
 );
 
 export default function DashboardPage() {
+  const t = useTranslations("dashboard");
+  const tNav = useTranslations("nav");
   const { summary, topProducts, dailyData, stockAlerts, warehouseAlerts, summaryDate, showingYesterday, loading } = useDashboard();
 
   return (
     <div style={{ padding: 24 }}>
       <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
-          <h2 className="text-lg font-semibold m-0">Dashboard</h2>
-          <p className="text-gray-400 text-sm mt-0.5">Resumen de hoy — {dayjs().format("dddd, D [de] MMMM YYYY")}</p>
+          <h2 className="text-lg font-semibold m-0">{tNav("dashboard")}</h2>
+          <p className="text-gray-400 text-sm mt-0.5">{t("subtitle", { date: dayjs().format("dddd, D [de] MMMM YYYY") })}</p>
         </div>
         <Button
           type="primary"
@@ -30,7 +33,7 @@ export default function DashboardPage() {
           target="_blank"
           style={{ background: "#ea580c", borderColor: "#ea580c" }}
         >
-          Ir al POS
+          {t("goToPos")}
         </Button>
       </div>
 
@@ -38,8 +41,8 @@ export default function DashboardPage() {
         <Alert
           type="info"
           showIcon
-          message="Todavía no hay ventas registradas hoy"
-          description={`Mostrando el resumen de ayer, ${dayjs(summaryDate).format("dddd D [de] MMMM")}.`}
+          message={t("noSalesTodayAlert")}
+          description={t("showingYesterdayAlert", { date: dayjs(summaryDate).format("dddd D [de] MMMM") })}
           style={{ marginBottom: 16 }}
         />
       )}

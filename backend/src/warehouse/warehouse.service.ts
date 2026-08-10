@@ -1,6 +1,7 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { InsufficientStockException } from '../common/exceptions/insufficient-stock.exception';
+import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import type { ListWarehouseStockQueryDto } from './dto/list-warehouse-stock-query.dto';
 import type { ListWarehouseMovementsQueryDto } from './dto/list-warehouse-movements-query.dto';
 import type { PurchaseWarehouseStockDto } from './dto/purchase-warehouse-stock.dto';
@@ -14,10 +15,15 @@ import type { WarehouseMovementRow } from './types/warehouse-movement.types';
 export class WarehouseService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async list(query: ListWarehouseStockQueryDto): Promise<WarehouseStockListResult> {
+  async list(query: ListWarehouseStockQueryDto, user: CurrentUserPayload): Promise<WarehouseStockListResult> {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 10;
-    const where = { ...(query.ingredientId ? { ingredientId: query.ingredientId } : {}), ingredient: { isActive: true } };
+    const businessId = this.resolveBusinessId(user);
+    const where = {
+      businessId,
+      ...(query.ingredientId ? { ingredientId: query.ingredientId } : {}),
+      ingredient: { isActive: true },
+    };
 
     const [rows, total] = await Promise.all([
       this.prisma.warehouseStock.findMany({
@@ -35,7 +41,7 @@ export class WarehouseService {
       ingredientIds.length
         ? (
             await this.prisma.warehouseMovement.findMany({
-              where: { ingredientId: { in: ingredientIds } },
+              where: { businessId, ingredientId: { in: ingredientIds } },
               select: { ingredientId: true },
               distinct: ['ingredientId'],
             })
@@ -59,8 +65,9 @@ export class WarehouseService {
     return { data, total, page, pageSize };
   }
 
-  async getMovements(query: ListWarehouseMovementsQueryDto): Promise<WarehouseMovementRow[]> {
+  async getMovements(query: ListWarehouseMovementsQueryDto, user: CurrentUserPayload): Promise<WarehouseMovementRow[]> {
     const where = {
+      businessId: this.resolveBusinessId(user),
       ...(query.type ? { type: query.type } : {}),
       ...(query.ingredientId ? { ingredientId: query.ingredientId } : {}),
       ...(query.branchId ? { branchId: query.branchId } : {}),
@@ -89,9 +96,11 @@ export class WarehouseService {
     }));
   }
 
-  async updateMinQuantity(id: string, dto: UpdateWarehouseMinQuantityDto): Promise<void> {
+  async updateMinQuantity(id: string, dto: UpdateWarehouseMinQuantityDto, user: CurrentUserPayload): Promise<void> {
     const row = await this.prisma.warehouseStock.findUnique({ where: { id } });
-    if (!row) throw new NotFoundException('Insumo no encontrado');
+    if (!row || row.businessId !== this.resolveBusinessId(user)) {
+      throw new NotFoundException('Insumo no encontrado');
+    }
 
     await this.prisma.warehouseStock.update({
       where: { id },
@@ -99,9 +108,11 @@ export class WarehouseService {
     });
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, user: CurrentUserPayload): Promise<void> {
     const row = await this.prisma.warehouseStock.findUnique({ where: { id } });
-    if (!row) throw new NotFoundException('Insumo no encontrado');
+    if (!row || row.businessId !== this.resolveBusinessId(user)) {
+      throw new NotFoundException('Insumo no encontrado');
+    }
 
     const movementsCount = await this.prisma.warehouseMovement.count({ where: { ingredientId: row.ingredientId } });
     if (movementsCount > 0) {
@@ -111,10 +122,12 @@ export class WarehouseService {
     await this.prisma.warehouseStock.delete({ where: { id } });
   }
 
-  async purchase(dto: PurchaseWarehouseStockDto, userId: string): Promise<void> {
+  async purchase(dto: PurchaseWarehouseStockDto, user: CurrentUserPayload): Promise<void> {
     if (dto.quantity <= 0) {
       throw new BadRequestException('La cantidad debe ser mayor a 0');
     }
+    const businessId = this.resolveBusinessId(user);
+    await this.assertIngredientOwnership(dto.ingredient_id, businessId);
 
     const existing = await this.prisma.warehouseStock.findUnique({ where: { ingredientId: dto.ingredient_id } });
 
@@ -129,26 +142,29 @@ export class WarehouseService {
       });
     } else {
       await this.prisma.warehouseStock.create({
-        data: { ingredientId: dto.ingredient_id, quantity: dto.quantity, minQuantity: dto.min_quantity ?? 0 },
+        data: { businessId, ingredientId: dto.ingredient_id, quantity: dto.quantity, minQuantity: dto.min_quantity ?? 0 },
       });
     }
 
     await this.prisma.warehouseMovement.create({
       data: {
+        businessId,
         ingredientId: dto.ingredient_id,
         quantity: dto.quantity,
         type: 'compra',
         branchId: null,
         notes: dto.notes ?? null,
-        createdBy: userId,
+        createdBy: user.id,
       },
     });
   }
 
-  async adjust(dto: AdjustWarehouseStockDto, userId: string): Promise<{ difference: number }> {
+  async adjust(dto: AdjustWarehouseStockDto, user: CurrentUserPayload): Promise<{ difference: number }> {
     if (dto.real_quantity < 0) {
       throw new BadRequestException('La cantidad no puede ser negativa');
     }
+    const businessId = this.resolveBusinessId(user);
+    await this.assertIngredientOwnership(dto.ingredient_id, businessId);
 
     const existing = await this.prisma.warehouseStock.findUnique({ where: { ingredientId: dto.ingredient_id } });
     if (!existing) throw new NotFoundException('Insumo no encontrado en bodega');
@@ -162,22 +178,26 @@ export class WarehouseService {
 
     await this.prisma.warehouseMovement.create({
       data: {
+        businessId,
         ingredientId: dto.ingredient_id,
         quantity: difference,
         type: 'ajuste',
         branchId: null,
         notes: dto.notes ?? null,
-        createdBy: userId,
+        createdBy: user.id,
       },
     });
 
     return { difference };
   }
 
-  async transfer(dto: TransferWarehouseStockDto, userId: string): Promise<void> {
+  async transfer(dto: TransferWarehouseStockDto, user: CurrentUserPayload): Promise<void> {
     if (dto.quantity <= 0) {
       throw new BadRequestException('La cantidad debe ser mayor a 0');
     }
+    const businessId = this.resolveBusinessId(user);
+    await this.assertIngredientOwnership(dto.ingredient_id, businessId);
+    await this.assertBranchOwnership(dto.branch_id, businessId);
 
     const warehouseRow = await this.prisma.warehouseStock.findUnique({ where: { ingredientId: dto.ingredient_id } });
     if (!warehouseRow) throw new NotFoundException('Insumo no encontrado en bodega');
@@ -209,12 +229,13 @@ export class WarehouseService {
 
     await this.prisma.warehouseMovement.create({
       data: {
+        businessId,
         ingredientId: dto.ingredient_id,
         quantity: -dto.quantity,
         type: 'transferencia',
         branchId: dto.branch_id,
         notes: dto.notes ?? null,
-        createdBy: userId,
+        createdBy: user.id,
       },
     });
 
@@ -226,8 +247,31 @@ export class WarehouseService {
         type: 'compra',
         origin: 'transferencia',
         notes: dto.notes ?? null,
-        createdBy: userId,
+        createdBy: user.id,
       },
     });
+  }
+
+  private resolveBusinessId(user: CurrentUserPayload): string {
+    if (!user.business_id) {
+      throw new InternalServerErrorException('El usuario no tiene un negocio asociado');
+    }
+    return user.business_id;
+  }
+
+  // Evita que un admin del negocio B mueva stock de bodega usando un
+  // ingredient_id/branch_id del negocio A, pasado directamente en el body.
+  private async assertIngredientOwnership(ingredientId: string, businessId: string): Promise<void> {
+    const ingredient = await this.prisma.ingredient.findUnique({ where: { id: ingredientId }, select: { businessId: true } });
+    if (!ingredient || ingredient.businessId !== businessId) {
+      throw new NotFoundException('Insumo no encontrado');
+    }
+  }
+
+  private async assertBranchOwnership(branchId: string, businessId: string): Promise<void> {
+    const branch = await this.prisma.branch.findUnique({ where: { id: branchId }, select: { businessId: true } });
+    if (!branch || branch.businessId !== businessId) {
+      throw new NotFoundException('Sucursal no encontrada');
+    }
   }
 }

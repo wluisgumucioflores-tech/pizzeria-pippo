@@ -2,6 +2,8 @@ import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import { AttendanceService } from './attendance.service';
 import { ScanAttendanceDto } from './dto/scan-attendance.dto';
 import { AttendanceHistoryQueryDto } from './dto/attendance-history-query.dto';
@@ -22,7 +24,7 @@ export class AttendanceController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Get('history')
-  history(@Query() query: AttendanceHistoryQueryDto) {
-    return this.attendanceService.history(query);
+  history(@Query() query: AttendanceHistoryQueryDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.attendanceService.history(query, user);
   }
 }

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { Modal, Form, Input, Select } from "antd";
+import { useTranslations } from "next-intl";
 import { AuthorizedChat, ChatFormValues } from "@/features/telegram-bot/types";
 
 interface Props {
@@ -13,6 +14,8 @@ interface Props {
 
 export function ChatModal({ open, editing, onClose, onSave }: Props) {
   const [form] = Form.useForm<ChatFormValues>();
+  const t = useTranslations("common");
+  const tc = useTranslations("settings.chats");
 
   useEffect(() => {
     if (open) {
@@ -31,52 +34,52 @@ export function ChatModal({ open, editing, onClose, onSave }: Props) {
 
   return (
     <Modal
-      title={editing ? "Editar chat autorizado" : "Agregar chat autorizado"}
+      title={editing ? tc("editTitle") : tc("addTitle")}
       open={open}
       onOk={handleOk}
       onCancel={onClose}
-      okText={editing ? "Guardar" : "Autorizar"}
-      cancelText="Cancelar"
-      destroyOnClose
+      okText={editing ? t("save") : tc("authorize")}
+      cancelText={t("cancel")}
+      destroyOnHidden
     >
       <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
         <Form.Item
           name="chat_id"
-          label="Chat ID"
-          rules={[{ required: true, message: "Ingresá el Chat ID" }]}
-          extra="ID numérico del usuario o grupo (los grupos tienen ID negativo)."
+          label={tc("chatIdLabel")}
+          rules={[{ required: true, message: tc("chatIdRequired") }]}
+          extra={tc("chatIdExtra")}
         >
           <Input placeholder="-1001234567890" disabled={!!editing} />
         </Form.Item>
 
         <Form.Item
           name="type"
-          label="Tipo"
+          label={tc("typeLabel")}
           rules={[{ required: true }]}
         >
           <Select disabled={!!editing}>
-            <Select.Option value="personal">Personal</Select.Option>
-            <Select.Option value="group">Grupo</Select.Option>
+            <Select.Option value="personal">{tc("typePersonal")}</Select.Option>
+            <Select.Option value="group">{tc("typeGroup")}</Select.Option>
           </Select>
         </Form.Item>
 
         <Form.Item
           name="label"
-          label="Nombre descriptivo"
-          rules={[{ required: true, message: "Ingresá un nombre" }]}
+          label={tc("nameLabel")}
+          rules={[{ required: true, message: tc("nameRequired") }]}
         >
-          <Input placeholder="Dueño — Chat Personal" />
+          <Input placeholder={tc("namePlaceholder")} />
         </Form.Item>
 
         <Form.Item
           name="plan"
-          label="Plan"
+          label={tc("planLabel")}
           rules={[{ required: true }]}
         >
           <Select>
-            <Select.Option value="basic">Básico (10 msg/día)</Select.Option>
-            <Select.Option value="pro">Pro (50 msg/día)</Select.Option>
-            <Select.Option value="unlimited">Sin límite</Select.Option>
+            <Select.Option value="basic">{tc("planBasicOption")}</Select.Option>
+            <Select.Option value="pro">{tc("planProOption")}</Select.Option>
+            <Select.Option value="unlimited">{tc("planUnlimitedOption")}</Select.Option>
           </Select>
         </Form.Item>
       </Form>

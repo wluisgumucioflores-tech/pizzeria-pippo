@@ -1,6 +1,6 @@
 import type { PaperWidth } from "../types/printing.types";
 
-export const TICKET_BUSINESS_NAME = "PIZZERIA PIPPO";
+export const DEFAULT_TICKET_BUSINESS_NAME = "GU PIZZA";
 export const TICKET_FOOTER_MESSAGE = "¡Gracias por su compra!";
 
 export const DEFAULT_PAPER_WIDTH: PaperWidth = 58;

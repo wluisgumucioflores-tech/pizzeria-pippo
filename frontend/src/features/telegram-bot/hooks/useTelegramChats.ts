@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { message } from "antd";
+import { useTranslations } from "next-intl";
 import { AuthorizedChat, ChatFormValues } from "@/features/telegram-bot/types";
 import {
   getAuthorizedChats,
@@ -11,6 +12,7 @@ import {
 } from "@/features/telegram-bot/services/telegramBot.service";
 
 export function useTelegramChats() {
+  const t = useTranslations("settings.chats");
   const [chats, setChats] = useState<AuthorizedChat[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -21,11 +23,11 @@ export function useTelegramChats() {
     try {
       setChats(await getAuthorizedChats());
     } catch {
-      message.error("Error al cargar los chats autorizados");
+      message.error(t("loadError"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -37,36 +39,36 @@ export function useTelegramChats() {
     try {
       if (editing) {
         await updateAuthorizedChat(editing.id, { label: values.label, plan: values.plan });
-        message.success("Chat actualizado");
+        message.success(t("updated"));
       } else {
         await createAuthorizedChat(values);
-        message.success("Chat autorizado");
+        message.success(t("created"));
       }
       closeModal();
       await load();
     } catch (err) {
-      message.error(err instanceof Error ? err.message : "Error al guardar");
+      message.error(err instanceof Error ? err.message : t("saveError"));
     }
-  }, [editing, closeModal, load]);
+  }, [editing, closeModal, load, t]);
 
   const handleToggleActive = useCallback(async (chat: AuthorizedChat) => {
     try {
       await updateAuthorizedChat(chat.id, { is_active: !chat.is_active });
       await load();
     } catch {
-      message.error("Error al cambiar el estado");
+      message.error(t("statusError"));
     }
-  }, [load]);
+  }, [load, t]);
 
   const handleDelete = useCallback(async (id: string) => {
     try {
       await deleteAuthorizedChat(id);
-      message.success("Acceso revocado");
+      message.success(t("revoked"));
       await load();
     } catch {
-      message.error("Error al revocar el acceso");
+      message.error(t("revokeError"));
     }
-  }, [load]);
+  }, [load, t]);
 
   return {
     chats,

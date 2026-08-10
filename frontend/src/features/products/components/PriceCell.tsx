@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { FocusEvent } from "react";
 import { Button, InputNumber, Space, Typography } from "antd";
 import { EditOutlined, PlusOutlined, CheckOutlined, CloseOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 
 const { Text } = Typography;
 
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function PriceCell({ variantId, branchId, price, saving, onSave }: Props) {
+  const t = useTranslations("products.branchPricesTable");
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState<number>(price ?? 0);
 
@@ -65,7 +67,7 @@ export function PriceCell({ variantId, branchId, price, saving, onSave }: Props)
 
   return (
     <Button size="small" icon={<PlusOutlined />} onClick={() => { setValue(0); setEditing(true); }}>
-      Asignar
+      {t("assign")}
     </Button>
   );
 }

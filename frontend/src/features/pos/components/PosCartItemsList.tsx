@@ -2,6 +2,7 @@
 
 import { Typography } from "antd";
 import { ShoppingCartOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import { CartItemRow } from "./CartItemRow";
 import type { DiscountedItem } from "@/lib/promotions";
 
@@ -40,13 +41,14 @@ interface Props {
 }
 
 export function PosCartItemsList({ discountedCart, onUpdateQty, onRemove, getStockQty }: Props) {
+  const t = useTranslations("pos.cartPanel");
   const groups = buildGroups(discountedCart);
 
   if (discountedCart.length === 0) {
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", color: "#9ca3af" }}>
         <ShoppingCartOutlined style={{ fontSize: 48, opacity: 0.25, marginBottom: 12 }} />
-        <Text type="secondary">Agregá productos al pedido</Text>
+        <Text type="secondary">{t("emptyState")}</Text>
       </div>
     );
   }

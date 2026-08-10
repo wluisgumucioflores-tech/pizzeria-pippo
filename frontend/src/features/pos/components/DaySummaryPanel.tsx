@@ -8,6 +8,7 @@ import {
   TeamOutlined,
   ShoppingCartOutlined,
 } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import type { DayOrder } from "../types/pos.types";
 
 const { Text } = Typography;
@@ -17,6 +18,8 @@ interface Props {
 }
 
 export function DaySummaryPanel({ dayOrders }: Props) {
+  const t = useTranslations("pos");
+  const td = useTranslations("pos.daySummary");
   // Cancelled orders don't count towards the day's sales/stats
   const activeOrders = dayOrders.filter((o) => o.cancelled_at === null);
   const totalSales = activeOrders.reduce((sum, o) => sum + Number(o.total), 0);
@@ -42,9 +45,9 @@ export function DaySummaryPanel({ dayOrders }: Props) {
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: 24, background: "#f5f5f5" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <Text strong style={{ fontSize: 16, color: "#374151" }}>Resumen del día</Text>
+        <Text strong style={{ fontSize: 16, color: "#374151" }}>{td("title")}</Text>
         <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 12, color: "#9ca3af" }}>Total del día</div>
+          <div style={{ fontSize: 12, color: "#9ca3af" }}>{td("totalDay")}</div>
           <div style={{ fontSize: 24, fontWeight: 700, color: "#ea580c" }}>Bs {totalSales.toFixed(2)}</div>
         </div>
       </div>
@@ -52,49 +55,49 @@ export function DaySummaryPanel({ dayOrders }: Props) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
         <SummaryCard
           icon={<ShoppingOutlined style={{ fontSize: 28, color: "#3b82f6" }} />}
-          label="Ventas realizadas"
+          label={td("salesMade")}
           value={String(activeOrders.length)}
           valueColor="#3b82f6"
         />
         <SummaryCard
           icon={<ClockCircleOutlined style={{ fontSize: 28, color: pendingCount > 0 ? "#f97316" : "#9ca3af" }} />}
-          label="Pendientes"
+          label={td("pending")}
           value={String(pendingCount)}
           valueColor={pendingCount > 0 ? "#f97316" : "#9ca3af"}
         />
         <SummaryCard
           icon={<CheckCircleOutlined style={{ fontSize: 28, color: "#16a34a" }} />}
-          label="Listos"
+          label={td("ready")}
           value={String(readyCount)}
           valueColor="#16a34a"
         />
         <SummaryCard
           icon={<TeamOutlined style={{ fontSize: 28, color: "#8b5cf6" }} />}
-          label="🍽️ Local"
+          label={t("orderType.dineInLocal")}
           value={String(dineInCount)}
           valueColor="#8b5cf6"
         />
         <SummaryCard
           icon={<ShoppingCartOutlined style={{ fontSize: 28, color: "#0891b2" }} />}
-          label="🥡 Para llevar"
+          label={t("orderType.takeawayLocal")}
           value={String(takeawayCount)}
           valueColor="#0891b2"
         />
         <SummaryCard
           icon={<span style={{ fontSize: 28 }}>💵</span>}
-          label="Efectivo"
+          label={t("paymentMethod.cash")}
           value={`Bs ${efectivoTotal.toFixed(2)}`}
           valueColor="#374151"
         />
         <SummaryCard
           icon={<span style={{ fontSize: 28 }}>📱</span>}
-          label="QR"
+          label={t("paymentMethod.qr")}
           value={`Bs ${qrTotal.toFixed(2)}`}
           valueColor="#374151"
         />
         <SummaryCard
           icon={<span style={{ fontSize: 28 }}>🌐</span>}
-          label="Online"
+          label={td("online")}
           value={`Bs ${onlineTotal.toFixed(2)}`}
           valueColor="#374151"
         />

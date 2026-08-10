@@ -1,6 +1,7 @@
 "use client";
 
 import NextImage from "next/image";
+import { useTranslations } from "next-intl";
 import type { DisplayProduct } from "../types/display.types";
 
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -9,18 +10,18 @@ const CATEGORY_EMOJI: Record<string, string> = {
   otro: "🍽️",
 };
 
-const CATEGORY_LABEL: Record<string, string> = {
-  pizza: "Pizzas",
-  bebida: "Bebidas",
-  otro: "Otros",
-};
-
 interface Props {
   products: DisplayProduct[];
   menuPage: number;
 }
 
 export function DisplayMenu({ products, menuPage }: Props) {
+  const t = useTranslations("display");
+  const categoryLabel: Record<string, string> = {
+    pizza: t("categories.pizza"),
+    bebida: t("categories.bebida"),
+    otro: t("categories.otro"),
+  };
   const categories = Array.from(new Set(products.map((p) => p.category)));
   const visibleProducts = products.slice(menuPage * 6, menuPage * 6 + 6);
   const totalPages = Math.ceil(products.length / 6);
@@ -36,7 +37,7 @@ export function DisplayMenu({ products, menuPage }: Props) {
             style={{ display: "flex", alignItems: "center", gap: 8, background: "#1f2937", padding: "8px 18px", borderRadius: 999, fontSize: 15, fontWeight: 500 }}
           >
             <span>{CATEGORY_EMOJI[cat] ?? "🍽️"}</span>
-            <span>{CATEGORY_LABEL[cat] ?? cat}</span>
+            <span>{categoryLabel[cat] ?? cat}</span>
           </div>
         ))}
       </div>
@@ -78,10 +79,10 @@ export function DisplayMenu({ products, menuPage }: Props) {
                 </div>
                 <div style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <span style={{ color: "#fb923c", fontWeight: 700, fontSize: 20 }}>
-                    {hasVariants ? `Desde Bs ${minPrice}` : `Bs ${minPrice}`}
+                    {hasVariants ? t("fromPrice", { price: minPrice }) : `Bs ${minPrice}`}
                   </span>
                   {hasVariants && (
-                    <span style={{ fontSize: 12, color: "#6b7280" }}>varios tamaños</span>
+                    <span style={{ fontSize: 12, color: "#6b7280" }}>{t("variousSizes")}</span>
                   )}
                 </div>
               </div>

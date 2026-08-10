@@ -2,6 +2,7 @@
 
 import { Button, Space } from "antd";
 import { CheckCircleOutlined, CloseCircleOutlined, ApiOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 
 interface Props {
   testing: boolean;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function TestConnectionButton({ testing, testResult, testError, disabled, onTest }: Props) {
+  const t = useTranslations("settings");
   return (
     <Space direction="vertical" size={4}>
       <Button
@@ -20,13 +22,13 @@ export function TestConnectionButton({ testing, testResult, testError, disabled,
         loading={testing}
         disabled={disabled}
       >
-        Probar conexión
+        {t("testConnection")}
       </Button>
 
       {testResult === "success" && (
         <Space style={{ color: "#52c41a", fontSize: 13 }}>
           <CheckCircleOutlined />
-          Mensaje enviado correctamente
+          {t("testSuccess")}
         </Space>
       )}
 

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { Card, Space, Typography, Tag, Badge, Divider } from "antd";
+import { useTranslations } from "next-intl";
 
 const { Title, Text } = Typography;
 
@@ -27,6 +28,8 @@ interface Props {
 }
 
 export function ProductImageCard({ name, category, imageUrl, description, isActive, imgSize }: Props) {
+  const t = useTranslations("products");
+
   return (
     <Card>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
@@ -39,7 +42,7 @@ export function ProductImageCard({ name, category, imageUrl, description, isActi
           <Title level={3} style={{ margin: 0 }}>{name}</Title>
           <Space style={{ marginTop: 8 }}>
             <Tag color={CATEGORY_COLORS[category] ?? "default"} style={{ fontSize: 13 }}>{category}</Tag>
-            {isActive ? <Badge status="success" text="Activo" /> : <Badge status="default" text="Inactivo" />}
+            {isActive ? <Badge status="success" text={t("activeBadge")} /> : <Badge status="default" text={t("inactiveTag")} />}
           </Space>
         </div>
       </div>
@@ -47,7 +50,7 @@ export function ProductImageCard({ name, category, imageUrl, description, isActi
         <>
           <Divider />
           <div>
-            <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 4 }}>Descripción para el cliente</Text>
+            <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 4 }}>{t("descriptionForCustomer")}</Text>
             <Text>{description}</Text>
           </div>
         </>

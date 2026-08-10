@@ -2,6 +2,7 @@
 
 import { Table, Button, Tag, Space, Typography, Tooltip } from "antd";
 import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/lib/useIsMobile";
 import type { VariantType } from "../types/variant-type.types";
 
@@ -17,27 +18,29 @@ interface Props {
 
 export function VariantTypesTable({ variantTypes, loading, onCreate, onEdit, onToggle }: Props) {
   const isMobile = useIsMobile();
+  const t = useTranslations("common");
+  const tv = useTranslations("variantTypes");
 
   const columns = [
-    { title: "Nombre", dataIndex: "name", key: "name" },
+    { title: tv("columns.name"), dataIndex: "name", key: "name" },
     {
-      title: "Estado",
+      title: tv("columns.status"),
       dataIndex: "is_active",
       key: "is_active",
       width: 100,
       render: (active: boolean) =>
-        active ? <Tag color="green">Activo</Tag> : <Tag color="default">Inactivo</Tag>,
+        active ? <Tag color="green">{tv("active")}</Tag> : <Tag color="default">{tv("inactive")}</Tag>,
     },
     {
-      title: "Acciones",
+      title: t("actions"),
       key: "actions",
       width: 120,
       render: (_: unknown, record: VariantType) => (
         <Space>
-          <Tooltip title="Editar">
+          <Tooltip title={t("edit")}>
             <Button icon={<EditOutlined />} size="small" onClick={() => onEdit(record)} />
           </Tooltip>
-          <Tooltip title={record.is_active ? "Desactivar" : "Activar"}>
+          <Tooltip title={record.is_active ? tv("deactivate") : tv("activate")}>
             <Button
               icon={record.is_active ? <StopOutlined /> : <CheckCircleOutlined />}
               size="small"
@@ -52,9 +55,9 @@ export function VariantTypesTable({ variantTypes, loading, onCreate, onEdit, onT
 
   const header = (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
-      <Title level={4} style={{ margin: 0 }}>Tipos de Variante</Title>
+      <Title level={4} style={{ margin: 0 }}>{tv("title")}</Title>
       <Button type="primary" icon={<PlusOutlined />} onClick={onCreate}>
-        Nuevo tipo
+        {tv("new")}
       </Button>
     </div>
   );
@@ -64,7 +67,7 @@ export function VariantTypesTable({ variantTypes, loading, onCreate, onEdit, onT
       <>
         {header}
         {loading ? (
-          <div style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>Cargando...</div>
+          <div style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>{t("loading")}</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {variantTypes.map((vt) => (
@@ -85,8 +88,8 @@ export function VariantTypesTable({ variantTypes, loading, onCreate, onEdit, onT
                   <Text strong style={{ fontSize: 15 }}>{vt.name}</Text>
                   <div style={{ marginTop: 4, display: "flex", gap: 4 }}>
                     {vt.is_active
-                      ? <Tag color="green" style={{ margin: 0 }}>Activo</Tag>
-                      : <Tag color="default" style={{ margin: 0 }}>Inactivo</Tag>}
+                      ? <Tag color="green" style={{ margin: 0 }}>{tv("active")}</Tag>
+                      : <Tag color="default" style={{ margin: 0 }}>{tv("inactive")}</Tag>}
                   </div>
                 </div>
                 <Space size={6}>

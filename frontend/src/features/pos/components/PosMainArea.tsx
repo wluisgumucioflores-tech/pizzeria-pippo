@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { ProductCatalog } from "./ProductCatalog";
 import { PromoTab } from "./PromoTab";
 import { PosCart } from "./PosCart";
@@ -30,6 +31,7 @@ export function PosMainArea({
   products, loading, branchId, getVariantPrice, getPromoLabel, onProductClick,
   cart, onOpenPayment, activePromotions, onAddItems, onAddSingleVariant,
 }: Props) {
+  const t = useTranslations("pos.mobileNav");
   const cartItemCount = cart.discountedCart.reduce((s, i) => s + i.qty_physical, 0);
   const cartPanel = (
     <PosCart
@@ -72,10 +74,10 @@ export function PosMainArea({
         </div>
         <div style={{ display: "flex", borderTop: "1px solid #e5e7eb", background: "#fff", flexShrink: 0 }}>
           <button onClick={() => onMobileViewChange("catalog")} style={{ flex: 1, padding: "12px 0", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 600, background: mobileView === "catalog" ? "#fff7ed" : "#fff", color: mobileView === "catalog" ? "#ea580c" : "#6b7280", borderTop: mobileView === "catalog" ? "2px solid #ea580c" : "2px solid transparent", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-            🛍️ Catálogo
+            {t("catalog")}
           </button>
           <button onClick={() => onMobileViewChange("cart")} style={{ flex: 1, padding: "12px 0", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 600, background: mobileView === "cart" ? "#fff7ed" : "#fff", color: mobileView === "cart" ? "#ea580c" : "#6b7280", borderTop: mobileView === "cart" ? "2px solid #ea580c" : "2px solid transparent", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-            🛒 Pedido
+            {t("cart")}
             {cartItemCount > 0 && (
               <span style={{ background: "#ea580c", color: "#fff", borderRadius: 10, fontSize: 11, fontWeight: 700, padding: "1px 7px" }}>
                 {cartItemCount}

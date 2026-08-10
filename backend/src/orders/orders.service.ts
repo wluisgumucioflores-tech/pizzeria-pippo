@@ -21,7 +21,9 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
-type CancellableOrder = Prisma.OrderGetPayload<{ include: { items: { include: { flavors: true } } } }>;
+type CancellableOrder = Prisma.OrderGetPayload<{
+  include: { items: { include: { flavors: true } }; branch: { select: { businessId: true } } };
+}>;
 type PrismaTransaction = Prisma.TransactionClient;
 
 @Injectable()
@@ -36,6 +38,8 @@ export class OrdersService {
   ) {}
 
   async create(dto: CreateOrderDto, user: CurrentUserPayload): Promise<CreateOrderResult> {
+    await this.assertBranchOwnership(dto.branch_id, user);
+
     // 1. Fetch variants (including mixed-pizza flavors) with prices, recipes and product info
     const flavorVariantIds = dto.items.flatMap((i) => (i.flavors ?? []).map((f) => f.variant_id));
     const variantIds = Array.from(new Set(dto.items.map((i) => i.variant_id).concat(flavorVariantIds)));
@@ -73,7 +77,7 @@ export class OrdersService {
 
     // 3. Recompute promotions and totals server-side (reuses PromotionsService's
     // query + mapping instead of duplicating it — same "all non-deleted promotions" set)
-    const allPromotions = (await this.promotionsService.list({})) as unknown as Promotion[];
+    const allPromotions = (await this.promotionsService.list({}, user)) as unknown as Promotion[];
     const activePromotions = getActivePromotions(allPromotions, dto.branch_id, todayInBolivia());
     const discounted = applyPromotions(cart, activePromotions);
     const serverTotal = round2(getCartTotal(discounted));
@@ -173,7 +177,8 @@ export class OrdersService {
     return result;
   }
 
-  async getDayOrders(branchId: string, date?: string): Promise<DayOrderResult[]> {
+  async getDayOrders(branchId: string, date: string | undefined, user: CurrentUserPayload): Promise<DayOrderResult[]> {
+    await this.assertBranchOwnership(branchId, user);
     const day = date ?? todayInBolivia();
 
     const orders = await this.prisma.order.findMany({
@@ -209,7 +214,8 @@ export class OrdersService {
     }));
   }
 
-  async getPendingKitchenOrders(branchId: string): Promise<KitchenOrderResult[]> {
+  async getPendingKitchenOrders(branchId: string, user: CurrentUserPayload): Promise<KitchenOrderResult[]> {
+    await this.assertBranchOwnership(branchId, user);
     const orders = await this.prisma.order.findMany({
       where: { branchId, kitchenStatus: 'pending', cancelledAt: null },
       orderBy: { createdAt: 'asc' },
@@ -255,9 +261,11 @@ export class OrdersService {
   async markReady(orderId: string, user: CurrentUserPayload): Promise<void> {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
-      select: { branchId: true, cancelledAt: true },
+      select: { branchId: true, cancelledAt: true, branch: { select: { businessId: true } } },
     });
-    if (!order) throw new NotFoundException('Orden no encontrada');
+    if (!order || order.branch.businessId !== user.business_id) {
+      throw new NotFoundException('Orden no encontrada');
+    }
     if (order.cancelledAt) throw new ConflictException('La orden está anulada');
     if (user.role !== 'admin' && user.branch_id !== order.branchId) {
       throw new ForbiddenException('No tenés permiso para esta orden');
@@ -269,7 +277,7 @@ export class OrdersService {
 
   async cancelOrder(orderId: string, dto: CancelOrderDto, user: CurrentUserPayload): Promise<void> {
     const reason = this.parseCancelReason(dto.reason);
-    const order = await this.findCancellableOrderOrThrow(orderId);
+    const order = await this.findCancellableOrderOrThrow(orderId, user);
     this.assertUserCanCancelOrder(order, user);
 
     const deductions = await this.computeReversalDeductions(order);
@@ -282,18 +290,29 @@ export class OrdersService {
     });
   }
 
+  // Evita que un usuario pase el branchId de una sucursal de OTRO negocio
+  // por query param — antes esto no se chequeaba en ningún GET de órdenes.
+  private async assertBranchOwnership(branchId: string, user: CurrentUserPayload): Promise<void> {
+    const branch = await this.prisma.branch.findUnique({ where: { id: branchId }, select: { businessId: true } });
+    if (!branch || branch.businessId !== user.business_id) {
+      throw new NotFoundException('Sucursal no encontrada');
+    }
+  }
+
   private parseCancelReason(rawReason: string): string {
     const reason = rawReason?.trim() ?? '';
     if (!reason) throw new BadRequestException('El motivo de anulación es requerido');
     return reason;
   }
 
-  private async findCancellableOrderOrThrow(orderId: string) {
+  private async findCancellableOrderOrThrow(orderId: string, user: CurrentUserPayload) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
-      include: { items: { include: { flavors: true } } },
+      include: { items: { include: { flavors: true } }, branch: { select: { businessId: true } } },
     });
-    if (!order) throw new NotFoundException('Orden no encontrada');
+    if (!order || order.branch.businessId !== user.business_id) {
+      throw new NotFoundException('Orden no encontrada');
+    }
     if (order.cancelledAt) throw new ConflictException('La orden ya fue anulada');
     return order;
   }

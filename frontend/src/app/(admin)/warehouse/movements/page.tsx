@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Typography, Space, Button } from "antd";
 import { ArrowLeftOutlined, HistoryOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { useWarehouseMovements } from "@/features/warehouse/hooks/useWarehouseMovements";
 import { WarehouseMovementsFilters } from "@/features/warehouse/components/WarehouseMovementsFilters";
@@ -14,6 +15,8 @@ const { Title } = Typography;
 export default function WarehouseMovementsPage() {
   const router = useRouter();
   const isMobile = useIsMobile();
+  const t = useTranslations("common");
+  const tw = useTranslations("warehouse.movements");
   const {
     movements, ingredients, branches, loading,
     filterType, setFilterType,
@@ -27,13 +30,13 @@ export default function WarehouseMovementsPage() {
     <div style={{ padding: isMobile ? 16 : 24 }}>
       <Space style={{ marginBottom: 16 }}>
         <Button icon={<ArrowLeftOutlined />} type="text" onClick={() => router.push("/warehouse")}>
-          Volver
+          {t("back")}
         </Button>
       </Space>
 
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
         <HistoryOutlined style={{ fontSize: 18 }} />
-        <Title level={4} style={{ margin: 0 }}>Historial de movimientos — Bodega</Title>
+        <Title level={4} style={{ margin: 0 }}>{tw("title")}</Title>
       </div>
 
       <WarehouseMovementsFilters

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { Modal, Form, Input } from "antd";
+import { useTranslations } from "next-intl";
 import type { VariantType } from "../types/variant-type.types";
 
 interface Props {
@@ -14,6 +15,8 @@ interface Props {
 
 export function VariantTypeModal({ open, editing, saving, onSave, onClose }: Props) {
   const [form] = Form.useForm();
+  const t = useTranslations("common");
+  const tv = useTranslations("variantTypes");
 
   useEffect(() => {
     if (open) {
@@ -28,22 +31,22 @@ export function VariantTypeModal({ open, editing, saving, onSave, onClose }: Pro
 
   return (
     <Modal
-      title={editing ? "Editar tipo de variante" : "Nuevo tipo de variante"}
+      title={editing ? tv("editTitle") : tv("createTitle")}
       open={open}
       onOk={handleOk}
       onCancel={onClose}
-      okText={editing ? "Guardar cambios" : "Crear"}
-      cancelText="Cancelar"
+      okText={editing ? tv("saveChanges") : t("create")}
+      cancelText={t("cancel")}
       confirmLoading={saving}
       afterClose={() => form.resetFields()}
     >
       <Form form={form} layout="vertical" className="mt-4">
         <Form.Item
           name="name"
-          label="Nombre"
-          rules={[{ required: true, message: "El nombre es requerido" }]}
+          label={tv("nameLabel")}
+          rules={[{ required: true, message: tv("nameRequired") }]}
         >
-          <Input placeholder="Ej: Personal, XL, Litro..." maxLength={50} />
+          <Input placeholder={tv("namePlaceholder")} maxLength={50} />
         </Form.Item>
       </Form>
     </Modal>

@@ -5,7 +5,8 @@ import {
   PlusOutlined, EditOutlined, StopOutlined,
   CheckCircleOutlined, EyeOutlined, SearchOutlined,
 } from "@ant-design/icons";
-import { UNIT_OPTIONS, UNIT_COLORS } from "../constants/ingredient.constants";
+import { useTranslations } from "next-intl";
+import { getUnitOptions, UNIT_COLORS } from "../constants/ingredient.constants";
 import { useIsMobile } from "@/lib/useIsMobile";
 import type { Ingredient } from "../types/ingredient.types";
 
@@ -29,10 +30,13 @@ interface Props {
 
 export function IngredientsTable({ ingredients, loading, showInactive, onToggleInactive, search, onSearch, onCreate, onEdit, onToggleActive, page, total, pageSize, onPageChange }: Props) {
   const isMobile = useIsMobile();
+  const t = useTranslations("common");
+  const ti = useTranslations("ingredients");
+  const UNIT_OPTIONS = getUnitOptions(ti);
 
   const columns = [
     {
-      title: "Nombre",
+      title: ti("name"),
       dataIndex: "name",
       key: "name",
       render: (name: string, record: Ingredient) => (
@@ -40,12 +44,12 @@ export function IngredientsTable({ ingredients, loading, showInactive, onToggleI
           <Text delete={!record.is_active} style={!record.is_active ? { color: "#9ca3af" } : {}}>
             {name}
           </Text>
-          {!record.is_active && <Tag color="default">Inactivo</Tag>}
+          {!record.is_active && <Tag color="default">{ti("inactiveTag")}</Tag>}
         </Space>
       ),
     },
     {
-      title: "Unidad",
+      title: ti("unit"),
       dataIndex: "unit",
       key: "unit",
       render: (unit: string, record: Ingredient) => (
@@ -55,15 +59,15 @@ export function IngredientsTable({ ingredients, loading, showInactive, onToggleI
       ),
     },
     {
-      title: "Acciones",
+      title: t("actions"),
       key: "actions",
       width: 120,
       render: (_: unknown, record: Ingredient) => (
         <Space>
-          <Tooltip title="Editar">
+          <Tooltip title={t("edit")}>
             <Button icon={<EditOutlined />} size="small" onClick={() => onEdit(record)} />
           </Tooltip>
-          <Tooltip title={record.is_active ? "Desactivar" : "Reactivar"}>
+          <Tooltip title={record.is_active ? ti("deactivate") : ti("reactivate")}>
             <Button
               icon={record.is_active ? <StopOutlined /> : <CheckCircleOutlined />}
               size="small"
@@ -79,20 +83,20 @@ export function IngredientsTable({ ingredients, loading, showInactive, onToggleI
   const header = (
     <div style={{ marginBottom: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-        <Title level={4} style={{ margin: 0 }}>Insumos</Title>
+        <Title level={4} style={{ margin: 0 }}>{ti("title")}</Title>
         <Space wrap>
           <Space size={4}>
             <EyeOutlined style={{ color: "#6b7280" }} />
-            {!isMobile && <Text type="secondary">Ver inactivos</Text>}
+            {!isMobile && <Text type="secondary">{ti("showInactive")}</Text>}
             <Switch size="small" checked={showInactive} onChange={onToggleInactive} />
           </Space>
           <Button type="primary" icon={<PlusOutlined />} onClick={onCreate}>
-            {isMobile ? "Nuevo" : "Nuevo insumo"}
+            {isMobile ? ti("newShort") : ti("new")}
           </Button>
         </Space>
       </div>
       <Input
-        placeholder="Buscar por nombre..."
+        placeholder={ti("searchPlaceholder")}
         prefix={<SearchOutlined />}
         value={search}
         onChange={(e) => onSearch(e.target.value)}
@@ -107,7 +111,7 @@ export function IngredientsTable({ ingredients, loading, showInactive, onToggleI
       <>
         {header}
         {loading ? (
-          <div style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>Cargando...</div>
+          <div style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>{t("loading")}</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {ingredients.map((ingredient) => (
@@ -144,7 +148,7 @@ export function IngredientsTable({ ingredients, loading, showInactive, onToggleI
                     >
                       {UNIT_OPTIONS.find((u) => u.value === ingredient.unit)?.label ?? ingredient.unit}
                     </Tag>
-                    {!ingredient.is_active && <Tag color="default" style={{ margin: 0 }}>Inactivo</Tag>}
+                    {!ingredient.is_active && <Tag color="default" style={{ margin: 0 }}>{ti("inactiveTag")}</Tag>}
                   </div>
                 </div>
                 <Space size={6}>
@@ -164,7 +168,7 @@ export function IngredientsTable({ ingredients, loading, showInactive, onToggleI
                   current={page}
                   pageSize={pageSize}
                   total={total}
-                  showTotal={(t) => `${t} insumos`}
+                  showTotal={(count) => ti("totalIngredients", { count })}
                   onChange={onPageChange}
                   showSizeChanger={false}
                   size="small"
@@ -189,7 +193,7 @@ export function IngredientsTable({ ingredients, loading, showInactive, onToggleI
           current: page,
           pageSize,
           total,
-          showTotal: (t) => `${t} insumos`,
+          showTotal: (count) => ti("totalIngredients", { count }),
           onChange: onPageChange,
           showSizeChanger: false,
         }}

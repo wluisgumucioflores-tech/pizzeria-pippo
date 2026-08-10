@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { Tabs, Space } from "antd";
 import { UnorderedListOutlined, UserOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 
 import { ReportFilters } from "@/features/reports/components/ReportFilters";
 import { ReportsGeneralTab } from "@/features/reports/components/ReportsGeneralTab";
@@ -15,6 +16,7 @@ const CashierReportTable = dynamic(() =>
 );
 
 export default function ReportsPage() {
+  const t = useTranslations("reports");
   const { filters, sales, cashier, ordersReport, cancellation } = useReportsPage();
 
   return (
@@ -33,12 +35,12 @@ export default function ReportsPage() {
         items={[
           {
             key: "general",
-            label: "General",
+            label: t("tabs.general"),
             children: <ReportsGeneralTab sales={sales} />,
           },
           {
             key: "ventas",
-            label: <Space><UnorderedListOutlined />Historial de ventas</Space>,
+            label: <Space><UnorderedListOutlined />{t("tabs.sales")}</Space>,
             children: (
               <ReportsOrdersTab
                 ordersReport={ordersReport}
@@ -50,7 +52,7 @@ export default function ReportsPage() {
           },
           {
             key: "cajeros",
-            label: <Space><UserOutlined />Por cajero</Space>,
+            label: <Space><UserOutlined />{t("tabs.cashiers")}</Space>,
             children: <CashierReportTable cashierReports={cashier.cashierReports} loading={cashier.loading} />,
           },
         ]}

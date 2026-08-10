@@ -58,6 +58,7 @@ describe('SettingsService', () => {
         telegram_enabled: false,
         kitchen_late_threshold_minutes: 10,
         printer_paper_width: 58,
+        printer_business_name: 'GU PIZZA',
       });
     });
 
@@ -79,7 +80,7 @@ describe('SettingsService', () => {
       const keysUpserted = prisma.appSetting.upsert.mock.calls.map((call) => call[0].where.businessId_key.key);
       expect(keysUpserted).not.toContain('telegram_bot_token');
       expect(keysUpserted).toEqual(
-        expect.arrayContaining(['telegram_chat_id', 'telegram_enabled', 'kitchen_late_threshold_minutes', 'printer_paper_width']),
+        expect.arrayContaining(['telegram_chat_id', 'telegram_enabled', 'kitchen_late_threshold_minutes', 'printer_paper_width', 'printer_business_name']),
       );
     });
 
@@ -110,6 +111,22 @@ describe('SettingsService', () => {
         (call) => call[0].where.businessId_key.key === 'printer_paper_width',
       );
       expect(paperCall[0].create.value).toBe('58');
+    });
+
+    it('guarda el nombre comercial de los tickets', async () => {
+      await service.updateSettings(admin, {
+        telegram_chat_id: '',
+        telegram_enabled: false,
+        kitchen_late_threshold_minutes: 10,
+        printer_paper_width: 58,
+        printer_business_name: 'Pizza del Barrio',
+      });
+
+      const businessNameCall = prisma.appSetting.upsert.mock.calls.find(
+        (call) => call[0].where.businessId_key.key === 'printer_business_name',
+      );
+      expect(businessNameCall[0].create.value).toBe('Pizza del Barrio');
+      expect(businessNameCall[0].update.value).toBe('Pizza del Barrio');
     });
   });
 

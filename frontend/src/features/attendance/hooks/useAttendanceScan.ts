@@ -2,17 +2,25 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { AttendanceScanService } from "../services/attendance-scan.service";
 
 type Status = "idle" | "loading" | "success" | "error";
+type ScanTranslator = ReturnType<typeof useTranslations>;
 
-function buildMessage(result: { employee: { full_name: string }; type: "entrada" | "salida"; occurred_at: string }): string {
+function buildMessage(
+  result: { employee: { full_name: string }; type: "entrada" | "salida"; occurred_at: string },
+  t: ScanTranslator,
+  tAttendance: ScanTranslator
+): string {
   const time = new Date(result.occurred_at).toLocaleTimeString("es-BO", { hour: "2-digit", minute: "2-digit" });
-  const label = result.type === "entrada" ? "Entrada" : "Salida";
-  return `¡Bienvenido ${result.employee.full_name}! ${label} registrada a las ${time}`;
+  const label = result.type === "entrada" ? tAttendance("typeIn") : tAttendance("typeOut");
+  return t("welcomeMessage", { name: result.employee.full_name, type: label, time });
 }
 
 export function useAttendanceScan() {
+  const t = useTranslations("attendance.scan");
+  const tAttendance = useTranslations("attendance");
   const searchParams = useSearchParams();
   const token = searchParams.get("t");
 
@@ -38,11 +46,11 @@ export function useAttendanceScan() {
     setStatus("loading");
     const response = await AttendanceScanService.scan(payload);
     if (response.ok && response.result) {
-      setMessage(buildMessage(response.result));
+      setMessage(buildMessage(response.result, t, tAttendance));
       setResultType(response.result.type);
       setStatus("success");
     } else {
-      setMessage(response.error ?? "Código no reconocido");
+      setMessage(response.error ?? t("errorDefault"));
       setStatus("error");
     }
   };

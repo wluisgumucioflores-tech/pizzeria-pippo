@@ -2,6 +2,7 @@
 
 import { Typography, Tag } from "antd";
 import { PlusOutlined, MinusOutlined, DeleteOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import type { DiscountedItem } from "@/lib/promotions";
 
 const { Text } = Typography;
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function CartItemRow({ item, onUpdateQty, onRemove, showPromoTag = true, maxQty }: Props) {
+  const t = useTranslations("pos.cartPanel");
   const lineTotal = item.unit_price * item.qty_physical - item.discount_applied;
   const atMax = maxQty !== null && maxQty !== undefined && item.qty_physical >= maxQty;
 
@@ -23,7 +25,7 @@ export function CartItemRow({ item, onUpdateQty, onRemove, showPromoTag = true, 
       {/* Info */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <Text strong style={{ fontSize: 13, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {item.flavors?.length ? "Pizza mixta" : item.product_name}
+          {item.flavors?.length ? t("mixedPizza") : item.product_name}
         </Text>
         <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2, flexWrap: "wrap" }}>
           {item.flavors?.length ? (

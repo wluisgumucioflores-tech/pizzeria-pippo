@@ -1,6 +1,7 @@
 "use client";
 
 import { Tabs, Typography, Skeleton } from "antd";
+import { useTranslations } from "next-intl";
 import { BranchPricesTable } from "./BranchPricesTable";
 import type { VariantWithPrices, Branch } from "../types/product.types";
 
@@ -16,13 +17,14 @@ interface Props {
 }
 
 export function ProductBranchPricesView({ productName, variants, branches, isLoading, saving, onSave }: Props) {
+  const t = useTranslations("products.branchPricesPage");
   if (isLoading) return <Skeleton active paragraph={{ rows: 6 }} />;
 
   if (variants.length === 1 && variants[0].name === "Unidad") {
     return (
       <div>
         <Text type="secondary" style={{ display: "block", marginBottom: 12 }}>
-          Producto de reventa — precio único por sucursal
+          {t("resaleSingleNote")}
         </Text>
         <BranchPricesTable variant={variants[0]} branches={branches} saving={saving} onSave={onSave} />
       </div>
@@ -38,7 +40,7 @@ export function ProductBranchPricesView({ productName, variants, branches, isLoa
   return (
     <div>
       <Text type="secondary" style={{ display: "block", marginBottom: 12 }}>
-        {productName} — precios por variante y sucursal
+        {t("variantNote", { name: productName })}
       </Text>
       <Tabs items={tabItems} />
     </div>

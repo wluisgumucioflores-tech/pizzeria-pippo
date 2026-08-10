@@ -2,7 +2,8 @@
 
 import { Modal, Form, Input, Select, Button } from "antd";
 import type { FormInstance } from "antd";
-import { ROLE_OPTIONS } from "../constants/user.constants";
+import { useTranslations } from "next-intl";
+import { getRoleOptions } from "../constants/user.constants";
 import type { User, Branch, UserRole } from "../types/user.types";
 
 interface Props {
@@ -24,9 +25,12 @@ interface Props {
 }
 
 export function UserModal({ open, editing, saving, selectedRole, branches, form, onClose, onSubmit, onRoleChange }: Props) {
+  const t = useTranslations("users");
+  const tc = useTranslations("common");
+  const roleOptions = getRoleOptions(t);
   return (
     <Modal
-      title={editing ? "Editar usuario" : "Nuevo usuario"}
+      title={editing ? t("editTitle") : t("createTitle")}
       open={open}
       onCancel={onClose}
       footer={null}
@@ -34,66 +38,66 @@ export function UserModal({ open, editing, saving, selectedRole, branches, form,
     >
       <Form form={form} layout="vertical" onFinish={onSubmit} className="mt-4">
         <Form.Item
-          label="Nombre completo"
+          label={t("fullNameLabel")}
           name="full_name"
-          rules={[{ required: true, message: "Ingresá el nombre del usuario" }]}
+          rules={[{ required: true, message: t("fullNameRequired") }]}
         >
-          <Input placeholder="Ej: Juan Pérez" />
+          <Input placeholder={t("fullNamePlaceholder")} />
         </Form.Item>
 
         {!editing && (
           <>
             <Form.Item
-              label="Email"
+              label={t("emailLabel")}
               name="email"
               rules={[
-                { required: true, message: "Ingresá el email" },
-                { type: "email", message: "Email inválido" },
+                { required: true, message: t("emailRequired") },
+                { type: "email", message: t("emailInvalid") },
               ]}
             >
-              <Input placeholder="usuario@ejemplo.com" />
+              <Input placeholder={t("emailPlaceholder")} />
             </Form.Item>
             <Form.Item
-              label="Contraseña"
+              label={t("passwordLabel")}
               name="password"
               rules={[
-                { required: true, message: "Ingresá la contraseña" },
-                { min: 6, message: "Mínimo 6 caracteres" },
+                { required: true, message: t("passwordRequired") },
+                { min: 6, message: t("passwordMin") },
               ]}
             >
-              <Input.Password placeholder="Mínimo 6 caracteres" />
+              <Input.Password placeholder={t("passwordMin")} />
             </Form.Item>
           </>
         )}
 
         <Form.Item
-          label="Rol"
+          label={t("roleLabel")}
           name="role"
-          rules={[{ required: true, message: "Seleccioná un rol" }]}
+          rules={[{ required: true, message: t("roleRequired") }]}
         >
-          <Select options={ROLE_OPTIONS} onChange={onRoleChange} />
+          <Select options={roleOptions} onChange={onRoleChange} />
         </Form.Item>
 
         <Form.Item
-          label="Sucursal"
+          label={t("branchLabel")}
           name="branch_id"
           rules={[{
             required: selectedRole === "cajero" || selectedRole === "cocinero",
-            message: "Seleccioná la sucursal",
+            message: t("branchRequired"),
           }]}
         >
           <Select
             disabled={selectedRole === "admin"}
-            placeholder="Seleccioná una sucursal"
+            placeholder={t("branchPlaceholder")}
             allowClear
             options={branches.map((b) => ({ value: b.id, label: b.name }))}
           />
         </Form.Item>
 
         <div className="flex justify-end gap-2 mt-4">
-          <Button onClick={onClose}>Cancelar</Button>
+          <Button onClick={onClose}>{tc("cancel")}</Button>
           <Button type="primary" htmlType="submit" loading={saving}>
-            {editing ? "Guardar cambios" : "Crear usuario"}
+            {editing ? t("saveChanges") : t("createUser")}
           </Button>
         </div>
       </Form>

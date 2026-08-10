@@ -2,6 +2,8 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Put, UseGuards } fro
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -17,27 +19,27 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  list() {
-    return this.usersService.list();
+  list(@CurrentUser() user: CurrentUserPayload) {
+    return this.usersService.list(user);
   }
 
   @Post()
-  create(@Body() dto: CreateUserDto) {
-    return this.usersService.create(dto);
+  create(@Body() dto: CreateUserDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.usersService.create(dto, user);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
-    return this.usersService.update(id, dto);
+  update(@Param('id') id: string, @Body() dto: UpdateUserDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.usersService.update(id, dto, user);
   }
 
   @Patch(':id')
-  toggleBan(@Param('id') id: string, @Body() dto: ToggleBanUserDto) {
-    return this.usersService.toggleBan(id, dto.ban);
+  toggleBan(@Param('id') id: string, @Body() dto: ToggleBanUserDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.usersService.toggleBan(id, dto.ban, user);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(id);
+  remove(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    return this.usersService.remove(id, user);
   }
 }

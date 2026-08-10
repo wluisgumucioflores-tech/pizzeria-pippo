@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Modal, Input, Typography, Alert } from "antd";
+import { useTranslations } from "next-intl";
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -20,6 +21,8 @@ interface Props {
 
 export function CancelOrderModal({ order, loading, onConfirm, onClose }: Props) {
   const [reason, setReason] = useState("");
+  const t = useTranslations("common");
+  const tc = useTranslations("pos.cancelOrderModal");
 
   const handleConfirm = () => {
     if (!order || !reason.trim()) return;
@@ -37,9 +40,9 @@ export function CancelOrderModal({ order, loading, onConfirm, onClose }: Props) 
   return (
     <Modal
       open={!!order}
-      title={<Text strong style={{ color: "#dc2626" }}>Anular orden {orderLabel}</Text>}
-      okText="Anular orden"
-      cancelText="Cancelar"
+      title={<Text strong style={{ color: "#dc2626" }}>{tc("title", { label: orderLabel })}</Text>}
+      okText={tc("confirm")}
+      cancelText={t("cancel")}
       okButtonProps={{ danger: true, loading, disabled: !reason.trim() }}
       onOk={handleConfirm}
       onCancel={handleClose}
@@ -48,11 +51,11 @@ export function CancelOrderModal({ order, loading, onConfirm, onClose }: Props) 
       <Alert
         type="warning"
         showIcon
-        message="Esta acción restaurará el stock automáticamente y no se puede deshacer."
+        message={tc("warning")}
         style={{ marginBottom: 16 }}
       />
       <TextArea
-        placeholder="Motivo de anulación"
+        placeholder={tc("reasonPlaceholder")}
         maxLength={200}
         showCount
         rows={3}

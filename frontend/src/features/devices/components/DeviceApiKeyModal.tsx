@@ -2,6 +2,7 @@
 
 import { Modal, Typography, Input, Button, message } from "antd";
 import { CopyOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 
 const { Text } = Typography;
 
@@ -11,32 +12,34 @@ interface Props {
 }
 
 export function DeviceApiKeyModal({ apiKey, onClose }: Props) {
+  const t = useTranslations("devices.apiKeyModal");
+
   const handleCopy = async () => {
     if (!apiKey) return;
     await navigator.clipboard.writeText(apiKey);
-    message.success("Copiado al portapapeles");
+    message.success(t("copied"));
   };
 
   return (
     <Modal
-      title="Dispositivo creado"
+      title={t("title")}
       open={!!apiKey}
       onOk={onClose}
       onCancel={onClose}
-      okText="Ya lo copié"
+      okText={t("gotIt")}
       cancelButtonProps={{ style: { display: "none" } }}
       closable={false}
       maskClosable={false}
     >
       <Text type="warning" strong style={{ display: "block", marginBottom: 12 }}>
-        Copiá este API key ahora — no se puede volver a ver.
+        {t("warning")}
       </Text>
       <Input.Group compact style={{ display: "flex" }}>
         <Input value={apiKey ?? ""} readOnly style={{ fontFamily: "monospace" }} />
         <Button icon={<CopyOutlined />} onClick={handleCopy} />
       </Input.Group>
       <Text type="secondary" style={{ display: "block", marginTop: 12, fontSize: 13 }}>
-        Configurá este valor en la app del celular (URL del backend + este API key) para que pueda reportar los pagos de Yape.
+        {t("hint")}
       </Text>
     </Modal>
   );

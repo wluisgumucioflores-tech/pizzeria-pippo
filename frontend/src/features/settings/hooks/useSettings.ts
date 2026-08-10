@@ -2,16 +2,19 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { message } from "antd";
+import { useTranslations } from "next-intl";
 import { AppSettings } from "@/features/settings/types";
 import { getSettings, saveSettings, testConnection } from "@/features/settings/services/settings.service";
 
 export function useSettings() {
+  const t = useTranslations("settings.errors");
   const [settings, setSettings] = useState<AppSettings>({
     telegram_bot_token: "",
     telegram_chat_id: "",
     telegram_enabled: false,
     kitchen_late_threshold_minutes: 10,
     printer_paper_width: 58,
+    printer_business_name: "GU PIZZA",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -25,11 +28,11 @@ export function useSettings() {
       const data = await getSettings();
       setSettings(data);
     } catch {
-      message.error("Error al cargar la configuración");
+      message.error(t("loadSettings"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -48,28 +51,28 @@ export function useSettings() {
         setTestResult("success");
       } else {
         setTestResult("error");
-        setTestError(result.error ?? "Error desconocido");
+        setTestError(result.error ?? t("testUnknownError"));
       }
     } catch {
       setTestResult("error");
-      setTestError("No se pudo conectar");
+      setTestError(t("testConnFailed"));
     } finally {
       setTesting(false);
     }
-  }, [settings.telegram_bot_token, settings.telegram_chat_id]);
+  }, [settings.telegram_bot_token, settings.telegram_chat_id, t]);
 
   const handleSave = useCallback(async () => {
     setSaving(true);
     try {
       await saveSettings(settings);
-      message.success("Configuración guardada");
+      message.success(t("saved"));
       await load();
     } catch {
-      message.error("Error al guardar la configuración");
+      message.error(t("saveSettings"));
     } finally {
       setSaving(false);
     }
-  }, [settings, load]);
+  }, [settings, load, t]);
 
   return {
     settings,

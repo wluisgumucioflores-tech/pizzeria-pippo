@@ -2,6 +2,7 @@
 
 import { Card, Button, Typography, Space } from "antd";
 import { ShopOutlined, LogoutOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import type { Branch } from "../types/pos.types";
 
 const { Title, Text } = Typography;
@@ -14,6 +15,8 @@ interface Props {
 }
 
 export function BranchSelector({ branches, userName, onSelect, onLogout }: Props) {
+  const t = useTranslations("pos.branchSelector");
+
   return (
     <div style={{
       height: "100vh",
@@ -26,8 +29,8 @@ export function BranchSelector({ branches, userName, onSelect, onLogout }: Props
       padding: 24,
     }}>
       <div style={{ textAlign: "center" }}>
-        <Title level={3} style={{ margin: 0 }}>Seleccionar sucursal</Title>
-        <Text type="secondary">Hola, {userName}. ¿Desde qué sucursal vas a vender?</Text>
+        <Title level={3} style={{ margin: 0 }}>{t("title")}</Title>
+        <Text type="secondary">{t("greeting", { name: userName })}</Text>
       </div>
 
       <Space direction="vertical" style={{ width: "100%", maxWidth: 360 }} size={12}>
@@ -48,7 +51,7 @@ export function BranchSelector({ branches, userName, onSelect, onLogout }: Props
       </Space>
 
       <Button icon={<LogoutOutlined />} type="text" onClick={onLogout}>
-        Cerrar sesión
+        {t("logout")}
       </Button>
     </div>
   );

@@ -21,4 +21,8 @@ export class UpdateSettingsDto {
   @IsOptional()
   @IsIn([58, 80])
   printer_paper_width?: number;
+
+  @IsOptional()
+  @IsString()
+  printer_business_name?: string;
 }

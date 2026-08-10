@@ -23,6 +23,7 @@ import { TelegramModule } from './telegram/telegram.module';
 import { PublicMenuModule } from './public-menu/public-menu.module';
 import { EmployeesModule } from './employees/employees.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { BusinessesModule } from './businesses/businesses.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { AttendanceModule } from './attendance/attendance.module';
     PublicMenuModule,
     EmployeesModule,
     AttendanceModule,
+    BusinessesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

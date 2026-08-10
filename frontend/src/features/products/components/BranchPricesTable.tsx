@@ -1,6 +1,7 @@
 "use client";
 
 import { Table, Typography, Tag } from "antd";
+import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { PriceCell } from "./PriceCell";
 import type { VariantWithPrices, Branch } from "../types/product.types";
@@ -16,6 +17,7 @@ interface Props {
 
 export function BranchPricesTable({ variant, branches, saving, onSave }: Props) {
   const isMobile = useIsMobile();
+  const t = useTranslations("products.branchPricesTable");
 
   const rows = branches.map((branch) => {
     const bp = variant.branch_prices.find((p) => p.branch_id === branch.id);
@@ -30,7 +32,7 @@ export function BranchPricesTable({ variant, branches, saving, onSave }: Props) 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <Text strong style={{ fontSize: 14 }}>{row.branchName}</Text>
               <Text type="secondary" style={{ fontSize: 12 }}>
-                Base: Bs {Number(variant.base_price).toFixed(2)}
+                {t("baseLabel", { price: Number(variant.base_price).toFixed(2) })}
               </Text>
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -38,7 +40,7 @@ export function BranchPricesTable({ variant, branches, saving, onSave }: Props) 
                 {row.price !== undefined ? (
                   <Tag color="orange" style={{ fontSize: 13 }}>Bs {Number(row.price).toFixed(2)}</Tag>
                 ) : (
-                  <Text type="secondary" style={{ fontSize: 12 }}>Sin precio asignado</Text>
+                  <Text type="secondary" style={{ fontSize: 12 }}>{t("noPriceAssigned")}</Text>
                 )}
               </div>
               <PriceCell variantId={variant.id} branchId={row.branchId} price={row.price} saving={saving} onSave={onSave} />
@@ -51,17 +53,17 @@ export function BranchPricesTable({ variant, branches, saving, onSave }: Props) 
 
   const columns = [
     {
-      title: "Sucursal",
+      title: t("branch"),
       key: "branch",
       render: (_: unknown, row: typeof rows[0]) => <Text>{row.branchName}</Text>,
     },
     {
-      title: "Precio base",
+      title: t("basePrice"),
       key: "base_price",
       render: () => <Text type="secondary">Bs {Number(variant.base_price).toFixed(2)}</Text>,
     },
     {
-      title: "Precio sucursal",
+      title: t("branchPrice"),
       key: "price",
       render: (_: unknown, row: typeof rows[0]) => (
         row.price !== undefined
@@ -70,7 +72,7 @@ export function BranchPricesTable({ variant, branches, saving, onSave }: Props) 
       ),
     },
     {
-      title: "Acción",
+      title: t("action"),
       key: "action",
       render: (_: unknown, row: typeof rows[0]) => (
         <PriceCell variantId={variant.id} branchId={row.branchId} price={row.price} saving={saving} onSave={onSave} />

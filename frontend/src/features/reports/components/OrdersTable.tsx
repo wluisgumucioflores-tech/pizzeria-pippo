@@ -2,6 +2,7 @@
 
 import { Card, Table, Tag, Tooltip, Typography, Button } from "antd";
 import { StopOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import { formatDateTimeBolivia } from "@/lib/timezone";
 import { PAYMENT_PROVIDERS } from "@pippo/shared";
 import { OrderItemsTable } from "./OrderItemsTable";
@@ -31,18 +32,20 @@ interface Props {
   onCancel: (order: Order) => void;
 }
 
-function buildOrderColumns(onCancel: (order: Order) => void) {
+type ReportsTranslator = ReturnType<typeof useTranslations>;
+
+function buildOrderColumns(onCancel: (order: Order) => void, t: ReportsTranslator) {
   return [
     {
-      title: "Fecha y hora",
+      title: t("columns.dateTime"),
       dataIndex: "created_at",
       key: "created_at",
       render: (d: string) => formatDateTimeBolivia(d),
     },
-    { title: "Sucursal", key: "branch", render: (_: unknown, o: Order) => o.branches?.name ?? "—" },
-    { title: "Cajero", key: "cashier", render: (_: unknown, o: Order) => o.cashier_name },
+    { title: t("columns.branch"), key: "branch", render: (_: unknown, o: Order) => o.branches?.name ?? t("payment.none") },
+    { title: t("columns.cashier"), key: "cashier", render: (_: unknown, o: Order) => o.cashier_name },
     {
-      title: "Items",
+      title: t("columns.items"),
       key: "items",
       render: (_: unknown, o: Order) => {
         const names = o.order_items
@@ -56,26 +59,26 @@ function buildOrderColumns(onCancel: (order: Order) => void) {
       },
     },
     {
-      title: "Tipo",
+      title: t("columns.type"),
       dataIndex: "order_type",
       key: "order_type",
-      render: (t: string) =>
-        t === "takeaway" ? <Tag color="purple">🥡 Para llevar</Tag> : <Tag color="orange">🍽️ Comer aquí</Tag>,
+      render: (type: string) =>
+        type === "takeaway" ? <Tag color="purple">{t("orderType.takeaway")}</Tag> : <Tag color="orange">{t("orderType.dineIn")}</Tag>,
     },
     {
-      title: "Pago",
+      title: t("columns.payment"),
       dataIndex: "payment_method",
       key: "payment_method",
       render: (m: string | null, o: Order) => {
-        if (m === "efectivo") return <Tag color="green">💵 Efectivo</Tag>;
-        if (m === "qr") return <Tag color="blue">📱 QR</Tag>;
+        if (m === "efectivo") return <Tag color="green">{t("payment.cash")}</Tag>;
+        if (m === "qr") return <Tag color="blue">{t("payment.qr")}</Tag>;
         if (m === "mixto") {
           const breakdown = o.payments
             .map((p) => `${p.method === "efectivo" ? "💵" : "📱"} Bs ${p.amount.toFixed(2)}`)
             .join(" + ");
           return (
             <Tooltip title={breakdown}>
-              <Tag color="gold">🔀 Mixto</Tag>
+              <Tag color="gold">{t("payment.mixed")}</Tag>
             </Tooltip>
           );
         }
@@ -83,37 +86,37 @@ function buildOrderColumns(onCancel: (order: Order) => void) {
           const known = o.payment_provider
             ? PAYMENT_PROVIDERS[o.payment_provider as keyof typeof PAYMENT_PROVIDERS]
             : undefined;
-          return <Tag color="geekblue">{known ? `${known.emoji} ${known.label}` : "🌐 Online"}</Tag>;
+          return <Tag color="geekblue">{known ? `${known.emoji} ${known.label}` : t("payment.online")}</Tag>;
         }
-        return <Text type="secondary">—</Text>;
+        return <Text type="secondary">{t("payment.none")}</Text>;
       },
     },
     {
-      title: "Total",
+      title: t("columns.total"),
       dataIndex: "total",
       key: "total",
       align: "right" as const,
-      render: (t: number, o: Order) =>
+      render: (total: number, o: Order) =>
         o.cancelled_at ? (
-          <Text delete type="secondary">Bs {Number(t).toFixed(2)}</Text>
+          <Text delete type="secondary">Bs {Number(total).toFixed(2)}</Text>
         ) : (
-          <Text strong style={{ color: "#f97316" }}>Bs {Number(t).toFixed(2)}</Text>
+          <Text strong style={{ color: "#f97316" }}>Bs {Number(total).toFixed(2)}</Text>
         ),
     },
     {
-      title: "Estado",
+      title: t("columns.status"),
       key: "status",
       render: (_: unknown, o: Order) => {
         if (o.cancelled_at) {
           return (
             <Tooltip title={o.cancel_reason ?? ""}>
-              <Tag color="red" icon={<StopOutlined />}>Anulada</Tag>
+              <Tag color="red" icon={<StopOutlined />}>{t("status.cancelled")}</Tag>
             </Tooltip>
           );
         }
         return (
           <Button size="small" danger ghost icon={<StopOutlined />} onClick={() => onCancel(o)}>
-            Anular
+            {t("status.cancelAction")}
           </Button>
         );
       },
@@ -122,6 +125,7 @@ function buildOrderColumns(onCancel: (order: Order) => void) {
 }
 
 export function OrdersTable({ orders, ordersTotal, ordersPage, ordersPageSize, loading, exporting, summary, onPageChange, onExport, onCancel }: Props) {
+  const t = useTranslations("reports");
   const isMobile = useIsMobile();
 
   if (isMobile) {
@@ -140,7 +144,7 @@ export function OrdersTable({ orders, ordersTotal, ordersPage, ordersPageSize, l
     );
   }
 
-  const columns = buildOrderColumns(onCancel);
+  const columns = buildOrderColumns(onCancel, t);
 
   return (
     <>
@@ -149,7 +153,7 @@ export function OrdersTable({ orders, ordersTotal, ordersPage, ordersPageSize, l
         size="small"
         extra={
           <Button icon={<IconExcel />} loading={exporting} disabled={orders.length === 0} onClick={onExport}>
-            Exportar Excel
+            {t("exportExcel")}
           </Button>
         }
       >
@@ -165,7 +169,7 @@ export function OrdersTable({ orders, ordersTotal, ordersPage, ordersPageSize, l
             total: ordersTotal,
             showSizeChanger: true,
             pageSizeOptions: ["10", "20", "50"],
-            showTotal: (t) => `${t} ventas`,
+            showTotal: (total) => t("salesCount", { count: total }),
             onChange: onPageChange,
           }}
           expandable={{

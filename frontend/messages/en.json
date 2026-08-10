@@ -22,21 +22,66 @@
   },
   "nav": {
     "dashboard": "Dashboard",
+    "branches": "Branches",
     "products": "Products",
+    "variantTypes": "Variant types",
     "ingredients": "Ingredients",
     "stock": "Stock",
+    "warehouse": "Warehouse",
     "promotions": "Promotions",
-    "reports": "Reports"
+    "users": "Users",
+    "employees": "Employees",
+    "attendance": "Attendance",
+    "reports": "Reports",
+    "settings": "Settings"
+  },
+  "localeSwitcher": {
+    "es": "ES",
+    "en": "EN"
   },
   "products": {
     "title": "Products",
     "new": "New product",
+    "newShort": "New",
+    "showInactive": "Show inactive",
+    "searchPlaceholder": "Search product...",
     "name": "Name",
     "category": "Category",
     "description": "Description",
     "image": "Image",
+    "notFound": "Product not found.",
+    "inactiveTag": "Inactive",
+    "activeBadge": "Active",
+    "filterLabel": "Filter:",
+    "filterAll": "All",
+    "typeResale": "Resale",
+    "typeMade": "Made",
+    "branchPricesTooltip": "Prices by branch",
+    "moreOptionsTooltip": "More options",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "duplicate": "Duplicate",
+    "deleteConfirmTitle": "Delete this product?",
+    "deleteConfirmDesc": "Only possible if it has no sales or promotions associated. Cannot be undone.",
+    "totalProducts": "{count, plural, one {# product} other {# products}}",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} / {total}",
+    "descriptionForCustomer": "Description for the customer",
+    "noRecipe": "No recipe registered",
+    "columns": {
+      "image": "Image",
+      "name": "Name",
+      "category": "Category",
+      "type": "Type",
+      "variants": "Variants",
+      "unit": "Unit",
+      "condition": "Condition"
+    },
     "categories": {
       "pizza": "Pizza",
+      "bebida": "Drink",
+      "otro": "Other",
       "drink": "Drink",
       "other": "Other"
     },
@@ -46,26 +91,106 @@
       "medium": "Medium",
       "family": "Family",
       "basePrice": "Base price",
-      "addVariant": "Add variant"
+      "addVariant": "Add variant",
+      "recipeTitle": "Internal recipe",
+      "conditions": {
+        "always": "Always",
+        "takeaway": "Takeaway only",
+        "dine_in": "Dine-in only"
+      }
     },
     "recipe": {
       "title": "Recipe",
       "ingredient": "Ingredient",
       "quantity": "Quantity",
       "addIngredient": "Add ingredient"
+    },
+    "steps": {
+      "generalData": "General data",
+      "variantsAndPrices": "Variants & prices",
+      "recipes": "Recipes",
+      "editTitle": "Edit — {name}"
+    },
+    "branchPricesPage": {
+      "back": "Back to products",
+      "loading": "Loading...",
+      "subtitle": "Prices by branch",
+      "resaleSingleNote": "Resale product — single price per branch",
+      "variantNote": "{name} — prices by variant and branch"
+    },
+    "branchPricesTable": {
+      "branch": "Branch",
+      "basePrice": "Base price",
+      "branchPrice": "Branch price",
+      "action": "Action",
+      "baseLabel": "Base: Bs {price}",
+      "noPriceAssigned": "No price assigned",
+      "assign": "Assign"
+    },
+    "form": {
+      "namePlaceholder": "Product name",
+      "required": "Required",
+      "categoryPlaceholder": "Category",
+      "howMade": "How is this product made?",
+      "howMadeRequired": "Select a type",
+      "madeLabel": "Made in-house",
+      "madeDesc": "Prepared with ingredients",
+      "resaleLabel": "Resale",
+      "resaleDesc": "Bought ready-made and resold",
+      "descriptionPlaceholder": "E.g: Pepperoni, mozzarella, tomato sauce",
+      "uploading": "Uploading...",
+      "uploadImage": "Upload image",
+      "next": "Next",
+      "previous": "Previous",
+      "saveChanges": "Save changes",
+      "create": "Create product",
+      "createProduct": "Create product",
+      "hasVariantsLabel": "This product has sizes or presentations",
+      "hasVariantsHintOn": "E.g: Personal / Medium / Family",
+      "hasVariantsHintOff": "Sold as a single unit with one price",
+      "sizeLabel": "Size",
+      "reactivate": "Reactivate",
+      "addVariant": "Add variant",
+      "noVariantTypes": "No variant types configured. Create one first in Variant types.",
+      "branchPricesCollapse": "Prices by branch ({count})",
+      "recipeNoIngredients": "No ingredients yet",
+      "addIngredientPlaceholder": "Add ingredient...",
+      "searching": "Searching...",
+      "noResults": "No results"
     }
   },
   "ingredients": {
     "title": "Ingredients",
     "new": "New ingredient",
+    "newShort": "New",
+    "showInactive": "Show inactive",
+    "searchPlaceholder": "Search by name...",
     "name": "Name",
     "unit": "Unit",
+    "inactiveTag": "Inactive",
+    "deactivate": "Deactivate",
+    "reactivate": "Reactivate",
+    "totalIngredients": "{count, plural, one {# ingredient} other {# ingredients}}",
     "units": {
-      "g": "Grams",
-      "kg": "Kilograms",
-      "ml": "Milliliters",
-      "l": "Liters",
-      "unit": "Units"
+      "g": "Grams (g)",
+      "kg": "Kilograms (kg)",
+      "ml": "Milliliters (ml)",
+      "l": "Liters (l)",
+      "unidad": "Units"
+    },
+    "modal": {
+      "editTitle": "Edit ingredient",
+      "createTitle": "New ingredient",
+      "name": "Name",
+      "namePlaceholder": "E.g: Flour, Mozzarella, Pepperoni",
+      "nameRequired": "Enter the name",
+      "unit": "Unit of measure",
+      "unitPlaceholder": "Select unit",
+      "unitRequired": "Select the unit",
+      "sharedUseLabel": "Deducted in full per order, not per flavor",
+      "sharedUseHint": "Use for boxes/packaging — doesn't apply to dough, cheese, toppings",
+      "saveChanges": "Save changes",
+      "create": "Create ingredient"
     }
   },
   "stock": {
@@ -76,25 +201,136 @@
     "purchase": "Register purchase",
     "adjust": "Manual adjustment",
     "movements": "Movements",
-    "types": {
-      "purchase": "Purchase",
-      "sale": "Sale",
-      "adjustment": "Adjustment"
+    "lowStockAlert": "{count, plural, one {# item below minimum} other {# items below minimum}}",
+    "searchPlaceholder": "Search by name...",
+    "selectBranchPlaceholder": "Select branch",
+    "exportExcel": "Export Excel",
+    "tabs": {
+      "currentStock": "Current stock",
+      "manualAdjust": "Manual adjustment",
+      "history": "History"
+    },
+    "typeSelector": {
+      "ingredients": "🧂 Ingredients",
+      "products": "📦 Resale"
+    },
+    "columns": {
+      "type": "Type",
+      "nameCombined": "Ingredient/Product",
+      "unit": "Unit",
+      "current": "Current stock",
+      "minimum": "Minimum",
+      "status": "Status",
+      "date": "Date",
+      "detail": "Detail",
+      "quantity": "Quantity",
+      "notes": "Notes",
+      "ingredient": "Ingredient"
+    },
+    "originIngredient": "🧂 Ingredient",
+    "originProduct": "📦 Resale",
+    "originIngredientShort": "Ingredient",
+    "originProductShort": "Resale",
+    "lowStockTooltip": "Stock below minimum",
+    "statusLow": "Low stock",
+    "statusOk": "OK",
+    "actualLabel": "Current: ",
+    "minLabel": "Minimum: ",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} / {total}",
+    "totalItems": "{count, plural, one {# item} other {# items}}",
+    "emptyStock": "No ingredients or resale products in stock for this branch.",
+    "totalMovements": "{count, plural, one {# movement} other {# movements}}",
+    "movementTypes": {
+      "compra": "Purchase",
+      "venta": "Sale",
+      "ajuste": "Adjustment",
+      "anulacion": "Cancellation"
+    },
+    "adjustForm": {
+      "helperText": "Enter the actual physically counted quantity. The system will calculate the difference.",
+      "ingredientLabel": "Ingredient",
+      "ingredientPlaceholder": "Select ingredient",
+      "productLabel": "Product",
+      "productPlaceholder": "Select product",
+      "realQuantity": "Actual quantity (physical count)",
+      "realQuantityPlaceholderIngredient": "E.g: 1200",
+      "realQuantityPlaceholderProduct": "E.g: 8",
+      "required": "Required",
+      "reason": "Adjustment reason",
+      "reasonPlaceholder": "E.g: Spoilage, previous count error...",
+      "notes": "Notes",
+      "notesPlaceholder": "Adjustment reason (optional)",
+      "submit": "Apply adjustment"
+    },
+    "minQtyModal": {
+      "title": "Minimum stock — {name}",
+      "helperProduct": "When branch stock drops below this number, an alert will show.",
+      "helperIngredient": "When stock drops below this number, an alert will show.",
+      "label": "Minimum quantity",
+      "required": "Required",
+      "unitsSuffix": "units"
+    },
+    "purchaseForm": {
+      "ingredientLabel": "Ingredient",
+      "ingredientPlaceholder": "Select ingredient",
+      "productLabel": "Product",
+      "productPlaceholder": "Select product",
+      "quantity": "Quantity",
+      "required": "Required",
+      "quantityMin": "The quantity must be greater than 0",
+      "quantityPlaceholder": "E.g: 500",
+      "quantityPlaceholderProduct": "E.g: 12",
+      "minQuantity": "Minimum stock",
+      "minQuantityTooltipIngredient": "First time this ingredient enters this branch. Set the quantity below which you want a low-stock alert.",
+      "minQuantityTooltipProduct": "First time this product enters this branch. Set the quantity below which you want a low-stock alert.",
+      "minQuantityRequiredIngredient": "Required for new ingredients",
+      "minQuantityRequiredProduct": "Required for new products",
+      "minQuantityPlaceholder": "E.g: 500",
+      "minQuantityPlaceholderProduct": "E.g: 5",
+      "submit": "Register entry"
     }
   },
   "promotions": {
     "title": "Promotions",
     "new": "New promotion",
+    "newShort": "New",
+    "showInactive": "Show inactive",
     "name": "Name",
     "type": "Type",
     "days": "Applicable days",
     "startDate": "Start date",
     "endDate": "End date",
     "branch": "Branch",
+    "allBranches": "All branches",
+    "validity": "Validity",
+    "active": "Active",
+    "viewDetail": "View detail",
+    "view": "View",
+    "deactivate": "Deactivate",
+    "reactivate": "Reactivate",
+    "notFound": "Promotion not found.",
+    "inactiveTag": "Inactive",
+    "statusActivePos": "Active on POS",
+    "statusPausedPos": "Paused on POS",
+    "statusActive": "Active",
+    "statusPaused": "Paused",
+    "statusDeleted": "Deleted",
+    "activeDays": "Active days",
+    "allProducts": "All products",
+    "rules": "Rules",
+    "noRulesConfigured": "No rules configured",
+    "slotLabel": "Slot {n}",
+    "ruleLabel": "Rule {n}",
+    "buyGetText": "Buy <b>{buy}</b> get <b>{get}</b> free",
+    "discountText": "<b>{percent}%</b> discount",
+    "discountBadge": "{percent}% off",
+    "comboPriceText": "Combo price: Bs {price}",
     "types": {
-      "buyXGetY": "Buy X Get Y",
+      "buyXGetY": "Buy X get Y (e.g: 2x1)",
       "percentage": "Percentage discount",
-      "combo": "Combo"
+      "combo": "Combo price"
     },
     "daysOfWeek": {
       "0": "Sunday",
@@ -104,6 +340,61 @@
       "4": "Thursday",
       "5": "Friday",
       "6": "Saturday"
+    },
+    "daysShort": {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat"
+    },
+    "categories": {
+      "pizza": "Pizza",
+      "bebida": "Drink",
+      "otro": "Other"
+    },
+    "modal": {
+      "editTitle": "Edit promotion",
+      "createTitle": "New promotion",
+      "saveChanges": "Save changes",
+      "createAction": "Create promotion",
+      "name": "Name",
+      "namePlaceholder": "E.g: 2x1 on Wednesdays",
+      "required": "Required",
+      "type": "Type",
+      "typePlaceholder": "Select type",
+      "active": "Active",
+      "branch": "Branch",
+      "daysOfWeekLabel": "Days of the week",
+      "allDaysToggle": "All week",
+      "daysPlaceholder": "All days if left empty",
+      "validity": "Validity"
+    },
+    "rulesEditor": {
+      "title": "Rules",
+      "ruleLabel": "Rule {n}",
+      "variant": "Variant",
+      "variantPlaceholder": "Select variant",
+      "buyQty": "Buy X",
+      "buyQtyPlaceholder": "E.g: 2",
+      "getQty": "Get Y free",
+      "getQtyPlaceholder": "E.g: 1",
+      "variantOrAll": "Variant (empty = all products)",
+      "discountPercent": "Discount %",
+      "discountPlaceholder": "E.g: 20",
+      "slotType": "Slot type",
+      "slotSpecific": "Specific variant",
+      "slotFlexible": "Category + Size",
+      "comboVariant": "Combo variant",
+      "comboPriceLabel": "Combo price (Bs)",
+      "comboPricePlaceholder": "E.g: 150",
+      "category": "Category",
+      "size": "Size",
+      "addBuyXGetY": "Add variant with 2x1",
+      "addPercentage": "Add discount",
+      "addCombo": "Add product to combo"
     }
   },
   "pos": {
@@ -116,12 +407,197 @@
     "cancelOrder": "Cancel order",
     "selectVariant": "Select size",
     "newSale": "New sale",
-    "orderComplete": "Sale completed!"
+    "orderComplete": "Sale completed!",
+    "loading": "Loading...",
+    "optional": "(optional)",
+    "continueAction": "Continue",
+    "confirmAndCharge": "Confirm and charge",
+    "halfAndHalf": "Half {first} / Half {second}",
+    "error": {
+      "title": "Something went wrong",
+      "message": "Something went wrong loading the POS. Please try again.",
+      "code": "Code: {digest}",
+      "retry": "Retry"
+    },
+    "branchSelector": {
+      "title": "Select branch",
+      "greeting": "Hi, {name}. Which branch are you selling from?",
+      "logout": "Log out"
+    },
+    "mobileNav": {
+      "catalog": "🛍️ Catalog",
+      "cart": "🛒 Order"
+    },
+    "header": {
+      "branchFallback": "Branch",
+      "logout": "Log out"
+    },
+    "tabs": {
+      "sale": "Sale",
+      "promos": "Promotions",
+      "promosShort": "Promos",
+      "orders": "Orders",
+      "ordersFull": "Today's orders",
+      "summary": "Summary"
+    },
+    "orderType": {
+      "dineIn": "Dine in",
+      "takeaway": "Takeaway",
+      "dineInEmoji": "🍽️ Dine in",
+      "takeawayEmoji": "🥡 Takeaway",
+      "dineInLocal": "🍽️ Dine in",
+      "takeawayLocal": "🥡 Takeaway"
+    },
+    "paymentMethod": {
+      "cash": "Cash",
+      "qr": "QR",
+      "mixed": "Mixed"
+    },
+    "paymentLabel": {
+      "cash": "💵 Cash",
+      "qr": "📱 QR",
+      "online": "🌐 Online payment"
+    },
+    "cartPanel": {
+      "title": "Current order",
+      "discountsApplied": "Discounts applied",
+      "emptyState": "Add products to the order",
+      "mixedPizza": "Mixed pizza"
+    },
+    "catalog": {
+      "noProducts": "No products in this category",
+      "soldOut": "Out of stock",
+      "fromPrice": "From Bs {price}",
+      "various": "various",
+      "categories": {
+        "pizza": "Pizza",
+        "bebida": "Drink",
+        "otro": "Other"
+      }
+    },
+    "paymentModal": {
+      "title": "Order type and payment",
+      "step1": "STEP 1 OF 2",
+      "orderTotal": "ORDER TOTAL",
+      "onlineOrder": "{provider} order (payment already received)",
+      "onlineHint": "Registers as takeaway, with online payment — skips QR validation.",
+      "howIsOrder": "How's the order going?",
+      "selectToContinue": "Select an option to continue",
+      "howDidPay": "How did the customer pay?",
+      "toggleHint": "Tap again to remove the selection",
+      "cashReceived": "CASH RECEIVED",
+      "remainingQr": "REMAINING QR",
+      "bothMustBeGreater": "Both amounts must be greater than 0",
+      "note": "Order note",
+      "notePlaceholder": "E.g: no onion, table 5, for John..."
+    },
+    "confirmSaleModal": {
+      "title": "Review and confirm",
+      "step2": "Step 2 of 2",
+      "validateAutomatically": "Validate payment automatically",
+      "totalToCharge": "Total to charge",
+      "productsSummary": "PRODUCTS SUMMARY",
+      "discountsApplied": "🏷️ Discounts applied"
+    },
+    "dayOrders": {
+      "title": "Today's orders ({count})",
+      "empty": "No sales recorded today.",
+      "cancelled": "Cancelled",
+      "readyShort": "Ready",
+      "markReady": "Mark ready",
+      "cancelAction": "Cancel"
+    },
+    "daySummary": {
+      "title": "Day summary",
+      "totalDay": "Day total",
+      "salesMade": "Sales made",
+      "pending": "Pending",
+      "ready": "Ready",
+      "online": "Online"
+    },
+    "paymentValidation": {
+      "title": "Validating payment",
+      "waiting": "Waiting for the payment to arrive...",
+      "detected": "A payment was detected for",
+      "from": "from",
+      "isCustomer": "Is this the customer?",
+      "update": "Update",
+      "sold": "Sold",
+      "notDetected": "Payment not detected yet."
+    },
+    "flavors": {
+      "title": "Flavors",
+      "totalParts": "Total: {count, plural, one {# part} other {# parts}}",
+      "partsCount": "{count, plural, one {part} other {parts}}",
+      "addAnother": "+ Add another flavor"
+    },
+    "variantModal": {
+      "size": "Size",
+      "addToCart": "Add to cart — Bs {price}",
+      "addMixedPizza": "Add mixed pizza — Bs {price}"
+    },
+    "ticketModal": {
+      "title": "✅ Sale confirmed",
+      "print": "Print",
+      "totalCharged": "Total charged",
+      "paymentMethodLabel": "Payment method"
+    },
+    "promos": {
+      "title": "Active promotions today ({count})",
+      "empty": "No active promotions today.",
+      "add": "Add"
+    },
+    "promoType": {
+      "buyXGetY": "2×1 / N+1",
+      "percentage": "% Discount",
+      "combo": "Combo"
+    },
+    "promoDesc": {
+      "buyXGetY": "Buy {buy} get {total} — {name}",
+      "percentageAll": "{percent}% OFF on all products",
+      "percentageSpecific": "{percent}% OFF — {name}",
+      "combo": "{count, plural, one {# product} other {# products}} for Bs {price}"
+    },
+    "comboSlot": {
+      "specificProduct": "Specific product",
+      "anyProduct": "Any product",
+      "fixed": "Fixed",
+      "addMixedPizza": "+ Mixed pizza (combine flavors)"
+    },
+    "comboSummary": {
+      "price": "Combo price",
+      "slotPending": "Slot {n} pending",
+      "addMobile": "Add — Bs {price}",
+      "addCombo": "Add combo"
+    },
+    "percentageModal": {
+      "noEligible": "No products eligible for this promotion.",
+      "addedToast": "{name} added with {percent}% OFF"
+    },
+    "cancelOrderModal": {
+      "title": "Cancel order {label}",
+      "confirm": "Cancel order",
+      "warning": "This will automatically restore stock and can't be undone.",
+      "reasonPlaceholder": "Cancellation reason"
+    }
   },
   "display": {
-    "menu": "Menu",
-    "orderTotal": "Total",
-    "thankYou": "Thank you for your purchase!"
+    "orderTypeTakeaway": "🥡 Takeaway order",
+    "orderTypeDineIn": "🍽️ Dine-in order",
+    "ourMenu": "Our menu",
+    "orderDetail": "Order detail",
+    "halfAndHalf": "Half {first} / Half {second}",
+    "totalToPay": "Total to pay",
+    "youSave": "You save",
+    "categories": {
+      "pizza": "Pizzas",
+      "bebida": "Drinks",
+      "otro": "Other"
+    },
+    "fromPrice": "From Bs {price}",
+    "variousSizes": "various sizes",
+    "thankYouTitle": "Thank you!",
+    "thankYouSubtitle": "Your order is being prepared"
   },
   "reports": {
     "title": "Reports",
@@ -137,10 +613,564 @@
     "averageTicket": "Average ticket",
     "topProducts": "Top products",
     "salesByCategory": "Sales by category",
-    "dailySales": "Daily sales"
+    "dailySales": "Daily sales",
+    "tabs": {
+      "general": "General",
+      "sales": "Sales history",
+      "cashiers": "By cashier"
+    },
+    "summary": {
+      "dineIn": "🍽️ Dine in ({count})",
+      "takeaway": "🥡 Takeaway ({count})",
+      "noDataPeriod": "No data for this period",
+      "noSalesPeriod": "No sales for the selected period"
+    },
+    "cashier": {
+      "sales": "Sales",
+      "orders": "Orders",
+      "ordersCount": "{count} orders"
+    },
+    "columns": {
+      "product": "Product",
+      "category": "Category",
+      "units": "Units",
+      "revenue": "Revenue",
+      "qty": "Qty.",
+      "unitPrice": "Unit price",
+      "discount": "Discount",
+      "promo": "Promo",
+      "subtotal": "Subtotal",
+      "dateTime": "Date & time",
+      "branch": "Branch",
+      "cashier": "Cashier",
+      "items": "Items",
+      "type": "Type",
+      "payment": "Payment",
+      "total": "Total",
+      "status": "Status",
+      "ingredient": "Ingredient",
+      "unit": "Unit",
+      "currentStock": "Current stock",
+      "minStock": "Minimum"
+    },
+    "orderType": {
+      "dineIn": "🍽️ Dine in",
+      "takeaway": "🥡 Takeaway",
+      "dineInShort": "🍽️ In-house",
+      "takeawayShort": "🥡 Takeaway"
+    },
+    "payment": {
+      "cash": "💵 Cash",
+      "qr": "📱 QR",
+      "mixed": "🔀 Mixed",
+      "online": "🌐 Online",
+      "unspecified": "Unspecified",
+      "none": "—"
+    },
+    "plain": {
+      "dineIn": "Dine in",
+      "takeaway": "Takeaway",
+      "cash": "Cash",
+      "qr": "QR",
+      "online": "Online",
+      "none": "—"
+    },
+    "status": {
+      "cancelled": "Cancelled",
+      "cancelAction": "Cancel"
+    },
+    "unitsShort": "units",
+    "currentShort": "Current",
+    "totalPeriod": "Total for the period",
+    "exportExcel": "Export Excel",
+    "export": "Export",
+    "salesCount": "{count} sales",
+    "loading": "Loading...",
+    "noSalesInPeriod": "No sales in this period",
+    "prev": "‹ Prev.",
+    "next": "Next ›",
+    "page": "Page {page}",
+    "stockAlerts": {
+      "title": "Low stock ingredients ({count})",
+      "goToStock": "Go to stock"
+    },
+    "cancelSuccess": "Order cancelled successfully. Stock restored.",
+    "cancelError": "Error cancelling the order",
+    "excel": {
+      "sheetName": "Sales history",
+      "headers": {
+        "date": "Date",
+        "branch": "Branch",
+        "cashier": "Cashier",
+        "type": "Type",
+        "payment": "Payment",
+        "product": "Product",
+        "variant": "Variant",
+        "qty": "Qty",
+        "unitPrice": "Unit price",
+        "discount": "Discount",
+        "total": "Sale total"
+      }
+    }
+  },
+  "dashboard": {
+    "sales": "Sales",
+    "subtitle": "Today's summary — {date}",
+    "goToPos": "Go to POS",
+    "noSalesTodayAlert": "No sales recorded today yet",
+    "showingYesterdayAlert": "Showing yesterday's summary, {date}.",
+    "salesToday": "Sales today",
+    "salesYesterday": "Sales yesterday",
+    "ordersToday": "Orders today",
+    "ordersYesterday": "Orders yesterday",
+    "averageTicket": "Average ticket",
+    "stockAlerts": "Stock alerts",
+    "salesLast7Days": "Sales last 7 days",
+    "viewReports": "View reports",
+    "noSalesLast7Days": "No sales in the last 7 days",
+    "top5Today": "Top 5 today",
+    "top5Yesterday": "Top 5 yesterday",
+    "noSalesToday": "No sales today",
+    "noSalesYesterday": "No sales yesterday",
+    "columns": {
+      "product": "Product",
+      "category": "Cat.",
+      "units": "Units",
+      "revenue": "Revenue"
+    },
+    "lowStockBranches": "Low stock ingredients in branches",
+    "goToStock": "Go to stock",
+    "lowStockWarehouse": "Low stock ingredients in warehouse",
+    "goToWarehouse": "Go to warehouse",
+    "centralWarehouse": "Central warehouse",
+    "minShort": "min. {min}"
   },
   "branches": {
-    "branchA": "Branch A",
-    "branchB": "Branch B"
+    "title": "Branches",
+    "new": "New branch",
+    "newShort": "New",
+    "showInactive": "Show inactive",
+    "columns": {
+      "name": "Name",
+      "address": "Address",
+      "createdAt": "Created on"
+    },
+    "inactiveTag": "Inactive",
+    "deactivate": "Deactivate",
+    "reactivate": "Reactivate",
+    "deleteConfirmTitle": "Delete this branch?",
+    "deleteConfirmDescLong": "Only possible if it has no sales, stock, prices or users associated. Cannot be undone.",
+    "deleteConfirmDescShort": "Only if it has no sales, stock, prices or users associated.",
+    "modal": {
+      "createTitle": "New branch",
+      "editTitle": "Edit branch",
+      "name": "Name",
+      "namePlaceholder": "E.g: Downtown branch",
+      "nameRequired": "Enter the name",
+      "address": "Address",
+      "addressPlaceholder": "E.g: 1234 Main St.",
+      "phone": "Phone",
+      "phonePlaceholder": "E.g: 67106933",
+      "startTime": "Start time",
+      "startTimeHint": "Informational only — shown alongside attendance history, does not flag lateness.",
+      "startTimePlaceholder": "E.g: 08:00",
+      "saveChanges": "Save changes",
+      "create": "Create branch"
+    },
+    "blockedModal": {
+      "title": "Can't deactivate this branch",
+      "understood": "Got it",
+      "body": "There are {count} cashier(s) assigned to <b>{name}</b>. Deactivate or reassign them before continuing."
+    }
+  },
+  "settings": {
+    "tabs": {
+      "notifications": "Notifications",
+      "kitchen": "Kitchen",
+      "bot": "AI Bot",
+      "printer": "Printer",
+      "devices": "Devices"
+    },
+    "testConnection": "Test connection",
+    "testSuccess": "Message sent successfully",
+    "kitchen": {
+      "title": "Kitchen",
+      "description": "Set the time threshold after which an order is marked as delayed.",
+      "thresholdLabel": "Minutes to mark as delayed",
+      "thresholdExtra": "Orders that exceed this time are highlighted in red on the kitchen screen."
+    },
+    "printer": {
+      "title": "Receipt printer",
+      "description": "Bluetooth thermal printer used by the POS to print sale receipts.",
+      "businessNameLabel": "Business name",
+      "businessNameExtra": "It will appear in the header of every receipt.",
+      "widthLabel": "Paper width",
+      "widthExtra": "If you switch printers (58mm ↔ 80mm), just adjust this value.",
+      "width58": "58 mm (32 characters)",
+      "width80": "80 mm (48 characters)"
+    },
+    "telegram": {
+      "title": "Telegram notifications",
+      "description": "Get automatic Telegram alerts when an ingredient's stock drops below the minimum.",
+      "botTokenLabel": "Bot Token",
+      "botTokenExtra": "Get it by creating a bot with @BotFather on Telegram.",
+      "chatIdLabel": "Chat ID",
+      "chatIdExtra": "Numeric ID of the chat or group. For multiple admins to receive alerts, create a group, add the bot, and use the group's ID.",
+      "enabledLabel": "Notifications enabled"
+    },
+    "errors": {
+      "loadSettings": "Error loading settings",
+      "saveSettings": "Error saving settings",
+      "saved": "Settings saved",
+      "testUnknownError": "Unknown error",
+      "testConnFailed": "Could not connect"
+    },
+    "bot": {
+      "title": "AI Bot",
+      "description": "Query sales, stock and reports in natural language from Telegram.",
+      "enableLabel": "Enable AI bot",
+      "providerLabel": "AI provider",
+      "providerOpenAI": "OpenAI-compatible (Qwen, Groq, etc.)",
+      "providerAnthropic": "Anthropic (Claude)",
+      "anthropicKeyLabel": "Anthropic API Key",
+      "apiKeyExtra": "Only updated if you enter a new value.",
+      "apiKeyLabel": "API Key",
+      "baseUrlLabel": "Base URL",
+      "baseUrlExtra": "For Qwen: dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "modelLabel": "Model",
+      "dailyLimits": "Daily limits per plan",
+      "basicLimitLabel": "Basic plan (msg/day)",
+      "proLimitLabel": "Pro plan (msg/day)",
+      "loadError": "Error loading bot settings",
+      "saveError": "Error saving",
+      "saved": "Bot settings saved",
+      "models": {
+        "haiku": "Haiku (fast, economical)",
+        "sonnet": "Sonnet (higher accuracy)",
+        "qwenPlus": "Qwen Plus (recommended)",
+        "qwenTurbo": "Qwen Turbo (faster)",
+        "qwenMax": "Qwen Max (higher accuracy)",
+        "gpt4oMini": "GPT-4o Mini",
+        "gpt4o": "GPT-4o"
+      }
+    },
+    "chats": {
+      "title": "Authorized chats",
+      "add": "Add chat",
+      "columns": {
+        "name": "Name",
+        "type": "Type",
+        "plan": "Plan",
+        "usageToday": "Usage today",
+        "active": "Active"
+      },
+      "typeGroup": "Group",
+      "typePersonal": "Personal",
+      "planBasic": "Basic",
+      "planPro": "Pro",
+      "planUnlimited": "Unlimited",
+      "revokeConfirm": "Revoke access for this chat?",
+      "revoke": "Revoke",
+      "editTitle": "Edit authorized chat",
+      "addTitle": "Add authorized chat",
+      "authorize": "Authorize",
+      "chatIdLabel": "Chat ID",
+      "chatIdRequired": "Enter the Chat ID",
+      "chatIdExtra": "Numeric ID of the user or group (groups have a negative ID).",
+      "typeLabel": "Type",
+      "nameLabel": "Descriptive name",
+      "nameRequired": "Enter a name",
+      "namePlaceholder": "Owner — Personal chat",
+      "planLabel": "Plan",
+      "planBasicOption": "Basic (10 msg/day)",
+      "planProOption": "Pro (50 msg/day)",
+      "planUnlimitedOption": "Unlimited",
+      "usageTooltip": "{used} of {limit} messages today",
+      "loadError": "Error loading authorized chats",
+      "updated": "Chat updated",
+      "created": "Chat authorized",
+      "saveError": "Error saving",
+      "statusError": "Error changing status",
+      "revoked": "Access revoked",
+      "revokeError": "Error revoking access"
+    }
+  },
+  "devices": {
+    "title": "Devices",
+    "new": "Add device",
+    "columns": {
+      "name": "Name",
+      "branch": "Branch",
+      "lastSeen": "Last seen",
+      "active": "Active"
+    },
+    "never": "Never",
+    "deleteConfirmTitle": "Delete this device?",
+    "deleteConfirmDesc": "You can reactivate it later from the switch.",
+    "modal": {
+      "createTitle": "Add device",
+      "editTitle": "Edit device",
+      "name": "Name",
+      "namePlaceholder": "Register 1 phone",
+      "nameRequired": "Enter a name",
+      "nameHint": "E.g: Register 1 phone - Downtown branch",
+      "branch": "Branch",
+      "branchPlaceholder": "Select branch",
+      "branchRequired": "Select a branch",
+      "branchLockedHint": "The branch can't be changed after creating the device."
+    },
+    "apiKeyModal": {
+      "title": "Device created",
+      "gotIt": "I copied it",
+      "warning": "Copy this API key now — it can't be shown again.",
+      "copied": "Copied to clipboard",
+      "hint": "Set this value in the phone app (backend URL + this API key) so it can report Yape payments."
+    }
+  },
+  "employees": {
+    "title": "Employees",
+    "new": "Add employee",
+    "columns": {
+      "name": "Name",
+      "position": "Position",
+      "branch": "Branch",
+      "active": "Active"
+    },
+    "regenerateConfirmTitle": "Regenerate the credential?",
+    "regenerateConfirmDesc": "The current QR card and code will stop working.",
+    "regenerate": "Regenerate",
+    "regenerateTooltip": "Regenerate QR credential",
+    "modal": {
+      "createTitle": "Add employee",
+      "editTitle": "Edit employee",
+      "fullName": "Full name",
+      "fullNameRequired": "Enter the name",
+      "fullNamePlaceholder": "John Smith",
+      "position": "Position",
+      "positionRequired": "Enter the position",
+      "positionPlaceholder": "E.g: Delivery",
+      "branch": "Branch",
+      "branchRequired": "Select a branch",
+      "branchPlaceholder": "Select branch"
+    },
+    "credentialModal": {
+      "title": "Employee credential",
+      "gotIt": "I saved it",
+      "warning": "Download, print or share this now — you won't be able to see it again. If it's lost, regenerate it (this invalidates the current credential).",
+      "backupCodeLabel": "Backup code (to type manually)",
+      "copyCode": "Copy code",
+      "copyCodeSuccess": "Code copied to clipboard",
+      "print": "Print",
+      "downloadQr": "Download QR",
+      "share": "Share",
+      "shareTitle": "Clock-in credential"
+    }
+  },
+  "warehouse": {
+    "title": "Central Warehouse",
+    "lowStockAlert": "{count, plural, one {# ingredient below minimum} other {# ingredients below minimum}}",
+    "lowStockAlertProduct": "{count, plural, one {# product below minimum} other {# products below minimum}}",
+    "history": "History",
+    "newPurchase": "New purchase",
+    "newPurchaseShort": "Purchase",
+    "transfer": "Transfer",
+    "searchIngredient": "Search ingredient...",
+    "status": "Status",
+    "statusLow": "Low stock",
+    "statusOk": "OK",
+    "columns": {
+      "ingredient": "Ingredient",
+      "product": "Product",
+      "warehouseStock": "Warehouse stock",
+      "minimum": "Minimum",
+      "status": "Status"
+    },
+    "lowStockTooltip": "Stock below minimum",
+    "adjust": "Adjust",
+    "hasMovementsTooltip": "Has recorded movements",
+    "stockLabel": "Stock: ",
+    "minLabel": "Minimum: ",
+    "totalIngredients": "{count, plural, one {# ingredient total} other {# ingredients total}}",
+    "totalProducts": "{count, plural, one {# product} other {# products}}",
+    "unitAbbrev": "units",
+    "noResaleProducts": "No resale products in the warehouse. Register a purchase first.",
+    "adjustModalTitle": "Adjust stock — {name}",
+    "realQuantity": "Actual quantity ({unit})",
+    "realQuantityUnits": "Actual warehouse quantity (units)",
+    "requiredQuantity": "Enter the actual quantity",
+    "adjustReason": "Adjustment reason",
+    "adjustReasonRequired": "The reason is required",
+    "adjustReasonPlaceholder": "E.g: Physical count, spoilage, loading error...",
+    "adjustReasonPlaceholderShort": "E.g: Physical count, spoilage, etc.",
+    "confirmAdjust": "Confirm adjustment",
+    "minQtyModalTitle": "Minimum stock — {name}",
+    "minQuantityLabel": "Minimum quantity ({unit})",
+    "required": "Required",
+    "tabIngredients": "🧂 Ingredients",
+    "tabProducts": "📦 Resale",
+    "movements": {
+      "title": "Movement history — Warehouse",
+      "origin": "Origin",
+      "originIngredient": "🧂 Ingredient",
+      "originProduct": "📦 Resale",
+      "type": "Type",
+      "ingredientOrProduct": "Ingredient / Product",
+      "destinationBranch": "Destination branch",
+      "loading": "Loading...",
+      "columns": {
+        "date": "Date",
+        "type": "Type",
+        "origin": "Origin",
+        "detail": "Detail",
+        "quantity": "Quantity",
+        "destination": "Destination",
+        "notes": "Notes"
+      },
+      "types": {
+        "compra": "Purchase",
+        "transferencia": "Transfer",
+        "ajuste": "Adjustment"
+      }
+    },
+    "purchase": {
+      "title": "Register warehouse purchase",
+      "success": "Purchase registered successfully",
+      "ingredientLabel": "Ingredient",
+      "ingredientRequired": "Select an ingredient",
+      "ingredientPlaceholder": "Select ingredient",
+      "productLabel": "Product",
+      "productRequired": "Select a product",
+      "productPlaceholder": "Select product",
+      "currentStock": "Current warehouse stock: ",
+      "quantityLabel": "Quantity to add",
+      "quantityRequired": "Enter the quantity",
+      "quantityMin": "The quantity must be greater than 0",
+      "quantityPlaceholderIngredient": "E.g: 5000",
+      "quantityPlaceholderProduct": "E.g: 24",
+      "minQuantityLabel": "Minimum stock",
+      "minQuantityTooltip": "Minimum warehouse quantity before receiving a low-stock alert",
+      "minQuantityRequired": "Enter the minimum",
+      "minQuantityPlaceholder": "E.g: 5",
+      "notes": "Notes",
+      "notesPlaceholder": "E.g: Supplier X, invoice #123",
+      "submit": "Register entry"
+    },
+    "transferPage": {
+      "title": "Transfer to branch",
+      "success": "Transfer completed successfully",
+      "available": "Available in warehouse: ",
+      "quantityLabel": "Quantity",
+      "quantityRequired": "Enter the quantity",
+      "quantityPlaceholder": "E.g: 12",
+      "destinationLabel": "Destination",
+      "destinationRequired": "Select a branch",
+      "destinationPlaceholder": "Select branch",
+      "notes": "Notes",
+      "notesPlaceholder": "Optional",
+      "submit": "Confirm transfer"
+    }
+  },
+  "attendance": {
+    "title": "Attendance",
+    "expectedStart": "Start time: {time}",
+    "allBranches": "All branches",
+    "columns": {
+      "employee": "Employee",
+      "position": "Position",
+      "branch": "Branch",
+      "type": "Type",
+      "dateTime": "Date & time"
+    },
+    "typeIn": "Clock in",
+    "typeOut": "Clock out",
+    "scan": {
+      "registering": "Registering...",
+      "manualCodeHint": "Enter your backup code to register your clock in or out",
+      "codePlaceholder": "Code",
+      "register": "Register",
+      "errorDefault": "Code not recognized",
+      "welcomeMessage": "Welcome {name}! {type} registered at {time}"
+    }
+  },
+  "users": {
+    "title": "Users",
+    "new": "New user",
+    "newShort": "New",
+    "editTitle": "Edit user",
+    "createTitle": "New user",
+    "fullNameLabel": "Full name",
+    "fullNameRequired": "Enter the user's name",
+    "fullNamePlaceholder": "E.g: John Smith",
+    "emailLabel": "Email",
+    "emailRequired": "Enter the email",
+    "emailInvalid": "Invalid email",
+    "emailPlaceholder": "user@example.com",
+    "passwordLabel": "Password",
+    "passwordRequired": "Enter the password",
+    "passwordMin": "Minimum 6 characters",
+    "roleLabel": "Role",
+    "roleRequired": "Select a role",
+    "branchLabel": "Branch",
+    "branchRequired": "Select the branch",
+    "branchPlaceholder": "Select a branch",
+    "saveChanges": "Save changes",
+    "createUser": "Create user",
+    "reactivate": "Reactivate",
+    "deactivate": "Deactivate",
+    "reactivateConfirmTitle": "Reactivate account?",
+    "deactivateConfirmTitle": "Deactivate account?",
+    "reactivateDesc": "The user will be able to log in again.",
+    "deactivateDesc": "The user won't be able to log in until reactivated.",
+    "deleteConfirmTitle": "Delete user?",
+    "deleteConfirmDesc": "This action cannot be undone.",
+    "deleteBlockedTooltip": "Can't delete: has sales recorded",
+    "deleteTooltip": "Delete user",
+    "inactiveTag": "Inactive",
+    "columns": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "branch": "Branch",
+      "createdAt": "Created on"
+    },
+    "roles": {
+      "cajero": "Cashier",
+      "cocinero": "Cook",
+      "admin": "Admin"
+    },
+    "toasts": {
+      "updated": "User updated",
+      "created": "User created",
+      "saveError": "Error saving",
+      "accountReactivated": "{name}'s account reactivated",
+      "accountDeactivated": "{name}'s account deactivated",
+      "updateError": "Error updating",
+      "deleted": "User deleted",
+      "deleteError": "Error deleting"
+    }
+  },
+  "variantTypes": {
+    "title": "Variant Types",
+    "new": "New type",
+    "editTitle": "Edit variant type",
+    "createTitle": "New variant type",
+    "saveChanges": "Save changes",
+    "nameLabel": "Name",
+    "nameRequired": "Name is required",
+    "namePlaceholder": "E.g: Personal, XL, Liter...",
+    "columns": {
+      "name": "Name",
+      "status": "Status"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "toasts": {
+      "updated": "Type updated",
+      "created": "Type created",
+      "saveError": "Error saving",
+      "toggleError": "Error changing status"
+    }
   }
 }

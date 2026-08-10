@@ -1,13 +1,16 @@
 "use client";
 
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { useDisplay } from "@/features/display/hooks/useDisplay";
 import { DisplayMenu } from "@/features/display/components/DisplayMenu";
 import { DisplayCart } from "@/features/display/components/DisplayCart";
 import { DisplayThankYou } from "@/features/display/components/DisplayThankYou";
+import { LocaleSwitcher } from "@/features/i18n/components/LocaleSwitcher";
 
 export default function DisplayPage() {
   const { mode, cartItems, cartTotal, orderType, products, menuPage } = useDisplay();
+  const t = useTranslations("display");
 
   return (
     <div style={{ height: "100vh", width: "100vw", overflow: "hidden", background: "#030712", color: "#fff", display: "flex", flexDirection: "column" }}>
@@ -15,7 +18,7 @@ export default function DisplayPage() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 32px", background: "#ea580c", flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Image
-            src="/pippo.jpg"
+            src="/logo.png"
             alt="Pippo Pizza"
             width={44}
             height={44}
@@ -23,12 +26,15 @@ export default function DisplayPage() {
           />
           <span style={{ fontSize: 26, fontWeight: 800, letterSpacing: "0.02em" }}>Pizzería Pippo</span>
         </div>
-        <span style={{ color: "#fed7aa", fontSize: 16 }}>
-          {mode === "order"
-            ? orderType === "takeaway" ? "🥡 Pedido para llevar" : "🍽️ Pedido para comer aquí"
-            : mode === "thanks" ? ""
-            : "Nuestro menú"}
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <span style={{ color: "#fed7aa", fontSize: 16 }}>
+            {mode === "order"
+              ? orderType === "takeaway" ? t("orderTypeTakeaway") : t("orderTypeDineIn")
+              : mode === "thanks" ? ""
+              : t("ourMenu")}
+          </span>
+          <LocaleSwitcher dark />
+        </div>
       </div>
 
       {/* Content */}

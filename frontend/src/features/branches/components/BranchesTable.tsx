@@ -5,6 +5,7 @@ import {
   PlusOutlined, EditOutlined, StopOutlined,
   CheckCircleOutlined, EyeOutlined, DeleteOutlined,
 } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/lib/useIsMobile";
 import type { Branch } from "../types/branch.types";
 
@@ -23,10 +24,12 @@ interface Props {
 
 export function BranchesTable({ branches, loading, showInactive, onToggleInactive, onCreate, onEdit, onToggleActive, onDelete }: Props) {
   const isMobile = useIsMobile();
+  const t = useTranslations("common");
+  const tb = useTranslations("branches");
 
   const columns = [
     {
-      title: "Nombre",
+      title: tb("columns.name"),
       dataIndex: "name",
       key: "name",
       render: (name: string, record: Branch) => (
@@ -34,12 +37,12 @@ export function BranchesTable({ branches, loading, showInactive, onToggleInactiv
           <Text delete={!record.is_active} style={!record.is_active ? { color: "#9ca3af" } : {}}>
             {name}
           </Text>
-          {!record.is_active && <Tag color="default">Inactiva</Tag>}
+          {!record.is_active && <Tag color="default">{tb("inactiveTag")}</Tag>}
         </Space>
       ),
     },
     {
-      title: "Dirección",
+      title: tb("columns.address"),
       dataIndex: "address",
       key: "address",
       render: (address: string | null, record: Branch) => (
@@ -47,7 +50,7 @@ export function BranchesTable({ branches, loading, showInactive, onToggleInactiv
       ),
     },
     {
-      title: "Fecha de creación",
+      title: tb("columns.createdAt"),
       dataIndex: "created_at",
       key: "created_at",
       render: (date: string, record: Branch) => (
@@ -57,15 +60,15 @@ export function BranchesTable({ branches, loading, showInactive, onToggleInactiv
       ),
     },
     {
-      title: "Acciones",
+      title: t("actions"),
       key: "actions",
       width: 160,
       render: (_: unknown, record: Branch) => (
         <Space>
-          <Tooltip title="Editar">
+          <Tooltip title={t("edit")}>
             <Button icon={<EditOutlined />} size="small" onClick={() => onEdit(record)} />
           </Tooltip>
-          <Tooltip title={record.is_active ? "Desactivar" : "Reactivar"}>
+          <Tooltip title={record.is_active ? tb("deactivate") : tb("reactivate")}>
             <Button
               icon={record.is_active ? <StopOutlined /> : <CheckCircleOutlined />}
               size="small"
@@ -74,14 +77,14 @@ export function BranchesTable({ branches, loading, showInactive, onToggleInactiv
             />
           </Tooltip>
           <Popconfirm
-            title="¿Eliminar esta sucursal?"
-            description="Solo se puede si no tiene ventas, stock, precios ni usuarios asociados. No se puede deshacer."
+            title={tb("deleteConfirmTitle")}
+            description={tb("deleteConfirmDescLong")}
             onConfirm={() => onDelete(record)}
-            okText="Eliminar"
-            cancelText="Cancelar"
+            okText={t("delete")}
+            cancelText={t("cancel")}
             okButtonProps={{ danger: true }}
           >
-            <Tooltip title="Eliminar">
+            <Tooltip title={t("delete")}>
               <Button icon={<DeleteOutlined />} size="small" danger />
             </Tooltip>
           </Popconfirm>
@@ -92,15 +95,15 @@ export function BranchesTable({ branches, loading, showInactive, onToggleInactiv
 
   const header = (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 8 }}>
-      <Title level={4} style={{ margin: 0 }}>Sucursales</Title>
+      <Title level={4} style={{ margin: 0 }}>{tb("title")}</Title>
       <Space wrap>
         <Space size={4}>
           <EyeOutlined style={{ color: "#6b7280" }} />
-          {!isMobile && <Text type="secondary">Ver inactivas</Text>}
+          {!isMobile && <Text type="secondary">{tb("showInactive")}</Text>}
           <Switch size="small" checked={showInactive} onChange={onToggleInactive} />
         </Space>
         <Button type="primary" icon={<PlusOutlined />} onClick={onCreate}>
-          {isMobile ? "Nueva" : "Nueva sucursal"}
+          {isMobile ? tb("newShort") : tb("new")}
         </Button>
       </Space>
     </div>
@@ -111,7 +114,7 @@ export function BranchesTable({ branches, loading, showInactive, onToggleInactiv
       <>
         {header}
         {loading ? (
-          <div style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>Cargando...</div>
+          <div style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>{t("loading")}</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {branches.map((branch) => (
@@ -134,7 +137,7 @@ export function BranchesTable({ branches, loading, showInactive, onToggleInactiv
                       >
                         {branch.name}
                       </Text>
-                      {!branch.is_active && <Tag color="default" style={{ margin: 0 }}>Inactiva</Tag>}
+                      {!branch.is_active && <Tag color="default" style={{ margin: 0 }}>{tb("inactiveTag")}</Tag>}
                     </div>
                     {branch.address && (
                       <Text type="secondary" style={{ fontSize: 13, display: "block", marginTop: 2 }}>{branch.address}</Text>
@@ -149,11 +152,11 @@ export function BranchesTable({ branches, loading, showInactive, onToggleInactiv
                       onClick={() => onToggleActive(branch)}
                     />
                     <Popconfirm
-                      title="¿Eliminar esta sucursal?"
-                      description="Solo si no tiene ventas, stock, precios ni usuarios asociados."
+                      title={tb("deleteConfirmTitle")}
+                      description={tb("deleteConfirmDescShort")}
                       onConfirm={() => onDelete(branch)}
-                      okText="Eliminar"
-                      cancelText="Cancelar"
+                      okText={t("delete")}
+                      cancelText={t("cancel")}
                       okButtonProps={{ danger: true }}
                     >
                       <Button icon={<DeleteOutlined />} size="small" danger />

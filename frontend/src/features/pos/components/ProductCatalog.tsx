@@ -3,16 +3,10 @@
 import { useState } from "react";
 import { Tag, Typography, Empty, Spin, Button } from "antd";
 import NextImage from "next/image";
+import { useTranslations } from "next-intl";
 import type { Product } from "../types/pos.types";
 
 const { Text } = Typography;
-
-const CATEGORY_OPTIONS = [
-  { value: "all", label: "Todos" },
-  { value: "pizza", label: "Pizza" },
-  { value: "bebida", label: "Bebida" },
-  { value: "otro", label: "Otro" },
-];
 
 const CATEGORY_COLORS: Record<string, string> = {
   pizza: "red",
@@ -31,6 +25,13 @@ interface Props {
 
 export function ProductCatalog({ products, loading, branchId, getVariantPrice, getPromoLabel, onProductClick }: Props) {
   const [filterCategory, setFilterCategory] = useState("all");
+  const t = useTranslations("pos");
+  const CATEGORY_OPTIONS = [
+    { value: "all", label: t("allCategories") },
+    { value: "pizza", label: t("catalog.categories.pizza") },
+    { value: "bebida", label: t("catalog.categories.bebida") },
+    { value: "otro", label: t("catalog.categories.otro") },
+  ];
 
   const isResaleVariant = (v: Product["product_variants"][0]) =>
     !v.recipes?.length && v.stock_quantity !== undefined;
@@ -79,7 +80,7 @@ export function ProductCatalog({ products, loading, branchId, getVariantPrice, g
             <Spin size="large" />
           </div>
         ) : filteredProducts.length === 0 ? (
-          <Empty description="No hay productos en esta categoría" style={{ marginTop: 60 }} />
+          <Empty description={t("catalog.noProducts")} style={{ marginTop: 60 }} />
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12 }}>
             {filteredProducts.map((product) => {
@@ -142,10 +143,10 @@ export function ProductCatalog({ products, loading, branchId, getVariantPrice, g
                     </Text>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
                       <Text style={{ color: soldOut ? "#9ca3af" : "#ea580c", fontWeight: 700, fontSize: 14 }}>
-                        {soldOut ? "Sin stock" : hasMultipleVariants ? `Desde Bs ${price}` : `Bs ${price}`}
+                        {soldOut ? t("catalog.soldOut") : hasMultipleVariants ? t("catalog.fromPrice", { price }) : `Bs ${price}`}
                       </Text>
                       {!soldOut && hasMultipleVariants && (
-                        <Text type="secondary" style={{ fontSize: 11 }}>varios</Text>
+                        <Text type="secondary" style={{ fontSize: 11 }}>{t("catalog.various")}</Text>
                       )}
                     </div>
                   </div>

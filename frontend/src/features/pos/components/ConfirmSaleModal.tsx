@@ -3,16 +3,26 @@
 import { Modal, Button, Tag, Typography } from "antd";
 import { ArrowLeftOutlined, CheckOutlined } from "@ant-design/icons";
 import { PAYMENT_PROVIDERS } from "@pippo/shared";
+import { useTranslations } from "next-intl";
 import type { DiscountedItem } from "@/lib/promotions";
 import type { PaymentMethod, SplitPayment } from "../types/pos.types";
 
 const { Text } = Typography;
 
+// The automatic QR-payment integration remains available in code but is not
+// ready for cashiers to use yet.
+const ENABLE_QR_AUTO_VALIDATION = false;
+
 type OrderType = "dine_in" | "takeaway";
 
-function paymentLabel(method: PaymentMethod, provider: string | null, payments: SplitPayment[] | null): string {
-  if (method === "efectivo") return "💵 Efectivo";
-  if (method === "qr") return "📱 QR";
+function paymentLabel(
+  method: PaymentMethod,
+  provider: string | null,
+  payments: SplitPayment[] | null,
+  labels: { cash: string; qr: string; online: string },
+): string {
+  if (method === "efectivo") return labels.cash;
+  if (method === "qr") return labels.qr;
   if (method === "mixto" && payments?.length) {
     return payments
       .map((p) => `${p.method === "efectivo" ? "💵" : "📱"} Bs ${p.amount.toFixed(2)}`)
@@ -20,7 +30,7 @@ function paymentLabel(method: PaymentMethod, provider: string | null, payments: 
   }
   if (method === "online") {
     const known = provider ? PAYMENT_PROVIDERS[provider as keyof typeof PAYMENT_PROVIDERS] : undefined;
-    return known ? `${known.emoji} ${known.label}` : "🌐 Pago online";
+    return known ? `${known.emoji} ${known.label}` : labels.online;
   }
   return "";
 }
@@ -41,12 +51,17 @@ interface Props {
 }
 
 export function ConfirmSaleModal({ open, discountedCart, total, totalDiscount, paymentMethod, paymentProvider, payments, orderType, loading, onConfirm, onCancel, onValidatePayment }: Props) {
+  const t = useTranslations("pos");
+  const tCommon = useTranslations("common");
+  const tc = useTranslations("pos.confirmSaleModal");
+  const labels = { cash: t("paymentLabel.cash"), qr: t("paymentLabel.qr"), online: t("paymentLabel.online") };
+
   return (
     <Modal
       title={
         <div>
-          <div>Revisar y confirmar</div>
-          <Text type="secondary" className="text-xs font-normal">Paso 2 de 2</Text>
+          <div>{tc("title")}</div>
+          <Text type="secondary" className="text-xs font-normal">{tc("step2")}</Text>
         </div>
       }
       open={open}
@@ -62,7 +77,7 @@ export function ConfirmSaleModal({ open, discountedCart, total, totalDiscount, p
               disabled={loading}
               style={{ flex: 1, height: 48 }}
             >
-              Volver
+              {tCommon("back")}
             </Button>
             <Button
               type="primary"
@@ -72,12 +87,12 @@ export function ConfirmSaleModal({ open, discountedCart, total, totalDiscount, p
               onClick={onConfirm}
               style={{ flex: 2, height: 48, background: "#ea580c", borderColor: "#ea580c" }}
             >
-              Confirmar y cobrar
+              {t("confirmAndCharge")}
             </Button>
           </div>
-          {paymentMethod === "qr" && onValidatePayment && (
+          {ENABLE_QR_AUTO_VALIDATION && paymentMethod === "qr" && onValidatePayment && (
             <Button block disabled={loading} onClick={onValidatePayment}>
-              Validar pago automáticamente
+              {tc("validateAutomatically")}
             </Button>
           )}
         </div>
@@ -87,23 +102,23 @@ export function ConfirmSaleModal({ open, discountedCart, total, totalDiscount, p
         {/* Total — what the cashier reads out loud */}
         <div className="flex flex-col items-center gap-3 bg-orange-50 rounded-lg px-4 py-4">
           <div className="text-center">
-            <Text className="!text-orange-700 block text-sm">Total a cobrar</Text>
+            <Text className="!text-orange-700 block text-sm">{tc("totalToCharge")}</Text>
             <Text strong className="!text-orange-700" style={{ fontSize: 34, lineHeight: 1.2 }}>Bs {total.toFixed(2)}</Text>
           </div>
           <div className="flex gap-2 flex-wrap justify-center">
             <span className="inline-flex items-center gap-1 bg-white rounded-full px-3 py-1 text-sm">
-              {orderType === "takeaway" ? "🥡 Para llevar" : "🍽️ Comer aquí"}
+              {orderType === "takeaway" ? t("orderType.takeawayEmoji") : t("orderType.dineInEmoji")}
             </span>
             {paymentMethod && (
               <span className="inline-flex items-center gap-1 bg-white rounded-full px-3 py-1 text-sm">
-                {paymentLabel(paymentMethod, paymentProvider, payments ?? null)}
+                {paymentLabel(paymentMethod, paymentProvider, payments ?? null, labels)}
               </span>
             )}
           </div>
         </div>
 
         {/* Items */}
-        <Text type="secondary" className="text-xs block mt-4 mb-2" style={{ letterSpacing: 0.5 }}>RESUMEN DE PRODUCTOS</Text>
+        <Text type="secondary" className="text-xs block mt-4 mb-2" style={{ letterSpacing: 0.5 }}>{tc("productsSummary")}</Text>
         <div className="flex flex-col gap-2 max-h-56 overflow-y-auto">
           {discountedCart.map((item, idx) => (
             <div
@@ -119,7 +134,7 @@ export function ConfirmSaleModal({ open, discountedCart, total, totalDiscount, p
               </span>
               <div className="flex-1 min-w-0">
                 <Text>
-                  {item.flavors?.length ? "Pizza mixta" : item.product_name}
+                  {item.flavors?.length ? t("cartPanel.mixedPizza") : item.product_name}
                   {item.promo_label && <Tag color="red" className="!ml-1.5 !text-xs">{item.promo_label}</Tag>}
                 </Text>
                 <Text type="secondary" className="block text-xs">
@@ -134,7 +149,7 @@ export function ConfirmSaleModal({ open, discountedCart, total, totalDiscount, p
 
         {totalDiscount > 0 && (
           <div className="flex justify-between py-2 border-t text-green-600">
-            <Text className="!text-green-600">🏷️ Descuentos aplicados</Text>
+            <Text className="!text-green-600">{tc("discountsApplied")}</Text>
             <Text className="!text-green-600">− Bs {totalDiscount.toFixed(2)}</Text>
           </div>
         )}

@@ -1,7 +1,7 @@
 {
-  "name": "Pizzería Pippo Admin",
-  "short_name": "Pippo",
-  "description": "Sistema de gestión para Pizzería Pippo",
+  "name": "Pizzería Admin",
+  "short_name": "Gu Pizza",
+  "description": "Sistema de gestión para Pizzería",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#ffffff",

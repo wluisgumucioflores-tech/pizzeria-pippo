@@ -2,6 +2,7 @@
 
 import { Button, Input, Select, Tag } from "antd";
 import { FileExcelOutlined, SearchOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import type { Branch } from "../types/stock.types";
 
 const IconWarning = () => (
@@ -27,19 +28,21 @@ export function StockPageHeader({
   isMobile, alertCount, branches, selectedBranch, onSelectedBranchChange,
   search, onSearchChange, exporting, onExport, exportDisabled,
 }: Props) {
+  const t = useTranslations("stock");
+
   return (
     <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "stretch" : "center", gap: 12, marginBottom: 20 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <h2 className="text-lg font-semibold m-0">Stock</h2>
+        <h2 className="text-lg font-semibold m-0">{t("title")}</h2>
         {alertCount > 0 && (
           <Tag color="red" icon={<IconWarning />}>
-            {alertCount} ítem{alertCount > 1 ? "s" : ""} bajo mínimo
+            {t("lowStockAlert", { count: alertCount })}
           </Tag>
         )}
       </div>
       <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 12 }}>
         <Input
-          placeholder="Buscar por nombre..."
+          placeholder={t("searchPlaceholder")}
           prefix={<SearchOutlined />}
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
@@ -51,7 +54,7 @@ export function StockPageHeader({
           onChange={onSelectedBranchChange}
           options={branches.map((b) => ({ value: b.id, label: b.name }))}
           style={{ width: isMobile ? "100%" : 200 }}
-          placeholder="Seleccionar sucursal"
+          placeholder={t("selectBranchPlaceholder")}
         />
         <Button
           icon={<FileExcelOutlined />}
@@ -60,7 +63,7 @@ export function StockPageHeader({
           onClick={onExport}
           style={{ width: isMobile ? "100%" : undefined }}
         >
-          Exportar Excel
+          {t("exportExcel")}
         </Button>
       </div>
     </div>

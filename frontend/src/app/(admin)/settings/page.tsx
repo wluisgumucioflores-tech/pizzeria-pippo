@@ -2,6 +2,7 @@
 
 import { Tabs } from "antd";
 import { BellOutlined, RobotOutlined, FireOutlined, PrinterOutlined, MobileOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import { TelegramSettingsForm } from "@/features/settings/components/TelegramSettingsForm";
 import { KitchenSettingsForm } from "@/features/settings/components/KitchenSettingsForm";
 import { PrinterSettingsForm } from "@/features/settings/components/PrinterSettingsForm";
@@ -62,33 +63,34 @@ function DevicesTab() {
 }
 
 export default function SettingsPage() {
+  const t = useTranslations("settings.tabs");
   return (
     <div className="p-6">
       <Tabs
         items={[
           {
             key: "notifications",
-            label: <span><BellOutlined /> Notificaciones</span>,
+            label: <span><BellOutlined /> {t("notifications")}</span>,
             children: <TelegramSettingsForm />,
           },
           {
             key: "kitchen",
-            label: <span><FireOutlined /> Cocina</span>,
+            label: <span><FireOutlined /> {t("kitchen")}</span>,
             children: <KitchenSettingsForm />,
           },
           {
             key: "bot",
-            label: <span><RobotOutlined /> Bot de IA</span>,
+            label: <span><RobotOutlined /> {t("bot")}</span>,
             children: <BotTab />,
           },
           {
             key: "printer",
-            label: <span><PrinterOutlined /> Impresora</span>,
+            label: <span><PrinterOutlined /> {t("printer")}</span>,
             children: <PrinterSettingsForm />,
           },
           {
             key: "devices",
-            label: <span><MobileOutlined /> Dispositivos</span>,
+            label: <span><MobileOutlined /> {t("devices")}</span>,
             children: <DevicesTab />,
           },
         ]}

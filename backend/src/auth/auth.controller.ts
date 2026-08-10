@@ -3,11 +3,15 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { PrismaService } from '../prisma/prisma.service';
 import type { CurrentUserPayload } from './types/jwt.types';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Post('login')
   login(@Body() dto: LoginDto) {
@@ -16,7 +20,11 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  me(@CurrentUser() user: CurrentUserPayload) {
-    return user;
+  async me(@CurrentUser() user: CurrentUserPayload) {
+    const business = user.business_id
+      ? await this.prisma.business.findUnique({ where: { id: user.business_id }, select: { name: true } })
+      : null;
+
+    return { ...user, business_name: business?.name ?? null };
   }
 }

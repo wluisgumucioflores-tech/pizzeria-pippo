@@ -1,6 +1,7 @@
 "use client";
 
 import { Form, Select, InputNumber, Button } from "antd";
+import { useTranslations } from "next-intl";
 import type { FormInstance } from "antd";
 import type { ProductVariantOption } from "../types/stock.types";
 
@@ -13,13 +14,15 @@ interface Props {
 }
 
 export function ProductStockPurchaseForm({ form, variants, isNewVariant, onVariantChange, onSubmit }: Props) {
+  const t = useTranslations("stock.purchaseForm");
+
   return (
     <div className="max-w-md">
       <Form form={form} layout="vertical" onFinish={onSubmit}>
-        <Form.Item label="Producto" name="variant_id" rules={[{ required: true, message: "Requerido" }]}>
+        <Form.Item label={t("productLabel")} name="variant_id" rules={[{ required: true, message: t("required") }]}>
           <Select
             showSearch
-            placeholder="Seleccionar producto"
+            placeholder={t("productPlaceholder")}
             options={variants.map((v) => ({
               value: v.variantId,
               label: v.variantName === "Unidad" ? v.productName : `${v.productName} — ${v.variantName}`,
@@ -28,21 +31,21 @@ export function ProductStockPurchaseForm({ form, variants, isNewVariant, onVaria
             onChange={onVariantChange}
           />
         </Form.Item>
-        <Form.Item label="Cantidad" name="quantity" rules={[{ required: true, message: "Requerido" }]}>
-          <InputNumber min={1} style={{ width: "100%" }} placeholder="Ej: 12" />
+        <Form.Item label={t("quantity")} name="quantity" rules={[{ required: true, message: t("required") }]}>
+          <InputNumber min={1} style={{ width: "100%" }} placeholder={t("quantityPlaceholderProduct")} />
         </Form.Item>
         {isNewVariant && (
           <Form.Item
-            label="Stock mínimo"
+            label={t("minQuantity")}
             name="min_quantity"
-            tooltip="Primer ingreso de este producto en esta sucursal. Definí a partir de qué cantidad querés recibir alerta de stock bajo."
-            rules={[{ required: true, message: "Requerido para productos nuevos" }]}
+            tooltip={t("minQuantityTooltipProduct")}
+            rules={[{ required: true, message: t("minQuantityRequiredProduct") }]}
           >
-            <InputNumber min={0} style={{ width: "100%" }} placeholder="Ej: 5" />
+            <InputNumber min={0} style={{ width: "100%" }} placeholder={t("minQuantityPlaceholderProduct")} />
           </Form.Item>
         )}
         <Button type="primary" htmlType="submit">
-          Registrar entrada
+          {t("submit")}
         </Button>
       </Form>
     </div>

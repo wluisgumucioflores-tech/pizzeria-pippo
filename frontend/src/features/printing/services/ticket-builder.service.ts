@@ -9,7 +9,7 @@ import {
   CHARS_PER_LINE,
   ORDER_TYPE_LABELS,
   PAYMENT_METHOD_LABELS,
-  TICKET_BUSINESS_NAME,
+  DEFAULT_TICKET_BUSINESS_NAME,
   TICKET_FOOTER_MESSAGE,
 } from "../constants/printing.constants";
 import type { TicketPrintConfig } from "../types/printing.types";
@@ -43,7 +43,12 @@ export function buildTicketBytes(
   const parts: Uint8Array[] = [CMD.INIT];
 
   // Header
-  parts.push(CMD.ALIGN_CENTER, CMD.BOLD_ON, encodeLine(TICKET_BUSINESS_NAME), CMD.BOLD_OFF);
+  parts.push(
+    CMD.ALIGN_CENTER,
+    CMD.BOLD_ON,
+    encodeLine(config.businessName?.trim() || DEFAULT_TICKET_BUSINESS_NAME),
+    CMD.BOLD_OFF
+  );
   if (config.branchName) parts.push(encodeLine(config.branchName));
   parts.push(encodeLine(formatDateTimeBolivia(printedAt)));
 

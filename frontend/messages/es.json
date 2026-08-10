@@ -22,21 +22,66 @@
   },
   "nav": {
     "dashboard": "Dashboard",
+    "branches": "Sucursales",
     "products": "Productos",
+    "variantTypes": "Tipos de variante",
     "ingredients": "Insumos",
     "stock": "Stock",
+    "warehouse": "Bodega",
     "promotions": "Promociones",
-    "reports": "Reportes"
+    "users": "Usuarios",
+    "employees": "Empleados",
+    "attendance": "Asistencia",
+    "reports": "Reportes",
+    "settings": "Configuración"
+  },
+  "localeSwitcher": {
+    "es": "ES",
+    "en": "EN"
   },
   "products": {
     "title": "Productos",
     "new": "Nuevo producto",
+    "newShort": "Nuevo",
+    "showInactive": "Ver inactivos",
+    "searchPlaceholder": "Buscar producto...",
     "name": "Nombre",
     "category": "Categoría",
     "description": "Descripción",
     "image": "Imagen",
+    "notFound": "Producto no encontrado.",
+    "inactiveTag": "Inactivo",
+    "activeBadge": "Activo",
+    "filterLabel": "Filtrar:",
+    "filterAll": "Todos",
+    "typeResale": "Reventa",
+    "typeMade": "Elaboración",
+    "branchPricesTooltip": "Precios por sucursal",
+    "moreOptionsTooltip": "Más opciones",
+    "activate": "Activar",
+    "deactivate": "Desactivar",
+    "duplicate": "Duplicar",
+    "deleteConfirmTitle": "¿Eliminar este producto?",
+    "deleteConfirmDesc": "Solo se puede si no tiene ventas ni promociones asociadas. No se puede deshacer.",
+    "totalProducts": "{count, plural, one {# producto} other {# productos}}",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "pageOf": "Pág. {page} / {total}",
+    "descriptionForCustomer": "Descripción para el cliente",
+    "noRecipe": "Sin receta registrada",
+    "columns": {
+      "image": "Imagen",
+      "name": "Nombre",
+      "category": "Categoría",
+      "type": "Tipo",
+      "variants": "Variantes",
+      "unit": "Unidad",
+      "condition": "Condición"
+    },
     "categories": {
       "pizza": "Pizza",
+      "bebida": "Bebida",
+      "otro": "Otro",
       "drink": "Bebida",
       "other": "Otro"
     },
@@ -46,26 +91,106 @@
       "medium": "Mediana",
       "family": "Familiar",
       "basePrice": "Precio base",
-      "addVariant": "Agregar variante"
+      "addVariant": "Agregar variante",
+      "recipeTitle": "Receta interna",
+      "conditions": {
+        "always": "Siempre",
+        "takeaway": "Solo llevar",
+        "dine_in": "Solo local"
+      }
     },
     "recipe": {
       "title": "Receta",
       "ingredient": "Insumo",
       "quantity": "Cantidad",
       "addIngredient": "Agregar insumo"
+    },
+    "steps": {
+      "generalData": "Datos generales",
+      "variantsAndPrices": "Variantes y precios",
+      "recipes": "Recetas",
+      "editTitle": "Editar — {name}"
+    },
+    "branchPricesPage": {
+      "back": "Volver a productos",
+      "loading": "Cargando...",
+      "subtitle": "Precios por sucursal",
+      "resaleSingleNote": "Producto de reventa — precio único por sucursal",
+      "variantNote": "{name} — precios por variante y sucursal"
+    },
+    "branchPricesTable": {
+      "branch": "Sucursal",
+      "basePrice": "Precio base",
+      "branchPrice": "Precio sucursal",
+      "action": "Acción",
+      "baseLabel": "Base: Bs {price}",
+      "noPriceAssigned": "Sin precio asignado",
+      "assign": "Asignar"
+    },
+    "form": {
+      "namePlaceholder": "Nombre del producto",
+      "required": "Requerido",
+      "categoryPlaceholder": "Categoría",
+      "howMade": "¿Cómo se elabora este producto?",
+      "howMadeRequired": "Seleccioná un tipo",
+      "madeLabel": "Elaboración propia",
+      "madeDesc": "Se prepara con ingredientes",
+      "resaleLabel": "Reventa",
+      "resaleDesc": "Se compra listo y se revende",
+      "descriptionPlaceholder": "Ej: Pepperoni, mozzarella, salsa de tomate",
+      "uploading": "Subiendo...",
+      "uploadImage": "Subir imagen",
+      "next": "Siguiente",
+      "previous": "Anterior",
+      "saveChanges": "Guardar cambios",
+      "create": "Crear producto",
+      "createProduct": "Crear producto",
+      "hasVariantsLabel": "Este producto tiene tamaños o presentaciones",
+      "hasVariantsHintOn": "Ej: Personal / Mediana / Familiar",
+      "hasVariantsHintOff": "Se vende como unidad única con un solo precio",
+      "sizeLabel": "Tamaño",
+      "reactivate": "Reactivar",
+      "addVariant": "Agregar variante",
+      "noVariantTypes": "No hay tipos de variante configurados. Creá uno primero en Tipos de variante.",
+      "branchPricesCollapse": "Precios por sucursal ({count})",
+      "recipeNoIngredients": "Sin ingredientes aún",
+      "addIngredientPlaceholder": "Agregar insumo...",
+      "searching": "Buscando...",
+      "noResults": "Sin resultados"
     }
   },
   "ingredients": {
     "title": "Insumos",
     "new": "Nuevo insumo",
+    "newShort": "Nuevo",
+    "showInactive": "Ver inactivos",
+    "searchPlaceholder": "Buscar por nombre...",
     "name": "Nombre",
     "unit": "Unidad",
+    "inactiveTag": "Inactivo",
+    "deactivate": "Desactivar",
+    "reactivate": "Reactivar",
+    "totalIngredients": "{count, plural, one {# insumo} other {# insumos}}",
     "units": {
-      "g": "Gramos",
-      "kg": "Kilogramos",
-      "ml": "Mililitros",
-      "l": "Litros",
-      "unit": "Unidades"
+      "g": "Gramos (g)",
+      "kg": "Kilogramos (kg)",
+      "ml": "Mililitros (ml)",
+      "l": "Litros (l)",
+      "unidad": "Unidades"
+    },
+    "modal": {
+      "editTitle": "Editar insumo",
+      "createTitle": "Nuevo insumo",
+      "name": "Nombre",
+      "namePlaceholder": "Ej: Harina, Mozzarella, Pepperoni",
+      "nameRequired": "Ingresá el nombre",
+      "unit": "Unidad de medida",
+      "unitPlaceholder": "Seleccionar unidad",
+      "unitRequired": "Seleccioná la unidad",
+      "sharedUseLabel": "Se descuenta completo por pedido, no por sabor",
+      "sharedUseHint": "Usar para cajas/empaques — no aplica a masa, queso, toppings",
+      "saveChanges": "Guardar cambios",
+      "create": "Crear insumo"
     }
   },
   "stock": {
@@ -76,25 +201,136 @@
     "purchase": "Registrar compra",
     "adjust": "Ajuste manual",
     "movements": "Movimientos",
-    "types": {
-      "purchase": "Compra",
-      "sale": "Venta",
-      "adjustment": "Ajuste"
+    "lowStockAlert": "{count, plural, one {# ítem bajo mínimo} other {# ítems bajo mínimo}}",
+    "searchPlaceholder": "Buscar por nombre...",
+    "selectBranchPlaceholder": "Seleccionar sucursal",
+    "exportExcel": "Exportar Excel",
+    "tabs": {
+      "currentStock": "Stock actual",
+      "manualAdjust": "Ajuste manual",
+      "history": "Historial"
+    },
+    "typeSelector": {
+      "ingredients": "🧂 Insumos",
+      "products": "📦 Reventa"
+    },
+    "columns": {
+      "type": "Tipo",
+      "nameCombined": "Insumo/Producto",
+      "unit": "Unidad",
+      "current": "Stock actual",
+      "minimum": "Mínimo",
+      "status": "Estado",
+      "date": "Fecha",
+      "detail": "Detalle",
+      "quantity": "Cantidad",
+      "notes": "Notas",
+      "ingredient": "Insumo"
+    },
+    "originIngredient": "🧂 Insumo",
+    "originProduct": "📦 Reventa",
+    "originIngredientShort": "Insumo",
+    "originProductShort": "Reventa",
+    "lowStockTooltip": "Stock bajo el mínimo",
+    "statusLow": "Stock bajo",
+    "statusOk": "OK",
+    "actualLabel": "Actual: ",
+    "minLabel": "Mínimo: ",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "pageOf": "Pág. {page} / {total}",
+    "totalItems": "{count, plural, one {# ítem} other {# ítems}}",
+    "emptyStock": "Sin insumos ni productos de reventa en stock para esta sucursal.",
+    "totalMovements": "{count, plural, one {# movimiento} other {# movimientos}}",
+    "movementTypes": {
+      "compra": "Compra",
+      "venta": "Venta",
+      "ajuste": "Ajuste",
+      "anulacion": "Anulación"
+    },
+    "adjustForm": {
+      "helperText": "Ingresá la cantidad real contada físicamente. El sistema calculará la diferencia.",
+      "ingredientLabel": "Insumo",
+      "ingredientPlaceholder": "Seleccionar insumo",
+      "productLabel": "Producto",
+      "productPlaceholder": "Seleccionar producto",
+      "realQuantity": "Cantidad real (conteo físico)",
+      "realQuantityPlaceholderIngredient": "Ej: 1200",
+      "realQuantityPlaceholderProduct": "Ej: 8",
+      "required": "Requerido",
+      "reason": "Motivo del ajuste",
+      "reasonPlaceholder": "Ej: Merma, error de conteo anterior...",
+      "notes": "Notas",
+      "notesPlaceholder": "Motivo del ajuste (opcional)",
+      "submit": "Aplicar ajuste"
+    },
+    "minQtyModal": {
+      "title": "Stock mínimo — {name}",
+      "helperProduct": "Cuando el stock en sucursal baje de este número, se mostrará una alerta.",
+      "helperIngredient": "Cuando el stock baje de este número, se mostrará una alerta.",
+      "label": "Cantidad mínima",
+      "required": "Requerido",
+      "unitsSuffix": "unidades"
+    },
+    "purchaseForm": {
+      "ingredientLabel": "Insumo",
+      "ingredientPlaceholder": "Seleccionar insumo",
+      "productLabel": "Producto",
+      "productPlaceholder": "Seleccionar producto",
+      "quantity": "Cantidad",
+      "required": "Requerido",
+      "quantityMin": "La cantidad debe ser mayor a 0",
+      "quantityPlaceholder": "Ej: 500",
+      "quantityPlaceholderProduct": "Ej: 12",
+      "minQuantity": "Stock mínimo",
+      "minQuantityTooltipIngredient": "Primer ingreso de este insumo en esta sucursal. Definí a partir de qué cantidad querés recibir alerta de stock bajo.",
+      "minQuantityTooltipProduct": "Primer ingreso de este producto en esta sucursal. Definí a partir de qué cantidad querés recibir alerta de stock bajo.",
+      "minQuantityRequiredIngredient": "Requerido para insumos nuevos",
+      "minQuantityRequiredProduct": "Requerido para productos nuevos",
+      "minQuantityPlaceholder": "Ej: 500",
+      "minQuantityPlaceholderProduct": "Ej: 5",
+      "submit": "Registrar entrada"
     }
   },
   "promotions": {
     "title": "Promociones",
     "new": "Nueva promoción",
+    "newShort": "Nueva",
+    "showInactive": "Ver inactivas",
     "name": "Nombre",
     "type": "Tipo",
     "days": "Días de aplicación",
     "startDate": "Fecha inicio",
     "endDate": "Fecha fin",
     "branch": "Sucursal",
+    "allBranches": "Todas las sucursales",
+    "validity": "Vigencia",
+    "active": "Activa",
+    "viewDetail": "Ver detalle",
+    "view": "Ver",
+    "deactivate": "Desactivar",
+    "reactivate": "Reactivar",
+    "notFound": "Promoción no encontrada.",
+    "inactiveTag": "Inactiva",
+    "statusActivePos": "Activa en POS",
+    "statusPausedPos": "Pausada en POS",
+    "statusActive": "Activa",
+    "statusPaused": "Pausada",
+    "statusDeleted": "Eliminada",
+    "activeDays": "Días activos",
+    "allProducts": "Todos los productos",
+    "rules": "Reglas",
+    "noRulesConfigured": "Sin reglas configuradas",
+    "slotLabel": "Slot {n}",
+    "ruleLabel": "Regla {n}",
+    "buyGetText": "Comprá <b>{buy}</b> llevate <b>{get}</b> gratis",
+    "discountText": "<b>{percent}%</b> de descuento",
+    "discountBadge": "{percent}% off",
+    "comboPriceText": "Precio combo: Bs {price}",
     "types": {
-      "buyXGetY": "Compra X llévate Y",
+      "buyXGetY": "Compra X llévate Y (ej: 2x1)",
       "percentage": "Descuento porcentual",
-      "combo": "Combo"
+      "combo": "Precio combo"
     },
     "daysOfWeek": {
       "0": "Domingo",
@@ -104,6 +340,61 @@
       "4": "Jueves",
       "5": "Viernes",
       "6": "Sábado"
+    },
+    "daysShort": {
+      "0": "Dom",
+      "1": "Lun",
+      "2": "Mar",
+      "3": "Mié",
+      "4": "Jue",
+      "5": "Vie",
+      "6": "Sáb"
+    },
+    "categories": {
+      "pizza": "Pizza",
+      "bebida": "Bebida",
+      "otro": "Otro"
+    },
+    "modal": {
+      "editTitle": "Editar promoción",
+      "createTitle": "Nueva promoción",
+      "saveChanges": "Guardar cambios",
+      "createAction": "Crear promoción",
+      "name": "Nombre",
+      "namePlaceholder": "Ej: 2x1 los miércoles",
+      "required": "Requerido",
+      "type": "Tipo",
+      "typePlaceholder": "Seleccionar tipo",
+      "active": "Activa",
+      "branch": "Sucursal",
+      "daysOfWeekLabel": "Días de la semana",
+      "allDaysToggle": "Toda la semana",
+      "daysPlaceholder": "Todos los días si se deja vacío",
+      "validity": "Vigencia"
+    },
+    "rulesEditor": {
+      "title": "Reglas",
+      "ruleLabel": "Regla {n}",
+      "variant": "Variante",
+      "variantPlaceholder": "Seleccionar variante",
+      "buyQty": "Compra X",
+      "buyQtyPlaceholder": "Ej: 2",
+      "getQty": "Llévate Y gratis",
+      "getQtyPlaceholder": "Ej: 1",
+      "variantOrAll": "Variante (vacío = todos los productos)",
+      "discountPercent": "Descuento %",
+      "discountPlaceholder": "Ej: 20",
+      "slotType": "Tipo de slot",
+      "slotSpecific": "Variante específica",
+      "slotFlexible": "Categoría + Tamaño",
+      "comboVariant": "Variante del combo",
+      "comboPriceLabel": "Precio combo (Bs)",
+      "comboPricePlaceholder": "Ej: 150",
+      "category": "Categoría",
+      "size": "Tamaño",
+      "addBuyXGetY": "Agregar variante con 2x1",
+      "addPercentage": "Agregar descuento",
+      "addCombo": "Agregar producto al combo"
     }
   },
   "pos": {
@@ -116,12 +407,197 @@
     "cancelOrder": "Cancelar pedido",
     "selectVariant": "Seleccionar tamaño",
     "newSale": "Nueva venta",
-    "orderComplete": "¡Venta completada!"
+    "orderComplete": "¡Venta completada!",
+    "loading": "Cargando...",
+    "optional": "(opcional)",
+    "continueAction": "Continuar",
+    "confirmAndCharge": "Confirmar y cobrar",
+    "halfAndHalf": "Mit. {first} / Mit. {second}",
+    "error": {
+      "title": "Ocurrió un error",
+      "message": "Algo salió mal al cargar el POS. Por favor intentá de nuevo.",
+      "code": "Código: {digest}",
+      "retry": "Reintentar"
+    },
+    "branchSelector": {
+      "title": "Seleccionar sucursal",
+      "greeting": "Hola, {name}. ¿Desde qué sucursal vas a vender?",
+      "logout": "Cerrar sesión"
+    },
+    "mobileNav": {
+      "catalog": "🛍️ Catálogo",
+      "cart": "🛒 Pedido"
+    },
+    "header": {
+      "branchFallback": "Sucursal",
+      "logout": "Salir"
+    },
+    "tabs": {
+      "sale": "Venta",
+      "promos": "Promociones",
+      "promosShort": "Promos",
+      "orders": "Pedidos",
+      "ordersFull": "Pedidos del día",
+      "summary": "Resumen"
+    },
+    "orderType": {
+      "dineIn": "Comer aquí",
+      "takeaway": "Para llevar",
+      "dineInEmoji": "🍽️ Comer aquí",
+      "takeawayEmoji": "🥡 Para llevar",
+      "dineInLocal": "🍽️ Local",
+      "takeawayLocal": "🥡 Para llevar"
+    },
+    "paymentMethod": {
+      "cash": "Efectivo",
+      "qr": "QR",
+      "mixed": "Mixto"
+    },
+    "paymentLabel": {
+      "cash": "💵 Efectivo",
+      "qr": "📱 QR",
+      "online": "🌐 Pago online"
+    },
+    "cartPanel": {
+      "title": "Pedido actual",
+      "discountsApplied": "Descuentos aplicados",
+      "emptyState": "Agregá productos al pedido",
+      "mixedPizza": "Pizza mixta"
+    },
+    "catalog": {
+      "noProducts": "No hay productos en esta categoría",
+      "soldOut": "Sin stock",
+      "fromPrice": "Desde Bs {price}",
+      "various": "varios",
+      "categories": {
+        "pizza": "Pizza",
+        "bebida": "Bebida",
+        "otro": "Otro"
+      }
+    },
+    "paymentModal": {
+      "title": "Tipo de pedido y pago",
+      "step1": "PASO 1 DE 2",
+      "orderTotal": "TOTAL DEL PEDIDO",
+      "onlineOrder": "Pedido de {provider} (pago ya recibido)",
+      "onlineHint": "Se registra para llevar, con pago online — sin pasar por validación de QR.",
+      "howIsOrder": "¿Cómo va el pedido?",
+      "selectToContinue": "Seleccioná una opción para continuar",
+      "howDidPay": "¿Cómo pagó el cliente?",
+      "toggleHint": "Toca de nuevo para quitar la selección",
+      "cashReceived": "EFECTIVO RECIBIDO",
+      "remainingQr": "RESTANTE QR",
+      "bothMustBeGreater": "Ambos montos deben ser mayores a 0",
+      "note": "Nota de venta",
+      "notePlaceholder": "Ej: sin cebolla, mesa 5, para Juan..."
+    },
+    "confirmSaleModal": {
+      "title": "Revisar y confirmar",
+      "step2": "Paso 2 de 2",
+      "validateAutomatically": "Validar pago automáticamente",
+      "totalToCharge": "Total a cobrar",
+      "productsSummary": "RESUMEN DE PRODUCTOS",
+      "discountsApplied": "🏷️ Descuentos aplicados"
+    },
+    "dayOrders": {
+      "title": "Pedidos del día ({count})",
+      "empty": "Sin ventas registradas hoy.",
+      "cancelled": "Anulada",
+      "readyShort": "Listo",
+      "markReady": "Marcar listo",
+      "cancelAction": "Anular"
+    },
+    "daySummary": {
+      "title": "Resumen del día",
+      "totalDay": "Total del día",
+      "salesMade": "Ventas realizadas",
+      "pending": "Pendientes",
+      "ready": "Listos",
+      "online": "Online"
+    },
+    "paymentValidation": {
+      "title": "Validando pago",
+      "waiting": "Esperando a que llegue el pago...",
+      "detected": "Se detectó un pago de",
+      "from": "de",
+      "isCustomer": "¿Es el cliente?",
+      "update": "Actualizar",
+      "sold": "Vendido",
+      "notDetected": "No se detectó el pago todavía."
+    },
+    "flavors": {
+      "title": "Sabores",
+      "totalParts": "Total: {count, plural, one {# parte} other {# partes}}",
+      "partsCount": "{count, plural, one {parte} other {partes}}",
+      "addAnother": "+ Agregar otro sabor"
+    },
+    "variantModal": {
+      "size": "Tamaño",
+      "addToCart": "Agregar al carrito — Bs {price}",
+      "addMixedPizza": "Agregar pizza mixta — Bs {price}"
+    },
+    "ticketModal": {
+      "title": "✅ Venta confirmada",
+      "print": "Imprimir",
+      "totalCharged": "Total cobrado",
+      "paymentMethodLabel": "Método de pago"
+    },
+    "promos": {
+      "title": "Promociones activas hoy ({count})",
+      "empty": "No hay promociones activas hoy.",
+      "add": "Agregar"
+    },
+    "promoType": {
+      "buyXGetY": "2×1 / N+1",
+      "percentage": "% Descuento",
+      "combo": "Combo"
+    },
+    "promoDesc": {
+      "buyXGetY": "Compra {buy} llévate {total} — {name}",
+      "percentageAll": "{percent}% OFF en todos los productos",
+      "percentageSpecific": "{percent}% OFF — {name}",
+      "combo": "{count, plural, one {# producto} other {# productos}} por Bs {price}"
+    },
+    "comboSlot": {
+      "specificProduct": "Producto específico",
+      "anyProduct": "Cualquier producto",
+      "fixed": "Fijo",
+      "addMixedPizza": "+ Pizza mixta (combinar sabores)"
+    },
+    "comboSummary": {
+      "price": "Precio del combo",
+      "slotPending": "Slot {n} pendiente",
+      "addMobile": "Agregar — Bs {price}",
+      "addCombo": "Agregar combo"
+    },
+    "percentageModal": {
+      "noEligible": "No hay productos elegibles para esta promoción.",
+      "addedToast": "{name} agregado con {percent}% OFF"
+    },
+    "cancelOrderModal": {
+      "title": "Anular orden {label}",
+      "confirm": "Anular orden",
+      "warning": "Esta acción restaurará el stock automáticamente y no se puede deshacer.",
+      "reasonPlaceholder": "Motivo de anulación"
+    }
   },
   "display": {
-    "menu": "Menú",
-    "orderTotal": "Total",
-    "thankYou": "¡Gracias por su compra!"
+    "orderTypeTakeaway": "🥡 Pedido para llevar",
+    "orderTypeDineIn": "🍽️ Pedido para comer aquí",
+    "ourMenu": "Nuestro menú",
+    "orderDetail": "Detalle del pedido",
+    "halfAndHalf": "Mit. {first} / Mit. {second}",
+    "totalToPay": "Total a pagar",
+    "youSave": "Ahorrás",
+    "categories": {
+      "pizza": "Pizzas",
+      "bebida": "Bebidas",
+      "otro": "Otros"
+    },
+    "fromPrice": "Desde Bs {price}",
+    "variousSizes": "varios tamaños",
+    "thankYouTitle": "¡Gracias!",
+    "thankYouSubtitle": "Tu pedido está siendo preparado"
   },
   "reports": {
     "title": "Reportes",
@@ -137,10 +613,564 @@
     "averageTicket": "Ticket promedio",
     "topProducts": "Productos más vendidos",
     "salesByCategory": "Ventas por categoría",
-    "dailySales": "Ventas por día"
+    "dailySales": "Ventas por día",
+    "tabs": {
+      "general": "General",
+      "sales": "Historial de ventas",
+      "cashiers": "Por cajero"
+    },
+    "summary": {
+      "dineIn": "🍽️ Comer aquí ({count})",
+      "takeaway": "🥡 Para llevar ({count})",
+      "noDataPeriod": "Sin datos para el período",
+      "noSalesPeriod": "Sin ventas para el período seleccionado"
+    },
+    "cashier": {
+      "sales": "Ventas",
+      "orders": "Órdenes",
+      "ordersCount": "{count} órdenes"
+    },
+    "columns": {
+      "product": "Producto",
+      "category": "Categoría",
+      "units": "Unidades",
+      "revenue": "Ingresos",
+      "qty": "Cant.",
+      "unitPrice": "Precio unit.",
+      "discount": "Descuento",
+      "promo": "Promoción",
+      "subtotal": "Subtotal",
+      "dateTime": "Fecha y hora",
+      "branch": "Sucursal",
+      "cashier": "Cajero",
+      "items": "Items",
+      "type": "Tipo",
+      "payment": "Pago",
+      "total": "Total",
+      "status": "Estado",
+      "ingredient": "Insumo",
+      "unit": "Unidad",
+      "currentStock": "Stock actual",
+      "minStock": "Mínimo"
+    },
+    "orderType": {
+      "dineIn": "🍽️ Comer aquí",
+      "takeaway": "🥡 Para llevar",
+      "dineInShort": "🍽️ Local",
+      "takeawayShort": "🥡 Llevar"
+    },
+    "payment": {
+      "cash": "💵 Efectivo",
+      "qr": "📱 QR",
+      "mixed": "🔀 Mixto",
+      "online": "🌐 Online",
+      "unspecified": "Sin especificar",
+      "none": "—"
+    },
+    "plain": {
+      "dineIn": "Comer aquí",
+      "takeaway": "Para llevar",
+      "cash": "Efectivo",
+      "qr": "QR",
+      "online": "Online",
+      "none": "—"
+    },
+    "status": {
+      "cancelled": "Anulada",
+      "cancelAction": "Anular"
+    },
+    "unitsShort": "uds.",
+    "currentShort": "Actual",
+    "totalPeriod": "Total del período",
+    "exportExcel": "Exportar Excel",
+    "export": "Exportar",
+    "salesCount": "{count} ventas",
+    "loading": "Cargando...",
+    "noSalesInPeriod": "Sin ventas en este período",
+    "prev": "‹ Ant.",
+    "next": "Sig. ›",
+    "page": "Pág. {page}",
+    "stockAlerts": {
+      "title": "Insumos bajo mínimo ({count})",
+      "goToStock": "Ir a stock"
+    },
+    "cancelSuccess": "Orden anulada correctamente. Stock restaurado.",
+    "cancelError": "Error al anular la orden",
+    "excel": {
+      "sheetName": "Historial de ventas",
+      "headers": {
+        "date": "Fecha",
+        "branch": "Sucursal",
+        "cashier": "Cajero",
+        "type": "Tipo",
+        "payment": "Pago",
+        "product": "Producto",
+        "variant": "Variante",
+        "qty": "Cantidad",
+        "unitPrice": "Precio unitario",
+        "discount": "Descuento",
+        "total": "Total venta"
+      }
+    }
+  },
+  "dashboard": {
+    "sales": "Ventas",
+    "subtitle": "Resumen de hoy — {date}",
+    "goToPos": "Ir al POS",
+    "noSalesTodayAlert": "Todavía no hay ventas registradas hoy",
+    "showingYesterdayAlert": "Mostrando el resumen de ayer, {date}.",
+    "salesToday": "Ventas hoy",
+    "salesYesterday": "Ventas de ayer",
+    "ordersToday": "Órdenes hoy",
+    "ordersYesterday": "Órdenes de ayer",
+    "averageTicket": "Ticket promedio",
+    "stockAlerts": "Alertas de stock",
+    "salesLast7Days": "Ventas últimos 7 días",
+    "viewReports": "Ver reportes",
+    "noSalesLast7Days": "Sin ventas en los últimos 7 días",
+    "top5Today": "Top 5 hoy",
+    "top5Yesterday": "Top 5 de ayer",
+    "noSalesToday": "Sin ventas hoy",
+    "noSalesYesterday": "Sin ventas ayer",
+    "columns": {
+      "product": "Producto",
+      "category": "Cat.",
+      "units": "Uds.",
+      "revenue": "Ingresos"
+    },
+    "lowStockBranches": "Insumos bajo mínimo en sucursales",
+    "goToStock": "Ir a stock",
+    "lowStockWarehouse": "Insumos bajo mínimo en bodega",
+    "goToWarehouse": "Ir a bodega",
+    "centralWarehouse": "Bodega central",
+    "minShort": "mín. {min}"
   },
   "branches": {
-    "branchA": "Sucursal A",
-    "branchB": "Sucursal B"
+    "title": "Sucursales",
+    "new": "Nueva sucursal",
+    "newShort": "Nueva",
+    "showInactive": "Ver inactivas",
+    "columns": {
+      "name": "Nombre",
+      "address": "Dirección",
+      "createdAt": "Fecha de creación"
+    },
+    "inactiveTag": "Inactiva",
+    "deactivate": "Desactivar",
+    "reactivate": "Reactivar",
+    "deleteConfirmTitle": "¿Eliminar esta sucursal?",
+    "deleteConfirmDescLong": "Solo se puede si no tiene ventas, stock, precios ni usuarios asociados. No se puede deshacer.",
+    "deleteConfirmDescShort": "Solo si no tiene ventas, stock, precios ni usuarios asociados.",
+    "modal": {
+      "createTitle": "Nueva sucursal",
+      "editTitle": "Editar sucursal",
+      "name": "Nombre",
+      "namePlaceholder": "Ej: Sucursal Centro",
+      "nameRequired": "Ingresá el nombre",
+      "address": "Dirección",
+      "addressPlaceholder": "Ej: Av. Corrientes 1234",
+      "phone": "Teléfono",
+      "phonePlaceholder": "Ej: 67106933",
+      "startTime": "Horario de entrada",
+      "startTimeHint": "Solo informativo — se muestra junto al historial de asistencia, no marca tardanzas.",
+      "startTimePlaceholder": "Ej: 08:00",
+      "saveChanges": "Guardar cambios",
+      "create": "Crear sucursal"
+    },
+    "blockedModal": {
+      "title": "No se puede desactivar la sucursal",
+      "understood": "Entendido",
+      "body": "Hay {count} cajero(s) asignado(s) a <b>{name}</b>. Desactívalos o reasígnalos antes de continuar."
+    }
+  },
+  "settings": {
+    "tabs": {
+      "notifications": "Notificaciones",
+      "kitchen": "Cocina",
+      "bot": "Bot de IA",
+      "printer": "Impresora",
+      "devices": "Dispositivos"
+    },
+    "testConnection": "Probar conexión",
+    "testSuccess": "Mensaje enviado correctamente",
+    "kitchen": {
+      "title": "Cocina",
+      "description": "Configura el umbral de tiempo tras el cual un pedido se marca como demorado.",
+      "thresholdLabel": "Minutos para marcar como demorado",
+      "thresholdExtra": "Los pedidos que superen este tiempo se resaltan en rojo en la pantalla de cocina."
+    },
+    "printer": {
+      "title": "Impresora de tickets",
+      "description": "Impresora térmica Bluetooth usada por el POS para imprimir tickets de venta.",
+      "businessNameLabel": "Nombre comercial",
+      "businessNameExtra": "Se mostrará en el encabezado de cada ticket.",
+      "widthLabel": "Ancho de papel",
+      "widthExtra": "Si cambias de impresora (58mm ↔ 80mm), solo ajusta este valor.",
+      "width58": "58 mm (32 caracteres)",
+      "width80": "80 mm (48 caracteres)"
+    },
+    "telegram": {
+      "title": "Notificaciones Telegram",
+      "description": "Recibe alertas automáticas en Telegram cuando el stock de un insumo baje del mínimo.",
+      "botTokenLabel": "Bot Token",
+      "botTokenExtra": "Obtenlo creando un bot con @BotFather en Telegram.",
+      "chatIdLabel": "Chat ID",
+      "chatIdExtra": "ID numérico del chat o grupo. Para que varios admins reciban alertas, crea un grupo, agregá el bot y usá el ID del grupo.",
+      "enabledLabel": "Notificaciones habilitadas"
+    },
+    "errors": {
+      "loadSettings": "Error al cargar la configuración",
+      "saveSettings": "Error al guardar la configuración",
+      "saved": "Configuración guardada",
+      "testUnknownError": "Error desconocido",
+      "testConnFailed": "No se pudo conectar"
+    },
+    "bot": {
+      "title": "Bot de IA",
+      "description": "Permite consultar ventas, stock y reportes en lenguaje natural desde Telegram.",
+      "enableLabel": "Habilitar bot de IA",
+      "providerLabel": "Proveedor de IA",
+      "providerOpenAI": "Compatible con OpenAI (Qwen, Groq, etc.)",
+      "providerAnthropic": "Anthropic (Claude)",
+      "anthropicKeyLabel": "Anthropic API Key",
+      "apiKeyExtra": "Solo se actualiza si ingresás un nuevo valor.",
+      "apiKeyLabel": "API Key",
+      "baseUrlLabel": "Base URL",
+      "baseUrlExtra": "Para Qwen: dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "modelLabel": "Modelo",
+      "dailyLimits": "Límites diarios por plan",
+      "basicLimitLabel": "Plan Básico (msg/día)",
+      "proLimitLabel": "Plan Pro (msg/día)",
+      "loadError": "Error al cargar la configuración del bot",
+      "saveError": "Error al guardar",
+      "saved": "Configuración del bot guardada",
+      "models": {
+        "haiku": "Haiku (rápido, económico)",
+        "sonnet": "Sonnet (mayor precisión)",
+        "qwenPlus": "Qwen Plus (recomendado)",
+        "qwenTurbo": "Qwen Turbo (más rápido)",
+        "qwenMax": "Qwen Max (mayor precisión)",
+        "gpt4oMini": "GPT-4o Mini",
+        "gpt4o": "GPT-4o"
+      }
+    },
+    "chats": {
+      "title": "Chats autorizados",
+      "add": "Agregar chat",
+      "columns": {
+        "name": "Nombre",
+        "type": "Tipo",
+        "plan": "Plan",
+        "usageToday": "Uso hoy",
+        "active": "Activo"
+      },
+      "typeGroup": "Grupo",
+      "typePersonal": "Personal",
+      "planBasic": "Básico",
+      "planPro": "Pro",
+      "planUnlimited": "Sin límite",
+      "revokeConfirm": "¿Revocar acceso de este chat?",
+      "revoke": "Revocar",
+      "editTitle": "Editar chat autorizado",
+      "addTitle": "Agregar chat autorizado",
+      "authorize": "Autorizar",
+      "chatIdLabel": "Chat ID",
+      "chatIdRequired": "Ingresá el Chat ID",
+      "chatIdExtra": "ID numérico del usuario o grupo (los grupos tienen ID negativo).",
+      "typeLabel": "Tipo",
+      "nameLabel": "Nombre descriptivo",
+      "nameRequired": "Ingresá un nombre",
+      "namePlaceholder": "Dueño — Chat Personal",
+      "planLabel": "Plan",
+      "planBasicOption": "Básico (10 msg/día)",
+      "planProOption": "Pro (50 msg/día)",
+      "planUnlimitedOption": "Sin límite",
+      "usageTooltip": "{used} de {limit} mensajes hoy",
+      "loadError": "Error al cargar los chats autorizados",
+      "updated": "Chat actualizado",
+      "created": "Chat autorizado",
+      "saveError": "Error al guardar",
+      "statusError": "Error al cambiar el estado",
+      "revoked": "Acceso revocado",
+      "revokeError": "Error al revocar el acceso"
+    }
+  },
+  "devices": {
+    "title": "Dispositivos",
+    "new": "Agregar dispositivo",
+    "columns": {
+      "name": "Nombre",
+      "branch": "Sucursal",
+      "lastSeen": "Última conexión",
+      "active": "Activo"
+    },
+    "never": "Nunca",
+    "deleteConfirmTitle": "¿Eliminar este dispositivo?",
+    "deleteConfirmDesc": "Podrás reactivarlo después desde el switch.",
+    "modal": {
+      "createTitle": "Agregar dispositivo",
+      "editTitle": "Editar dispositivo",
+      "name": "Nombre",
+      "namePlaceholder": "Celular caja 1",
+      "nameRequired": "Ingresá un nombre",
+      "nameHint": "Ej: Celular caja 1 - Sucursal Centro",
+      "branch": "Sucursal",
+      "branchPlaceholder": "Seleccionar sucursal",
+      "branchRequired": "Seleccioná una sucursal",
+      "branchLockedHint": "La sucursal no se puede cambiar después de crear el dispositivo."
+    },
+    "apiKeyModal": {
+      "title": "Dispositivo creado",
+      "gotIt": "Ya lo copié",
+      "warning": "Copiá este API key ahora — no se puede volver a ver.",
+      "copied": "Copiado al portapapeles",
+      "hint": "Configurá este valor en la app del celular (URL del backend + este API key) para que pueda reportar los pagos de Yape."
+    }
+  },
+  "employees": {
+    "title": "Empleados",
+    "new": "Agregar empleado",
+    "columns": {
+      "name": "Nombre",
+      "position": "Puesto",
+      "branch": "Sucursal",
+      "active": "Activo"
+    },
+    "regenerateConfirmTitle": "¿Regenerar la credencial?",
+    "regenerateConfirmDesc": "La tarjeta QR y el código actuales dejarán de funcionar.",
+    "regenerate": "Regenerar",
+    "regenerateTooltip": "Regenerar credencial QR",
+    "modal": {
+      "createTitle": "Agregar empleado",
+      "editTitle": "Editar empleado",
+      "fullName": "Nombre completo",
+      "fullNameRequired": "Ingresá el nombre",
+      "fullNamePlaceholder": "Juan Pérez",
+      "position": "Puesto",
+      "positionRequired": "Ingresá el puesto",
+      "positionPlaceholder": "Ej: Delivery",
+      "branch": "Sucursal",
+      "branchRequired": "Seleccioná una sucursal",
+      "branchPlaceholder": "Seleccionar sucursal"
+    },
+    "credentialModal": {
+      "title": "Credencial del empleado",
+      "gotIt": "Ya la guardé",
+      "warning": "Descargá, imprimí o compartí esto ahora — no vas a poder volver a verlo. Si se pierde, regeneralo (esto invalida la credencial actual).",
+      "backupCodeLabel": "Código de respaldo (para tipear a mano)",
+      "copyCode": "Copiar código",
+      "copyCodeSuccess": "Código copiado al portapapeles",
+      "print": "Imprimir",
+      "downloadQr": "Descargar QR",
+      "share": "Compartir",
+      "shareTitle": "Credencial de fichaje"
+    }
+  },
+  "warehouse": {
+    "title": "Bodega Central",
+    "lowStockAlert": "{count, plural, one {# insumo bajo mínimo} other {# insumos bajo mínimo}}",
+    "lowStockAlertProduct": "{count, plural, one {# producto bajo mínimo} other {# productos bajo mínimo}}",
+    "history": "Historial",
+    "newPurchase": "Nueva compra",
+    "newPurchaseShort": "Compra",
+    "transfer": "Transferir",
+    "searchIngredient": "Buscar insumo...",
+    "status": "Estado",
+    "statusLow": "Stock bajo",
+    "statusOk": "OK",
+    "columns": {
+      "ingredient": "Insumo",
+      "product": "Producto",
+      "warehouseStock": "Stock bodega",
+      "minimum": "Mínimo",
+      "status": "Estado"
+    },
+    "lowStockTooltip": "Stock bajo el mínimo",
+    "adjust": "Ajustar",
+    "hasMovementsTooltip": "Tiene movimientos registrados",
+    "stockLabel": "Stock: ",
+    "minLabel": "Mínimo: ",
+    "totalIngredients": "{count, plural, one {# insumo en total} other {# insumos en total}}",
+    "totalProducts": "{count, plural, one {# producto} other {# productos}}",
+    "unitAbbrev": "unid.",
+    "noResaleProducts": "Sin productos de reventa en bodega. Registrá una compra primero.",
+    "adjustModalTitle": "Ajustar stock — {name}",
+    "realQuantity": "Cantidad real ({unit})",
+    "realQuantityUnits": "Cantidad real en bodega (unid.)",
+    "requiredQuantity": "Ingresá la cantidad real",
+    "adjustReason": "Motivo del ajuste",
+    "adjustReasonRequired": "El motivo es requerido",
+    "adjustReasonPlaceholder": "Ej: Conteo físico, merma, error de carga...",
+    "adjustReasonPlaceholderShort": "Ej: Conteo físico, merma, etc.",
+    "confirmAdjust": "Confirmar ajuste",
+    "minQtyModalTitle": "Stock mínimo — {name}",
+    "minQuantityLabel": "Cantidad mínima ({unit})",
+    "required": "Requerido",
+    "tabIngredients": "🧂 Insumos",
+    "tabProducts": "📦 Reventa",
+    "movements": {
+      "title": "Historial de movimientos — Bodega",
+      "origin": "Origen",
+      "originIngredient": "🧂 Insumo",
+      "originProduct": "📦 Reventa",
+      "type": "Tipo",
+      "ingredientOrProduct": "Insumo / Producto",
+      "destinationBranch": "Sucursal destino",
+      "loading": "Cargando...",
+      "columns": {
+        "date": "Fecha",
+        "type": "Tipo",
+        "origin": "Origen",
+        "detail": "Detalle",
+        "quantity": "Cantidad",
+        "destination": "Destino",
+        "notes": "Notas"
+      },
+      "types": {
+        "compra": "Compra",
+        "transferencia": "Transferencia",
+        "ajuste": "Ajuste"
+      }
+    },
+    "purchase": {
+      "title": "Registrar compra en bodega",
+      "success": "Compra registrada correctamente",
+      "ingredientLabel": "Insumo",
+      "ingredientRequired": "Seleccioná un insumo",
+      "ingredientPlaceholder": "Seleccionar insumo",
+      "productLabel": "Producto",
+      "productRequired": "Seleccioná un producto",
+      "productPlaceholder": "Seleccionar producto",
+      "currentStock": "Stock actual en bodega: ",
+      "quantityLabel": "Cantidad a ingresar",
+      "quantityRequired": "Ingresá la cantidad",
+      "quantityMin": "La cantidad debe ser mayor a 0",
+      "quantityPlaceholderIngredient": "Ej: 5000",
+      "quantityPlaceholderProduct": "Ej: 24",
+      "minQuantityLabel": "Stock mínimo",
+      "minQuantityTooltip": "Cantidad mínima en bodega antes de recibir alerta de stock bajo",
+      "minQuantityRequired": "Ingresá el mínimo",
+      "minQuantityPlaceholder": "Ej: 5",
+      "notes": "Notas",
+      "notesPlaceholder": "Ej: Proveedor X, factura #123",
+      "submit": "Registrar entrada"
+    },
+    "transferPage": {
+      "title": "Transferir a sucursal",
+      "success": "Transferencia realizada correctamente",
+      "available": "Disponible en bodega: ",
+      "quantityLabel": "Cantidad",
+      "quantityRequired": "Ingresá la cantidad",
+      "quantityPlaceholder": "Ej: 12",
+      "destinationLabel": "Destino",
+      "destinationRequired": "Seleccioná una sucursal",
+      "destinationPlaceholder": "Seleccionar sucursal",
+      "notes": "Notas",
+      "notesPlaceholder": "Opcional",
+      "submit": "Confirmar transferencia"
+    }
+  },
+  "attendance": {
+    "title": "Asistencia",
+    "expectedStart": "Horario de entrada: {time}",
+    "allBranches": "Todas las sucursales",
+    "columns": {
+      "employee": "Empleado",
+      "position": "Puesto",
+      "branch": "Sucursal",
+      "type": "Tipo",
+      "dateTime": "Fecha y hora"
+    },
+    "typeIn": "Entrada",
+    "typeOut": "Salida",
+    "scan": {
+      "registering": "Registrando...",
+      "manualCodeHint": "Ingresá tu código de respaldo para registrar tu entrada o salida",
+      "codePlaceholder": "Código",
+      "register": "Registrar",
+      "errorDefault": "Código no reconocido",
+      "welcomeMessage": "¡Bienvenido {name}! {type} registrada a las {time}"
+    }
+  },
+  "users": {
+    "title": "Usuarios",
+    "new": "Nuevo usuario",
+    "newShort": "Nuevo",
+    "editTitle": "Editar usuario",
+    "createTitle": "Nuevo usuario",
+    "fullNameLabel": "Nombre completo",
+    "fullNameRequired": "Ingresá el nombre del usuario",
+    "fullNamePlaceholder": "Ej: Juan Pérez",
+    "emailLabel": "Email",
+    "emailRequired": "Ingresá el email",
+    "emailInvalid": "Email inválido",
+    "emailPlaceholder": "usuario@ejemplo.com",
+    "passwordLabel": "Contraseña",
+    "passwordRequired": "Ingresá la contraseña",
+    "passwordMin": "Mínimo 6 caracteres",
+    "roleLabel": "Rol",
+    "roleRequired": "Seleccioná un rol",
+    "branchLabel": "Sucursal",
+    "branchRequired": "Seleccioná la sucursal",
+    "branchPlaceholder": "Seleccioná una sucursal",
+    "saveChanges": "Guardar cambios",
+    "createUser": "Crear usuario",
+    "reactivate": "Reactivar",
+    "deactivate": "Desactivar",
+    "reactivateConfirmTitle": "¿Reactivar cuenta?",
+    "deactivateConfirmTitle": "¿Desactivar cuenta?",
+    "reactivateDesc": "El usuario podrá volver a iniciar sesión.",
+    "deactivateDesc": "El usuario no podrá iniciar sesión hasta que se reactive.",
+    "deleteConfirmTitle": "¿Eliminar usuario?",
+    "deleteConfirmDesc": "Esta acción no se puede deshacer.",
+    "deleteBlockedTooltip": "No se puede eliminar: tiene ventas registradas",
+    "deleteTooltip": "Eliminar usuario",
+    "inactiveTag": "Inactivo",
+    "columns": {
+      "name": "Nombre",
+      "email": "Email",
+      "role": "Rol",
+      "branch": "Sucursal",
+      "createdAt": "Fecha de creación"
+    },
+    "roles": {
+      "cajero": "Cajero",
+      "cocinero": "Cocinero",
+      "admin": "Admin"
+    },
+    "toasts": {
+      "updated": "Usuario actualizado",
+      "created": "Usuario creado",
+      "saveError": "Error al guardar",
+      "accountReactivated": "Cuenta de {name} reactivada",
+      "accountDeactivated": "Cuenta de {name} desactivada",
+      "updateError": "Error al actualizar",
+      "deleted": "Usuario eliminado",
+      "deleteError": "Error al eliminar"
+    }
+  },
+  "variantTypes": {
+    "title": "Tipos de Variante",
+    "new": "Nuevo tipo",
+    "editTitle": "Editar tipo de variante",
+    "createTitle": "Nuevo tipo de variante",
+    "saveChanges": "Guardar cambios",
+    "nameLabel": "Nombre",
+    "nameRequired": "El nombre es requerido",
+    "namePlaceholder": "Ej: Personal, XL, Litro...",
+    "columns": {
+      "name": "Nombre",
+      "status": "Estado"
+    },
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "activate": "Activar",
+    "deactivate": "Desactivar",
+    "toasts": {
+      "updated": "Tipo actualizado",
+      "created": "Tipo creado",
+      "saveError": "Error al guardar",
+      "toggleError": "Error al cambiar estado"
+    }
   }
 }

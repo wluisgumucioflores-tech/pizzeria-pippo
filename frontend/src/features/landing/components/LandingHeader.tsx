@@ -17,7 +17,7 @@ export function LandingHeader({ phone }: Props) {
     <header className="fixed top-0 left-0 w-full z-50 bg-[#fcf9f8]/90 backdrop-blur-md border-b border-black/5">
       <nav className="max-w-6xl mx-auto flex justify-between items-center px-5 md:px-10 py-3">
         <a href="#inicio" className="flex items-center gap-2">
-          <Image src="/pippo.jpg" alt="Pippo Pizza" width={40} height={40} className="rounded-full object-cover" />
+          <Image src="/logo.png" alt="Pippo Pizza" width={40} height={40} className="rounded-full object-cover" />
           <span className="font-[var(--font-landing-heading)] font-extrabold text-lg text-[#b62409]">
             Pippo Pizza
           </span>

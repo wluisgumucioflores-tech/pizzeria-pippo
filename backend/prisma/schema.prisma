@@ -1,10 +1,12 @@
-// Prisma schema — refleja a mano las tablas reales de docs/database/schema-base.sql
-// (no se corrió `prisma db pull` todavía: falta un DATABASE_URL real, ver backend/.env)
+// Prisma schema — refleja a mano las tablas del Supabase de DESARROLLO,
+// reseteado 2026-08-09 con el schema multitenant-first (ver
+// docs/database/migrations/multitenant/001_initial_schema_multitenant.sql).
+// `business_id` es NOT NULL desde el día 1 en este entorno — a diferencia
+// del enfoque incremental (nullable → backfill → NOT NULL) que sí aplica
+// a producción, ver docs/plans/2026-06-09-multitenant-f0-f1-foundations.md.
 //
-// Alcance actual: tablas de reports (Fase 1), ingredients/products/stock/
-// warehouse/promotions/branches/variant_types/users/app_settings (Fase 3).
-// El resto de tablas (order_item_flavors, telegram_*, etc.) se agregan
-// cuando les toque su fase de migración.
+// No se corrió `prisma db pull` — se mantiene a mano para conservar los
+// nombres de modelo/relación ya usados en el código del backend.
 
 generator client {
   provider = "prisma-client-js"
@@ -16,6 +18,7 @@ datasource db {
 
 model Branch {
   id                String   @id @default(uuid()) @db.Uuid
+  businessId        String   @map("business_id") @db.Uuid
   name              String
   address           String?
   phone             String?
@@ -23,33 +26,36 @@ model Branch {
   isActive          Boolean  @default(true) @map("is_active")
   expectedStartTime String?  @map("expected_start_time")
 
-  profiles                 Profile[]
-  orders                   Order[]
-  promotions               Promotion[]
-  branchPrices             BranchPrice[]
-  branchStock              BranchStock[]
-  stockMovements           StockMovement[]
-  branchProductStock       BranchProductStock[]
-  productStockMovements    ProductStockMovement[]
-  warehouseMovements       WarehouseMovement[]
+  business                  Business                   @relation(fields: [businessId], references: [id])
+  profiles                  Profile[]
+  orders                    Order[]
+  promotions                Promotion[]
+  branchPrices              BranchPrice[]
+  branchStock               BranchStock[]
+  stockMovements            StockMovement[]
+  branchProductStock        BranchProductStock[]
+  productStockMovements     ProductStockMovement[]
+  warehouseMovements        WarehouseMovement[]
   warehouseProductMovements WarehouseProductMovement[]
-  devices                  Device[]
-  employees                Employee[]
-  attendanceRecords        AttendanceRecord[]
+  devices                   Device[]
+  employees                 Employee[]
+  attendanceRecords         AttendanceRecord[]
 
   @@map("branches")
 }
 
 model Employee {
-  id              String   @id @default(uuid()) @db.Uuid
-  branchId        String   @map("branch_id") @db.Uuid
-  fullName        String   @map("full_name")
-  position        String
-  credentialHash  String   @map("credential_hash")
-  manualCodeHash  String   @map("manual_code_hash")
-  isActive        Boolean  @default(true) @map("is_active")
-  createdAt       DateTime @default(now()) @map("created_at")
+  id             String   @id @default(uuid()) @db.Uuid
+  businessId     String   @map("business_id") @db.Uuid
+  branchId       String   @map("branch_id") @db.Uuid
+  fullName       String   @map("full_name")
+  position       String
+  credentialHash String   @map("credential_hash")
+  manualCodeHash String   @map("manual_code_hash")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
 
+  business          Business           @relation(fields: [businessId], references: [id])
   branch            Branch             @relation(fields: [branchId], references: [id])
   attendanceRecords AttendanceRecord[]
 
@@ -71,6 +77,7 @@ model AttendanceRecord {
 
 model Device {
   id         String    @id @default(uuid()) @db.Uuid
+  businessId String    @map("business_id") @db.Uuid
   branchId   String    @map("branch_id") @db.Uuid
   name       String
   apiKeyHash String    @map("api_key_hash")
@@ -78,7 +85,8 @@ model Device {
   lastSeenAt DateTime? @map("last_seen_at")
   createdAt  DateTime  @default(now()) @map("created_at")
 
-  branch Branch @relation(fields: [branchId], references: [id])
+  business Business @relation(fields: [businessId], references: [id])
+  branch   Branch   @relation(fields: [branchId], references: [id])
 
   @@map("devices")
 }
@@ -89,8 +97,21 @@ model Business {
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
 
-  profiles    Profile[]
-  appSettings AppSetting[]
+  profiles                  Profile[]
+  appSettings               AppSetting[]
+  branches                  Branch[]
+  employees                 Employee[]
+  devices                   Device[]
+  variantTypes              VariantType[]
+  ingredients               Ingredient[]
+  products                  Product[]
+  productVariants           ProductVariant[]
+  warehouseStock            WarehouseStock[]
+  warehouseMovements        WarehouseMovement[]
+  warehouseProductStock     WarehouseProductStock[]
+  warehouseProductMovements WarehouseProductMovement[]
+  promotions                Promotion[]
+  promotionRules            PromotionRule[]
 
   @@map("businesses")
 }
@@ -104,6 +125,10 @@ model Profile {
   branchId     String?  @map("branch_id") @db.Uuid
   fullName     String?  @map("full_name")
   createdAt    DateTime @default(now()) @map("created_at")
+  // Nullable solo para role = 'superadmin' — un superadmin no pertenece a
+  // ningún negocio. Para cualquier otro rol, la BD lo exige (CHECK
+  // profiles_business_id_required_unless_superadmin, ver
+  // docs/database/migrations/multitenant/002_superadmin_role.sql).
   businessId   String?  @map("business_id") @db.Uuid
 
   branch   Branch?   @relation(fields: [branchId], references: [id])
@@ -153,13 +178,15 @@ model TelegramUsage {
 }
 
 model Ingredient {
-  id           String   @id @default(uuid()) @db.Uuid
-  name         String
-  unit         String
-  createdAt    DateTime @default(now()) @map("created_at")
-  isActive     Boolean  @default(true) @map("is_active")
-  isSharedUse  Boolean  @default(false) @map("is_shared_use")
+  id          String   @id @default(uuid()) @db.Uuid
+  businessId  String   @map("business_id") @db.Uuid
+  name        String
+  unit        String
+  createdAt   DateTime @default(now()) @map("created_at")
+  isActive    Boolean  @default(true) @map("is_active")
+  isSharedUse Boolean  @default(false) @map("is_shared_use")
 
+  business           Business            @relation(fields: [businessId], references: [id])
   recipes            Recipe[]
   branchStock        BranchStock[]
   warehouseStock     WarehouseStock?
@@ -170,17 +197,22 @@ model Ingredient {
 }
 
 model VariantType {
-  id        String    @id @default(uuid()) @db.Uuid
-  name      String    @unique
-  sortOrder Int       @default(0) @map("sort_order")
-  isActive  Boolean   @default(true) @map("is_active")
-  createdAt DateTime? @default(now()) @map("created_at")
+  id         String    @id @default(uuid()) @db.Uuid
+  businessId String    @map("business_id") @db.Uuid
+  name       String
+  sortOrder  Int       @default(0) @map("sort_order")
+  isActive   Boolean   @default(true) @map("is_active")
+  createdAt  DateTime? @default(now()) @map("created_at")
 
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@unique([businessId, name])
   @@map("variant_types")
 }
 
 model Product {
   id          String   @id @default(uuid()) @db.Uuid
+  businessId  String   @map("business_id") @db.Uuid
   name        String
   category    String
   description String?
@@ -189,29 +221,32 @@ model Product {
   createdAt   DateTime @default(now()) @map("created_at")
   isActive    Boolean  @default(true) @map("is_active")
 
+  business Business         @relation(fields: [businessId], references: [id])
   variants ProductVariant[]
 
   @@map("products")
 }
 
 model ProductVariant {
-  id        String   @id @default(uuid()) @db.Uuid
-  productId String   @map("product_id") @db.Uuid
-  name      String
-  basePrice Decimal  @map("base_price")
-  createdAt DateTime @default(now()) @map("created_at")
-  isActive  Boolean  @default(true) @map("is_active")
+  id         String   @id @default(uuid()) @db.Uuid
+  businessId String   @map("business_id") @db.Uuid
+  productId  String   @map("product_id") @db.Uuid
+  name       String
+  basePrice  Decimal  @map("base_price")
+  createdAt  DateTime @default(now()) @map("created_at")
+  isActive   Boolean  @default(true) @map("is_active")
 
-  product                   Product                    @relation(fields: [productId], references: [id])
-  branchPrices              BranchPrice[]
-  recipes                   Recipe[]
-  orderItems                OrderItem[]
-  orderItemFlavors          OrderItemFlavor[]
-  promotionRules            PromotionRule[]
-  branchStock               BranchProductStock[]
-  stockMovements            ProductStockMovement[]
-  warehouseStock            WarehouseProductStock?
-  warehouseMovements        WarehouseProductMovement[]
+  business           Business                   @relation(fields: [businessId], references: [id])
+  product            Product                    @relation(fields: [productId], references: [id])
+  branchPrices       BranchPrice[]
+  recipes            Recipe[]
+  orderItems         OrderItem[]
+  orderItemFlavors   OrderItemFlavor[]
+  promotionRules     PromotionRule[]
+  branchStock        BranchProductStock[]
+  stockMovements     ProductStockMovement[]
+  warehouseStock     WarehouseProductStock?
+  warehouseMovements WarehouseProductMovement[]
 
   @@map("product_variants")
 }
@@ -306,11 +341,13 @@ model ProductStockMovement {
 
 model WarehouseStock {
   id           String   @id @default(uuid()) @db.Uuid
+  businessId   String   @map("business_id") @db.Uuid
   ingredientId String   @unique @map("ingredient_id") @db.Uuid
   quantity     Decimal  @default(0)
   minQuantity  Decimal  @default(0) @map("min_quantity")
   updatedAt    DateTime @default(now()) @map("updated_at")
 
+  business   Business   @relation(fields: [businessId], references: [id])
   ingredient Ingredient @relation(fields: [ingredientId], references: [id])
 
   @@map("warehouse_stock")
@@ -318,6 +355,7 @@ model WarehouseStock {
 
 model WarehouseMovement {
   id           String   @id @default(uuid()) @db.Uuid
+  businessId   String   @map("business_id") @db.Uuid
   ingredientId String   @map("ingredient_id") @db.Uuid
   quantity     Decimal
   type         String
@@ -326,6 +364,7 @@ model WarehouseMovement {
   createdBy    String?  @map("created_by") @db.Uuid
   createdAt    DateTime @default(now()) @map("created_at")
 
+  business   Business   @relation(fields: [businessId], references: [id])
   ingredient Ingredient @relation(fields: [ingredientId], references: [id])
   branch     Branch?    @relation(fields: [branchId], references: [id])
 
@@ -334,34 +373,39 @@ model WarehouseMovement {
 
 model WarehouseProductStock {
   id          String   @id @default(uuid()) @db.Uuid
+  businessId  String   @map("business_id") @db.Uuid
   variantId   String   @unique @map("variant_id") @db.Uuid
   quantity    Decimal  @default(0)
   minQuantity Decimal  @default(0) @map("min_quantity")
   updatedAt   DateTime @default(now()) @map("updated_at")
 
-  variant ProductVariant @relation(fields: [variantId], references: [id])
+  business Business       @relation(fields: [businessId], references: [id])
+  variant  ProductVariant @relation(fields: [variantId], references: [id])
 
   @@map("warehouse_product_stock")
 }
 
 model WarehouseProductMovement {
-  id        String   @id @default(uuid()) @db.Uuid
-  variantId String   @map("variant_id") @db.Uuid
-  quantity  Decimal
-  type      String
-  branchId  String?  @map("branch_id") @db.Uuid
-  notes     String?
-  createdBy String?  @map("created_by") @db.Uuid
-  createdAt DateTime @default(now()) @map("created_at")
+  id         String   @id @default(uuid()) @db.Uuid
+  businessId String   @map("business_id") @db.Uuid
+  variantId  String   @map("variant_id") @db.Uuid
+  quantity   Decimal
+  type       String
+  branchId   String?  @map("branch_id") @db.Uuid
+  notes      String?
+  createdBy  String?  @map("created_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
 
-  variant ProductVariant @relation(fields: [variantId], references: [id])
-  branch  Branch?        @relation(fields: [branchId], references: [id])
+  business Business       @relation(fields: [businessId], references: [id])
+  variant  ProductVariant @relation(fields: [variantId], references: [id])
+  branch   Branch?        @relation(fields: [branchId], references: [id])
 
   @@map("warehouse_product_movements")
 }
 
 model Promotion {
   id         String   @id @default(uuid()) @db.Uuid
+  businessId String   @map("business_id") @db.Uuid
   name       String
   type       String
   daysOfWeek Int[]    @map("days_of_week")
@@ -372,14 +416,16 @@ model Promotion {
   isActive   Boolean  @default(true) @map("is_active")
   createdAt  DateTime @default(now()) @map("created_at")
 
-  branch Branch?         @relation(fields: [branchId], references: [id])
-  rules  PromotionRule[]
+  business Business        @relation(fields: [businessId], references: [id])
+  branch   Branch?         @relation(fields: [branchId], references: [id])
+  rules    PromotionRule[]
 
   @@map("promotions")
 }
 
 model PromotionRule {
   id              String   @id @default(uuid()) @db.Uuid
+  businessId      String   @map("business_id") @db.Uuid
   promotionId     String   @map("promotion_id") @db.Uuid
   variantId       String?  @map("variant_id") @db.Uuid
   buyQty          Int?     @map("buy_qty")
@@ -389,6 +435,7 @@ model PromotionRule {
   category        String?
   variantSize     String?  @map("variant_size")
 
+  business  Business        @relation(fields: [businessId], references: [id])
   promotion Promotion       @relation(fields: [promotionId], references: [id])
   variant   ProductVariant? @relation(fields: [variantId], references: [id])
 
@@ -396,25 +443,25 @@ model PromotionRule {
 }
 
 model Order {
-  id            String    @id @default(uuid()) @db.Uuid
-  branchId      String    @map("branch_id") @db.Uuid
-  cashierId     String    @map("cashier_id") @db.Uuid
-  total         Decimal
-  createdAt     DateTime  @default(now()) @map("created_at")
-  kitchenStatus String    @default("pending") @map("kitchen_status")
-  dailyNumber   Int       @default(0) @map("daily_number")
-  paymentMethod String?   @map("payment_method")
-  paymentProvider String? @map("payment_provider")
-  orderType     String    @default("dine_in") @map("order_type")
-  cancelledAt   DateTime? @map("cancelled_at")
-  cancelledBy   String?   @map("cancelled_by") @db.Uuid
-  cancelReason  String?   @map("cancel_reason")
-  notes         String?   @map("notes")
-  idempotencyKey String?  @unique @map("idempotency_key")
+  id              String    @id @default(uuid()) @db.Uuid
+  branchId        String    @map("branch_id") @db.Uuid
+  cashierId       String    @map("cashier_id") @db.Uuid
+  total           Decimal
+  createdAt       DateTime  @default(now()) @map("created_at")
+  kitchenStatus   String    @default("pending") @map("kitchen_status")
+  dailyNumber     Int       @default(0) @map("daily_number")
+  paymentMethod   String?   @map("payment_method")
+  paymentProvider String?   @map("payment_provider")
+  orderType       String    @default("dine_in") @map("order_type")
+  cancelledAt     DateTime? @map("cancelled_at")
+  cancelledBy     String?   @map("cancelled_by") @db.Uuid
+  cancelReason    String?   @map("cancel_reason")
+  notes           String?   @map("notes")
+  idempotencyKey  String?   @unique @map("idempotency_key")
 
-  branch  Branch          @relation(fields: [branchId], references: [id])
-  cashier Profile         @relation(fields: [cashierId], references: [id])
-  items   OrderItem[]
+  branch   Branch         @relation(fields: [branchId], references: [id])
+  cashier  Profile        @relation(fields: [cashierId], references: [id])
+  items    OrderItem[]
   payments OrderPayment[]
 
   @@map("orders")
@@ -433,17 +480,17 @@ model OrderPayment {
 }
 
 model OrderItem {
-  id               String  @id @default(uuid()) @db.Uuid
-  orderId          String  @map("order_id") @db.Uuid
-  variantId        String  @map("variant_id") @db.Uuid
-  qty              Int
-  unitPrice        Decimal @map("unit_price")
-  discountApplied  Decimal @default(0) @map("discount_applied")
-  qtyPhysical      Int     @default(1) @map("qty_physical")
-  promoLabel       String? @map("promo_label")
+  id              String  @id @default(uuid()) @db.Uuid
+  orderId         String  @map("order_id") @db.Uuid
+  variantId       String  @map("variant_id") @db.Uuid
+  qty             Int
+  unitPrice       Decimal @map("unit_price")
+  discountApplied Decimal @default(0) @map("discount_applied")
+  qtyPhysical     Int     @default(1) @map("qty_physical")
+  promoLabel      String? @map("promo_label")
 
-  order   Order              @relation(fields: [orderId], references: [id])
-  variant ProductVariant     @relation(fields: [variantId], references: [id])
+  order   Order             @relation(fields: [orderId], references: [id])
+  variant ProductVariant    @relation(fields: [variantId], references: [id])
   flavors OrderItemFlavor[]
 
   @@map("order_items")

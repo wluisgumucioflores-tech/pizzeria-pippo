@@ -3,6 +3,7 @@ import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmployeesService } from '../employees/employees.service';
+import type { CurrentUserPayload } from '../auth/types/jwt.types';
 
 describe('AttendanceService', () => {
   let service: AttendanceService;
@@ -10,6 +11,15 @@ describe('AttendanceService', () => {
   let employeesService: { verifyCredential: jest.Mock };
 
   const employee = { id: 'e1', fullName: 'Juan Pérez', branchId: 'b1' };
+
+  const admin: CurrentUserPayload = {
+    id: 'u1',
+    email: 'admin@pippo.local',
+    role: 'admin',
+    branch_id: null,
+    full_name: 'Admin',
+    business_id: 'biz1',
+  };
 
   beforeEach(async () => {
     prisma = { attendanceRecord: { findFirst: jest.fn(), create: jest.fn(), findMany: jest.fn() } };
@@ -91,7 +101,7 @@ describe('AttendanceService', () => {
         },
       ]);
 
-      const result = await service.history({});
+      const result = await service.history({}, admin);
 
       expect(result).toEqual([
         {

@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { Row, Col, Tag, Typography, Space, Button, Skeleton } from "antd";
 import { ArrowLeftOutlined, EditOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { useProductDetail } from "@/features/products/hooks/useProductDetail";
 import { ProductImageCard } from "@/features/products/components/ProductImageCard";
@@ -15,9 +16,11 @@ export default function ProductDetailPage() {
   const router = useRouter();
   const isMobile = useIsMobile();
   const { product, loading } = useProductDetail(id);
+  const t = useTranslations("common");
+  const tp = useTranslations("products");
 
   if (loading) return <div style={{ padding: 24 }}><Skeleton active paragraph={{ rows: 8 }} /></div>;
-  if (!product) return <div style={{ padding: 24 }}><Text type="danger">Producto no encontrado.</Text></div>;
+  if (!product) return <div style={{ padding: 24 }}><Text type="danger">{tp("notFound")}</Text></div>;
 
   const imgSize = isMobile ? 140 : 220;
 
@@ -25,11 +28,11 @@ export default function ProductDetailPage() {
     <div style={{ padding: isMobile ? 16 : 24 }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 20 }}>
         <Space>
-          <Button icon={<ArrowLeftOutlined />} onClick={() => router.push("/products")}>Volver</Button>
+          <Button icon={<ArrowLeftOutlined />} onClick={() => router.push("/products")}>{t("back")}</Button>
           <Title level={4} style={{ margin: 0 }}>{product.name}</Title>
-          {!product.is_active && <Tag color="default">Inactivo</Tag>}
+          {!product.is_active && <Tag color="default">{tp("inactiveTag")}</Tag>}
         </Space>
-        <Button icon={<EditOutlined />} type="primary" onClick={() => router.push(`/products/${id}/edit`)}>Editar</Button>
+        <Button icon={<EditOutlined />} type="primary" onClick={() => router.push(`/products/${id}/edit`)}>{t("edit")}</Button>
       </div>
 
       <Row gutter={[16, 16]}>

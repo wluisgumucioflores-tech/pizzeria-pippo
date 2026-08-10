@@ -6,7 +6,7 @@ import { StockService } from '../stock/stock.service';
 import { AiProviderFactory } from './ai-providers/ai-provider.factory';
 
 describe('TelegramAiService', () => {
-  let prisma: { branch: { findMany: jest.Mock }; promotion: { findMany: jest.Mock } };
+  let prisma: { branch: { findMany: jest.Mock }; promotion: { findMany: jest.Mock }; business: { findFirst: jest.Mock } };
   let settingsService: { getRawSettingsForFirstBusiness: jest.Mock };
   let reportsService: { getSales: jest.Mock; getTopProducts: jest.Mock; getOrders: jest.Mock };
   let stockService: { list: jest.Mock; getAlerts: jest.Mock };
@@ -16,7 +16,11 @@ describe('TelegramAiService', () => {
   const mockAiClient = { complete: jest.fn() };
 
   beforeEach(() => {
-    prisma = { branch: { findMany: jest.fn().mockResolvedValue([]) }, promotion: { findMany: jest.fn() } };
+    prisma = {
+      branch: { findMany: jest.fn().mockResolvedValue([]) },
+      promotion: { findMany: jest.fn() },
+      business: { findFirst: jest.fn().mockResolvedValue({ id: 'biz1' }) },
+    };
     settingsService = { getRawSettingsForFirstBusiness: jest.fn() };
     reportsService = { getSales: jest.fn(), getTopProducts: jest.fn(), getOrders: jest.fn() };
     stockService = { list: jest.fn(), getAlerts: jest.fn() };
@@ -57,7 +61,10 @@ describe('TelegramAiService', () => {
 
     const result = await service.processMessage('¿cuánto vendí hoy?');
 
-    expect(reportsService.getSales).toHaveBeenCalledWith({ branchId: undefined, from: '2026-07-14', to: '2026-07-14' });
+    expect(reportsService.getSales).toHaveBeenCalledWith(
+      { branchId: undefined, from: '2026-07-14', to: '2026-07-14' },
+      expect.objectContaining({ business_id: 'biz1' }),
+    );
     expect(result.content).toContain('Bs 150.50');
     expect(result.content).toContain('Órdenes: 3');
   });

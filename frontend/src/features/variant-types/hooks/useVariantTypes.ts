@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { notification } from "antd";
+import { useTranslations } from "next-intl";
 import { VariantTypesService } from "../services/variant-types.service";
 import type { VariantType } from "../types/variant-type.types";
 
 export function useVariantTypes() {
+  const t = useTranslations("variantTypes.toasts");
   const [variantTypes, setVariantTypes] = useState<VariantType[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -33,11 +35,11 @@ export function useVariantTypes() {
     setSaving(false);
 
     if (result.ok) {
-      notification.success({ message: editing ? "Tipo actualizado" : "Tipo creado" });
+      notification.success({ message: editing ? t("updated") : t("created") });
       closeModal();
       load();
     } else {
-      notification.error({ message: result.error ?? "Error al guardar" });
+      notification.error({ message: result.error ?? t("saveError") });
     }
   };
 
@@ -46,7 +48,7 @@ export function useVariantTypes() {
     if (result.ok) {
       load();
     } else {
-      notification.error({ message: result.error ?? "Error al cambiar estado" });
+      notification.error({ message: result.error ?? t("toggleError") });
     }
   };
 

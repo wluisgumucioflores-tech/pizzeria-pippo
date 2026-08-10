@@ -2,9 +2,10 @@
 
 import { memo, useMemo, useCallback } from "react";
 import { Select, DatePicker, Button, Space, Typography } from "antd";
+import { useTranslations } from "next-intl";
 import type { Dayjs } from "dayjs";
 
-import { PRESET_RANGES } from "../hooks/useReportFilters";
+import { getPresetRanges } from "../hooks/useReportFilters";
 import type { Branch } from "../types/reports.types";
 
 const { Title } = Typography;
@@ -25,16 +26,19 @@ function ReportFiltersComponent({
   onBranchChange,
   onDateRangeChange,
 }: Props) {
+  const t = useTranslations("reports");
 
   const branchOptions = useMemo(() => {
     return [
-      { value: "all", label: "Todas las sucursales" },
+      { value: "all", label: t("allBranches") },
       ...branches.map((b) => ({
         value: b.id,
         label: b.name,
       })),
     ];
-  }, [branches]);
+  }, [branches, t]);
+
+  const presetRanges = useMemo(() => getPresetRanges(t), [t]);
 
   const handleRangeChange = useCallback(
     (dates: null | (Dayjs | null)[]) => {
@@ -57,12 +61,12 @@ function ReportFiltersComponent({
       }}
     >
       <Title level={4} style={{ margin: 0 }}>
-        Reportes
+        {t("title")}
       </Title>
 
       <Space wrap>
 
-        {PRESET_RANGES.map((p) => (
+        {presetRanges.map((p) => (
           <Button
             key={p.label}
             size="small"

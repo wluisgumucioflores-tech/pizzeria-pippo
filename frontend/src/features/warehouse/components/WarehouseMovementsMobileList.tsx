@@ -1,7 +1,8 @@
 "use client";
 
 import { Typography, Tag, Space } from "antd";
-import { MOVEMENT_TYPE_COLORS, MOVEMENT_TYPE_LABELS } from "../types/warehouse-movements.types";
+import { useTranslations } from "next-intl";
+import { MOVEMENT_TYPE_COLORS, getMovementTypeLabels } from "../types/warehouse-movements.types";
 import type { UnifiedMovement } from "../types/warehouse-movements.types";
 
 const { Text } = Typography;
@@ -12,8 +13,11 @@ interface Props {
 }
 
 export function WarehouseMovementsMobileList({ movements, loading }: Props) {
+  const t = useTranslations("warehouse.movements");
+  const MOVEMENT_TYPE_LABELS = getMovementTypeLabels(t);
+
   if (loading) {
-    return <div style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>Cargando...</div>;
+    return <div style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>{t("loading")}</div>;
   }
 
   return (
@@ -26,8 +30,8 @@ export function WarehouseMovementsMobileList({ movements, loading }: Props) {
               <Space size={4}>
                 <Tag color={MOVEMENT_TYPE_COLORS[r.type]} style={{ margin: 0 }}>{MOVEMENT_TYPE_LABELS[r.type] ?? r.type}</Tag>
                 {r.origin === "ingredient"
-                  ? <Tag color="default" style={{ margin: 0 }}>🧂 Insumo</Tag>
-                  : <Tag color="purple" style={{ margin: 0 }}>📦 Reventa</Tag>}
+                  ? <Tag color="default" style={{ margin: 0 }}>{t("originIngredient")}</Tag>
+                  : <Tag color="purple" style={{ margin: 0 }}>{t("originProduct")}</Tag>}
               </Space>
               <Text type="secondary" style={{ fontSize: 12 }}>{new Date(r.created_at).toLocaleString("es-BO")}</Text>
             </div>

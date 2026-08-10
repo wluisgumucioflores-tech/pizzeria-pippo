@@ -1,35 +1,49 @@
 "use client";
 
-import { Card, Form, Select, Button, Typography, Skeleton } from "antd";
+import { Card, Form, Select, Button, Typography, Skeleton, Input } from "antd";
 import { SaveOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import { useSettings } from "@/features/settings/hooks/useSettings";
 
 const { Title, Text } = Typography;
 
 export function PrinterSettingsForm() {
+  const t = useTranslations("settings.printer");
+  const tc = useTranslations("common");
   const { settings, loading, saving, handleChange, handleSave } = useSettings();
 
   if (loading) return <Skeleton active paragraph={{ rows: 3 }} />;
 
   return (
     <Card style={{ maxWidth: 400 }}>
-      <Title level={4} style={{ marginBottom: 4 }}>Impresora de tickets</Title>
+      <Title level={4} style={{ marginBottom: 4 }}>{t("title")}</Title>
       <Text type="secondary" style={{ display: "block", marginBottom: 24 }}>
-        Impresora térmica Bluetooth usada por el POS para imprimir tickets de venta.
+        {t("description")}
       </Text>
 
       <Form layout="vertical" onFinish={handleSave}>
         <Form.Item
-          label="Ancho de papel"
-          extra="Si cambias de impresora (58mm ↔ 80mm), solo ajusta este valor."
+          label={t("businessNameLabel")}
+          extra={t("businessNameExtra")}
+        >
+          <Input
+            value={settings.printer_business_name}
+            onChange={(event) => handleChange("printer_business_name", event.target.value)}
+            maxLength={48}
+          />
+        </Form.Item>
+
+        <Form.Item
+          label={t("widthLabel")}
+          extra={t("widthExtra")}
         >
           <Select
             value={settings.printer_paper_width}
             onChange={(val) => handleChange("printer_paper_width", val)}
             style={{ width: 220 }}
             options={[
-              { value: 58, label: "58 mm (32 caracteres)" },
-              { value: 80, label: "80 mm (48 caracteres)" },
+              { value: 58, label: t("width58") },
+              { value: 80, label: t("width80") },
             ]}
           />
         </Form.Item>
@@ -40,7 +54,7 @@ export function PrinterSettingsForm() {
           loading={saving}
           onClick={handleSave}
         >
-          Guardar
+          {tc("save")}
         </Button>
       </Form>
     </Card>

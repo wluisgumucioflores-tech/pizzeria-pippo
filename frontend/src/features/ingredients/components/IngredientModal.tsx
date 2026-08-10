@@ -2,7 +2,8 @@
 
 import { Modal, Form, Input, Select, Checkbox, Button } from "antd";
 import type { FormInstance } from "antd";
-import { UNIT_OPTIONS } from "../constants/ingredient.constants";
+import { useTranslations } from "next-intl";
+import { getUnitOptions } from "../constants/ingredient.constants";
 import type { Ingredient } from "../types/ingredient.types";
 
 interface Props {
@@ -15,31 +16,36 @@ interface Props {
 }
 
 export function IngredientModal({ open, editing, saving, form, onClose, onSubmit }: Props) {
+  const t = useTranslations("common");
+  const ti = useTranslations("ingredients");
+  const tm = useTranslations("ingredients.modal");
+  const UNIT_OPTIONS = getUnitOptions(ti);
+
   return (
     <Modal
-      title={editing ? "Editar insumo" : "Nuevo insumo"}
+      title={editing ? tm("editTitle") : tm("createTitle")}
       open={open}
       onCancel={onClose}
       footer={null}
       destroyOnHidden
     >
       <Form form={form} layout="vertical" onFinish={onSubmit} className="mt-4">
-        <Form.Item label="Nombre" name="name" rules={[{ required: true, message: "Ingresá el nombre" }]}>
-          <Input placeholder="Ej: Harina, Mozzarella, Pepperoni" />
+        <Form.Item label={tm("name")} name="name" rules={[{ required: true, message: tm("nameRequired") }]}>
+          <Input placeholder={tm("namePlaceholder")} />
         </Form.Item>
-        <Form.Item label="Unidad de medida" name="unit" rules={[{ required: true, message: "Seleccioná la unidad" }]}>
-          <Select placeholder="Seleccionar unidad" options={UNIT_OPTIONS} />
+        <Form.Item label={tm("unit")} name="unit" rules={[{ required: true, message: tm("unitRequired") }]}>
+          <Select placeholder={tm("unitPlaceholder")} options={UNIT_OPTIONS} />
         </Form.Item>
         <Form.Item name="is_shared_use" valuePropName="checked">
           <Checkbox>
-            Se descuenta completo por pedido, no por sabor
-            <div className="text-xs text-gray-400">Usar para cajas/empaques — no aplica a masa, queso, toppings</div>
+            {tm("sharedUseLabel")}
+            <div className="text-xs text-gray-400">{tm("sharedUseHint")}</div>
           </Checkbox>
         </Form.Item>
         <div className="flex justify-end gap-2 mt-4">
-          <Button onClick={onClose}>Cancelar</Button>
+          <Button onClick={onClose}>{t("cancel")}</Button>
           <Button type="primary" htmlType="submit" loading={saving}>
-            {editing ? "Guardar cambios" : "Crear insumo"}
+            {editing ? tm("saveChanges") : tm("create")}
           </Button>
         </div>
       </Form>

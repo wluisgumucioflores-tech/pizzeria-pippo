@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { message } from "antd";
+import { useTranslations } from "next-intl";
 import { getBotSettings, saveBotSettings } from "../services/telegramBot.service";
-import { SETTINGS_KEYS, QWEN_BASE_URL, MODELS } from "../constants/bot-settings.constants";
+import { SETTINGS_KEYS, QWEN_BASE_URL, MODEL_VALUES } from "../constants/bot-settings.constants";
 import type { AIProvider, BotSettings } from "../types";
 
 export function useBotSettingsForm() {
+  const t = useTranslations("settings.bot");
   const [settings, setSettings] = useState<BotSettings>({
     telegram_ai_enabled: false,
     ai_provider: "openai_compatible",
@@ -36,11 +38,11 @@ export function useBotSettingsForm() {
         telegram_plan_pro_limit: parseInt(config["telegram_plan_pro_limit"] || "50", 10),
       });
     } catch {
-      message.error("Error al cargar la configuración del bot");
+      message.error(t("loadError"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -50,7 +52,7 @@ export function useBotSettingsForm() {
       // Auto-switch default model when provider changes
       if (field === "ai_provider") {
         const provider = value as AIProvider;
-        next.telegram_ai_model = MODELS[provider][0].value;
+        next.telegram_ai_model = MODEL_VALUES[provider][0];
         if (provider === "openai_compatible" && !next.openai_compatible_base_url) {
           next.openai_compatible_base_url = QWEN_BASE_URL;
         }
@@ -81,10 +83,10 @@ export function useBotSettingsForm() {
 
       await saveBotSettings(updates);
 
-      message.success("Configuración del bot guardada");
+      message.success(t("saved"));
       await load();
     } catch {
-      message.error("Error al guardar");
+      message.error(t("saveError"));
     } finally {
       setSaving(false);
     }

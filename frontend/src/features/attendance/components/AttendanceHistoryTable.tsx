@@ -1,6 +1,7 @@
 "use client";
 
 import { Table, Tag, Typography } from "antd";
+import { useTranslations } from "next-intl";
 import type { AttendanceRecord } from "../types/attendance.types";
 
 const { Text } = Typography;
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function AttendanceHistoryTable({ records, loading }: Props) {
+  const t = useTranslations("attendance");
   return (
     <Table
       dataSource={records}
@@ -18,18 +20,18 @@ export function AttendanceHistoryTable({ records, loading }: Props) {
       rowKey="id"
       size="small"
       columns={[
-        { title: "Empleado", dataIndex: "employee_name" },
-        { title: "Puesto", dataIndex: "position" },
-        { title: "Sucursal", dataIndex: "branch_name" },
+        { title: t("columns.employee"), dataIndex: "employee_name" },
+        { title: t("columns.position"), dataIndex: "position" },
+        { title: t("columns.branch"), dataIndex: "branch_name" },
         {
-          title: "Tipo",
+          title: t("columns.type"),
           dataIndex: "type",
           render: (type: string) => (
-            <Tag color={type === "entrada" ? "green" : "orange"}>{type === "entrada" ? "Entrada" : "Salida"}</Tag>
+            <Tag color={type === "entrada" ? "green" : "orange"}>{type === "entrada" ? t("typeIn") : t("typeOut")}</Tag>
           ),
         },
         {
-          title: "Fecha y hora",
+          title: t("columns.dateTime"),
           dataIndex: "created_at",
           render: (createdAt: string) => <Text>{new Date(createdAt).toLocaleString("es-BO")}</Text>,
         },

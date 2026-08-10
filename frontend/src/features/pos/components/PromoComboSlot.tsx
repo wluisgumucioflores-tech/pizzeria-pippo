@@ -2,6 +2,7 @@
 
 import { Typography, Tag } from "antd";
 import { CheckOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import type { PromotionRule } from "@/lib/promotions";
 import type { Product, Variant } from "../types/pos.types";
 import type { SlotSelection, FlavorEntry } from "../types/promo-combo.types";
@@ -9,16 +10,16 @@ import { PromoComboFlavorBuilder } from "./PromoComboFlavorBuilder";
 
 const { Text } = Typography;
 
-function buildSlotLabel(rule: PromotionRule, products: Product[]): string {
+function buildSlotLabel(rule: PromotionRule, products: Product[], t: ReturnType<typeof useTranslations>): string {
   if (rule.variant_id) {
     for (const p of products) {
       const v = p.product_variants.find((pv) => pv.id === rule.variant_id);
       if (v) return `${p.name} — ${v.name}`;
     }
-    return "Producto específico";
+    return t("comboSlot.specificProduct");
   }
   const parts = [rule.category, rule.variant_size].filter(Boolean);
-  return parts.length ? parts.join(" ") : "Cualquier producto";
+  return parts.length ? parts.join(" ") : t("comboSlot.anyProduct");
 }
 
 function getSlotOptions(rule: PromotionRule, products: Product[], branchId: string, getVariantPrice: (v: Variant, b: string) => number) {
@@ -58,9 +59,10 @@ export function PromoComboSlot({
   rule, idx, products, branchId, getVariantPrice,
   selected, showFlavorBuilder, onSelect, onRevealFlavorBuilder, onFlavorChange,
 }: Props) {
+  const t = useTranslations("pos");
   const options = getSlotOptions(rule, products, branchId, getVariantPrice);
   const isFixed = !!rule.variant_id;
-  const label = buildSlotLabel(rule, products);
+  const label = buildSlotLabel(rule, products, t);
   const isPizzaSlot = rule.category === "pizza" || (!rule.category && selected?.category === "pizza");
   const selectedProduct = selected ? products.find((p) => p.product_variants.some((v) => v.id === selected.variantId)) : null;
   const selectedVariant = selectedProduct?.product_variants.find((v) => v.id === selected?.variantId);
@@ -76,7 +78,7 @@ export function PromoComboSlot({
           }
         </div>
         <Text strong style={{ fontSize: 13, color: selected ? "#c2410c" : "#374151" }}>{label}</Text>
-        {isFixed && <Tag color="blue" style={{ margin: 0, fontSize: 10 }}>Fijo</Tag>}
+        {isFixed && <Tag color="blue" style={{ margin: 0, fontSize: 10 }}>{t("comboSlot.fixed")}</Tag>}
       </div>
 
       {/* Selected summary (fixed slots) */}
@@ -125,7 +127,7 @@ export function PromoComboSlot({
                   onClick={() => onRevealFlavorBuilder(idx)}
                   style={{ fontSize: 12, color: "#ea580c", background: "none", border: "none", cursor: "pointer", padding: 0, textDecoration: "underline" }}
                 >
-                  + Pizza mixta (combinar sabores)
+                  {t("comboSlot.addMixedPizza")}
                 </button>
               ) : (
                 <PromoComboFlavorBuilder

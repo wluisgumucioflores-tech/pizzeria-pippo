@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import type { ListProductStockQueryDto } from './dto/list-product-stock-query.dto';
 import type { ListProductMovementsQueryDto } from './dto/list-product-movements-query.dto';
 import type { PurchaseProductStockDto } from './dto/purchase-product-stock.dto';
@@ -11,9 +12,9 @@ import type { ProductMovementListResult } from './types/product-movement.types';
 export class ProductStockService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async list(query: ListProductStockQueryDto): Promise<{ data: ProductStockRow[]; total: number }> {
+  async list(query: ListProductStockQueryDto, user: CurrentUserPayload): Promise<{ data: ProductStockRow[]; total: number }> {
     const rows = await this.prisma.branchProductStock.findMany({
-      where: { branchId: query.branchId },
+      where: { branch: { businessId: this.resolveBusinessId(user) }, branchId: query.branchId },
       orderBy: { variantId: 'asc' },
       include: { variant: { include: { product: true } } },
     });
@@ -36,9 +37,13 @@ export class ProductStockService {
     return { data: filtered, total: filtered.length };
   }
 
-  async getResaleVariants(): Promise<ResaleVariantRow[]> {
+  async getResaleVariants(user: CurrentUserPayload): Promise<ResaleVariantRow[]> {
     const variants = await this.prisma.productVariant.findMany({
-      where: { isActive: true, product: { isActive: true, productType: 'resale' } },
+      where: {
+        businessId: this.resolveBusinessId(user),
+        isActive: true,
+        product: { isActive: true, productType: 'resale' },
+      },
       orderBy: { id: 'asc' },
       include: { product: true },
     });
@@ -50,10 +55,13 @@ export class ProductStockService {
     }));
   }
 
-  async getMovements(query: ListProductMovementsQueryDto): Promise<ProductMovementListResult> {
+  async getMovements(query: ListProductMovementsQueryDto, user: CurrentUserPayload): Promise<ProductMovementListResult> {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 10;
-    const where = query.branchId ? { branchId: query.branchId } : {};
+    const where = {
+      branch: { businessId: this.resolveBusinessId(user) },
+      ...(query.branchId ? { branchId: query.branchId } : {}),
+    };
 
     const [rows, total] = await Promise.all([
       this.prisma.productStockMovement.findMany({
@@ -85,7 +93,9 @@ export class ProductStockService {
     };
   }
 
-  async purchase(dto: PurchaseProductStockDto, userId: string): Promise<void> {
+  async purchase(dto: PurchaseProductStockDto, user: CurrentUserPayload): Promise<void> {
+    await this.assertBranchOwnership(dto.branch_id, user);
+
     const existing = await this.prisma.branchProductStock.findUnique({
       where: { branchId_variantId: { branchId: dto.branch_id, variantId: dto.variant_id } },
     });
@@ -112,7 +122,7 @@ export class ProductStockService {
         variantId: dto.variant_id,
         quantity: dto.quantity,
         type: 'compra',
-        createdBy: userId,
+        createdBy: user.id,
       },
     });
   }
@@ -120,7 +130,9 @@ export class ProductStockService {
   // Not every product arrives via a warehouse transfer — some get bought
   // directly at the branch, so there may be no branch_product_stock row yet.
   // Adjust upserts (same as purchase()) instead of requiring a prior transfer.
-  async adjust(dto: AdjustProductStockDto, userId: string): Promise<{ difference: number }> {
+  async adjust(dto: AdjustProductStockDto, user: CurrentUserPayload): Promise<{ difference: number }> {
+    await this.assertBranchOwnership(dto.branch_id, user);
+
     const existing = await this.prisma.branchProductStock.findUnique({
       where: { branchId_variantId: { branchId: dto.branch_id, variantId: dto.variant_id } },
     });
@@ -150,14 +162,39 @@ export class ProductStockService {
         quantity: difference,
         type: 'ajuste',
         notes: dto.notes ?? null,
-        createdBy: userId,
+        createdBy: user.id,
       },
     });
 
     return { difference };
   }
 
-  async updateMinQuantity(id: string, minQuantity: number): Promise<void> {
+  async updateMinQuantity(id: string, minQuantity: number, user: CurrentUserPayload): Promise<void> {
+    const businessId = this.resolveBusinessId(user);
+    const row = await this.prisma.branchProductStock.findUnique({
+      where: { id },
+      select: { branch: { select: { businessId: true } } },
+    });
+    if (!row || row.branch.businessId !== businessId) {
+      throw new NotFoundException('Registro de stock no encontrado');
+    }
     await this.prisma.branchProductStock.update({ where: { id }, data: { minQuantity } });
+  }
+
+  private resolveBusinessId(user: CurrentUserPayload): string {
+    if (!user.business_id) {
+      throw new InternalServerErrorException('El usuario no tiene un negocio asociado');
+    }
+    return user.business_id;
+  }
+
+  // Evita que un usuario del negocio B escriba stock de reventa en una
+  // sucursal del negocio A pasando su branch_id directamente en el body.
+  private async assertBranchOwnership(branchId: string, user: CurrentUserPayload): Promise<void> {
+    const businessId = this.resolveBusinessId(user);
+    const branch = await this.prisma.branch.findUnique({ where: { id: branchId }, select: { businessId: true } });
+    if (!branch || branch.businessId !== businessId) {
+      throw new NotFoundException('Sucursal no encontrada');
+    }
   }
 }

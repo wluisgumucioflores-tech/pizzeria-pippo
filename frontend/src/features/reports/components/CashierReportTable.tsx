@@ -2,6 +2,7 @@
 
 import { Row, Col, Card, Statistic, Space, Typography, Avatar, Collapse, Table, Tag } from "antd";
 import { UserOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/lib/useIsMobile";
 import type { CashierReport, TopProduct } from "../types/reports.types";
 
@@ -11,38 +12,42 @@ const CATEGORY_COLOR: Record<string, string> = {
   pizza: "red", bebida: "blue", otro: "green",
 };
 
-const cashierItemColumns = [
-  {
-    title: "Producto",
-    key: "product",
-    render: (_: unknown, r: TopProduct) => (
-      <Space direction="vertical" size={0}>
-        <Text strong>{r.product_name}</Text>
-        <Text type="secondary" style={{ fontSize: 11 }}>{r.variant_name}</Text>
-      </Space>
-    ),
-  },
-  {
-    title: "Categoría",
-    dataIndex: "category",
-    key: "category",
-    render: (cat: string) => <Tag color={CATEGORY_COLOR[cat] ?? "default"}>{cat}</Tag>,
-  },
-  {
-    title: "Unidades",
-    dataIndex: "qty",
-    key: "qty",
-    sorter: (a: TopProduct, b: TopProduct) => b.qty - a.qty,
-    render: (qty: number) => <Text strong>{qty}</Text>,
-  },
-  {
-    title: "Ingresos",
-    dataIndex: "revenue",
-    key: "revenue",
-    sorter: (a: TopProduct, b: TopProduct) => b.revenue - a.revenue,
-    render: (rev: number) => <Text strong style={{ color: "#f97316" }}>Bs {rev.toFixed(2)}</Text>,
-  },
-];
+type ReportsTranslator = ReturnType<typeof useTranslations>;
+
+function buildCashierItemColumns(t: ReportsTranslator) {
+  return [
+    {
+      title: t("columns.product"),
+      key: "product",
+      render: (_: unknown, r: TopProduct) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{r.product_name}</Text>
+          <Text type="secondary" style={{ fontSize: 11 }}>{r.variant_name}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: t("columns.category"),
+      dataIndex: "category",
+      key: "category",
+      render: (cat: string) => <Tag color={CATEGORY_COLOR[cat] ?? "default"}>{cat}</Tag>,
+    },
+    {
+      title: t("columns.units"),
+      dataIndex: "qty",
+      key: "qty",
+      sorter: (a: TopProduct, b: TopProduct) => b.qty - a.qty,
+      render: (qty: number) => <Text strong>{qty}</Text>,
+    },
+    {
+      title: t("columns.revenue"),
+      dataIndex: "revenue",
+      key: "revenue",
+      sorter: (a: TopProduct, b: TopProduct) => b.revenue - a.revenue,
+      render: (rev: number) => <Text strong style={{ color: "#f97316" }}>Bs {rev.toFixed(2)}</Text>,
+    },
+  ];
+}
 
 interface Props {
   cashierReports: CashierReport[];
@@ -50,13 +55,15 @@ interface Props {
 }
 
 export function CashierReportTable({ cashierReports, loading }: Props) {
+  const t = useTranslations("reports");
   const isMobile = useIsMobile();
+  const cashierItemColumns = buildCashierItemColumns(t);
 
   if (cashierReports.length === 0 && !loading) {
     return (
       <Card>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 160, color: "#9ca3af" }}>
-          Sin ventas para el período seleccionado
+          {t("summary.noSalesPeriod")}
         </div>
       </Card>
     );
@@ -75,10 +82,10 @@ export function CashierReportTable({ cashierReports, loading }: Props) {
                 </Space>
                 <Row gutter={8}>
                   <Col span={12}>
-                    <Statistic title="Ventas" value={c.total} suffix="Bs" precision={2} valueStyle={{ color: "#f97316", fontSize: 18 }} />
+                    <Statistic title={t("cashier.sales")} value={c.total} suffix="Bs" precision={2} valueStyle={{ color: "#f97316", fontSize: 18 }} />
                   </Col>
                   <Col span={12}>
-                    <Statistic title="Órdenes" value={c.orders} valueStyle={{ fontSize: 18 }} />
+                    <Statistic title={t("cashier.orders")} value={c.orders} valueStyle={{ fontSize: 18 }} />
                   </Col>
                 </Row>
               </Space>
@@ -95,7 +102,7 @@ export function CashierReportTable({ cashierReports, loading }: Props) {
             <Space wrap>
               <Avatar size="small" icon={<UserOutlined />} style={{ backgroundColor: "#f97316" }} />
               <Text strong>{c.cashier_name}</Text>
-              <Text type="secondary">— {c.orders} órdenes</Text>
+              <Text type="secondary">— {t("cashier.ordersCount", { count: c.orders })}</Text>
               <Text style={{ color: "#f97316", fontWeight: 600 }}>Bs {c.total.toFixed(2)}</Text>
             </Space>
           ),
@@ -112,7 +119,7 @@ export function CashierReportTable({ cashierReports, loading }: Props) {
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <Text strong style={{ color: "#f97316", display: "block" }}>Bs {r.revenue.toFixed(2)}</Text>
-                    <Text type="secondary" style={{ fontSize: 12 }}>{r.qty} uds.</Text>
+                    <Text type="secondary" style={{ fontSize: 12 }}>{r.qty} {t("unitsShort")}</Text>
                   </div>
                 </div>
               ))}

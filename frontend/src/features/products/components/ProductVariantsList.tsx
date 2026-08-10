@@ -1,25 +1,10 @@
 "use client";
 
 import { Card, Space, Tag, Typography, Table } from "antd";
+import { useTranslations } from "next-intl";
 import type { ProductDetailVariant, ProductDetailRecipeItem } from "../types/product.types";
 
 const { Text } = Typography;
-
-const CONDITION_LABELS: Record<string, string> = { always: "Siempre", takeaway: "Solo llevar", dine_in: "Solo local" };
-
-const recipeColumns = [
-  { title: "Insumo", key: "name", render: (_: unknown, r: ProductDetailRecipeItem) => <Text>{r.ingredients?.name}</Text> },
-  { title: "Unidad", key: "unit", render: (_: unknown, r: ProductDetailRecipeItem) => <Tag>{r.ingredients?.unit}</Tag> },
-  { title: "Cantidad", dataIndex: "quantity", key: "quantity", render: (q: number) => <Text strong>{q}</Text> },
-  {
-    title: "Condición", key: "condition",
-    render: (_: unknown, r: ProductDetailRecipeItem) => (
-      <Tag color={r.apply_condition === "takeaway" ? "blue" : r.apply_condition === "dine_in" ? "orange" : "default"}>
-        {CONDITION_LABELS[r.apply_condition ?? "always"] ?? r.apply_condition}
-      </Tag>
-    ),
-  },
-];
 
 interface Props {
   variants: ProductDetailVariant[];
@@ -27,13 +12,31 @@ interface Props {
 }
 
 export function ProductVariantsList({ variants, isMobile }: Props) {
+  const t = useTranslations("products");
+  const tc = useTranslations("products.variants.conditions");
+  const CONDITION_LABELS: Record<string, string> = { always: tc("always"), takeaway: tc("takeaway"), dine_in: tc("dine_in") };
+
+  const recipeColumns = [
+    { title: t("recipe.ingredient"), key: "name", render: (_: unknown, r: ProductDetailRecipeItem) => <Text>{r.ingredients?.name}</Text> },
+    { title: t("columns.unit"), key: "unit", render: (_: unknown, r: ProductDetailRecipeItem) => <Tag>{r.ingredients?.unit}</Tag> },
+    { title: t("recipe.quantity"), dataIndex: "quantity", key: "quantity", render: (q: number) => <Text strong>{q}</Text> },
+    {
+      title: t("columns.condition"), key: "condition",
+      render: (_: unknown, r: ProductDetailRecipeItem) => (
+        <Tag color={r.apply_condition === "takeaway" ? "blue" : r.apply_condition === "dine_in" ? "orange" : "default"}>
+          {CONDITION_LABELS[r.apply_condition ?? "always"] ?? r.apply_condition}
+        </Tag>
+      ),
+    },
+  ];
+
   return (
     <Space direction="vertical" style={{ width: "100%" }} size={12}>
       {variants?.map((variant) => (
         <Card
           key={variant.id}
           size="small"
-          title={<Space><Text strong style={{ fontSize: 15 }}>{variant.name}</Text>{!variant.is_active && <Tag color="default">Inactiva</Tag>}</Space>}
+          title={<Space><Text strong style={{ fontSize: 15 }}>{variant.name}</Text>{!variant.is_active && <Tag color="default">{t("inactiveTag")}</Tag>}</Space>}
           extra={
             <Space wrap>
               {variant.branch_prices?.length > 0
@@ -47,7 +50,7 @@ export function ProductVariantsList({ variants, isMobile }: Props) {
         >
           {variant.recipes?.length > 0 ? (
             <>
-              <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 8 }}>Receta interna</Text>
+              <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 8 }}>{t("variants.recipeTitle")}</Text>
               {isMobile ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {variant.recipes.map((r) => (
@@ -70,7 +73,7 @@ export function ProductVariantsList({ variants, isMobile }: Props) {
               )}
             </>
           ) : (
-            <Text type="secondary">Sin receta registrada</Text>
+            <Text type="secondary">{t("noRecipe")}</Text>
           )}
         </Card>
       ))}

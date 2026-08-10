@@ -1,7 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PasswordHasherService } from '../auth/password/password-hasher.service';
+import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import type { UserResult } from './types/user-result.types';
 import type { CreateUserDto } from './dto/create-user.dto';
 import type { UpdateUserDto } from './dto/update-user.dto';
@@ -13,12 +14,19 @@ export class UsersService {
     private readonly passwordHasher: PasswordHasherService,
   ) {}
 
-  async list(): Promise<UserResult[]> {
+  async list(user: CurrentUserPayload): Promise<UserResult[]> {
+    const businessId = this.resolveBusinessId(user);
+
     const [profiles, orders] = await Promise.all([
       this.prisma.profile.findMany({
+        where: { businessId },
         select: { id: true, email: true, fullName: true, role: true, branchId: true, createdAt: true, isBanned: true },
       }),
-      this.prisma.order.findMany({ select: { cashierId: true }, distinct: ['cashierId'] }),
+      this.prisma.order.findMany({
+        where: { branch: { businessId } },
+        select: { cashierId: true },
+        distinct: ['cashierId'],
+      }),
     ]);
 
     const cashierIdsWithOrders = new Set(orders.map((o) => o.cashierId));
@@ -35,12 +43,13 @@ export class UsersService {
     }));
   }
 
-  async create(dto: CreateUserDto): Promise<{ id: string }> {
+  async create(dto: CreateUserDto, user: CurrentUserPayload): Promise<{ id: string }> {
     const passwordHash = await this.passwordHasher.hash(dto.password);
 
     try {
       const profile = await this.prisma.profile.create({
         data: {
+          businessId: this.resolveBusinessId(user),
           email: dto.email,
           passwordHash,
           fullName: dto.full_name,
@@ -57,7 +66,15 @@ export class UsersService {
     }
   }
 
-  async update(id: string, dto: UpdateUserDto): Promise<void> {
+  private resolveBusinessId(user: CurrentUserPayload): string {
+    if (!user.business_id) {
+      throw new InternalServerErrorException('El usuario no tiene un negocio asociado');
+    }
+    return user.business_id;
+  }
+
+  async update(id: string, dto: UpdateUserDto, user: CurrentUserPayload): Promise<void> {
+    await this.assertOwnership(id, user);
     const passwordHash = dto.password ? await this.passwordHasher.hash(dto.password) : undefined;
 
     await this.prisma.profile.update({
@@ -71,11 +88,14 @@ export class UsersService {
     });
   }
 
-  async toggleBan(id: string, banned: boolean): Promise<void> {
+  async toggleBan(id: string, banned: boolean, user: CurrentUserPayload): Promise<void> {
+    await this.assertOwnership(id, user);
     await this.prisma.profile.update({ where: { id }, data: { isBanned: banned } });
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, user: CurrentUserPayload): Promise<void> {
+    await this.assertOwnership(id, user);
+
     const ordersCount = await this.prisma.order.count({ where: { cashierId: id } });
     if (ordersCount > 0) {
       throw new ConflictException(
@@ -83,5 +103,15 @@ export class UsersService {
       );
     }
     await this.prisma.profile.delete({ where: { id } });
+  }
+
+  // Evita que un admin del negocio B pueda editar/banear/borrar un usuario del
+  // negocio A conociendo su UUID — 404 en vez de 403 para no revelar que el id existe.
+  private async assertOwnership(id: string, user: CurrentUserPayload): Promise<void> {
+    const businessId = this.resolveBusinessId(user);
+    const profile = await this.prisma.profile.findUnique({ where: { id }, select: { businessId: true } });
+    if (!profile || profile.businessId !== businessId) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
   }
 }

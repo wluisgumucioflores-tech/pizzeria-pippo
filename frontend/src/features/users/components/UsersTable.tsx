@@ -2,7 +2,8 @@
 
 import { Table, Button, Space, Tag, Typography, Popconfirm, Tooltip } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined, StopOutlined, CheckCircleOutlined } from "@ant-design/icons";
-import { ROLE_COLORS, ROLE_LABELS } from "../constants/user.constants";
+import { useTranslations } from "next-intl";
+import { ROLE_COLORS, getRoleLabels } from "../constants/user.constants";
 import { useIsMobile } from "@/lib/useIsMobile";
 import type { User, Branch } from "../types/user.types";
 
@@ -20,24 +21,27 @@ interface Props {
 
 export function UsersTable({ users, branches, loading, onCreate, onEdit, onToggleBan, onDelete }: Props) {
   const isMobile = useIsMobile();
+  const t = useTranslations("common");
+  const tu = useTranslations("users");
+  const roleLabels = getRoleLabels(tu);
   const branchName = (id: string | null) =>
     id ? (branches.find((b) => b.id === id)?.name ?? "—") : "—";
 
   const renderActions = (record: User) => (
     <Space size={4}>
-      <Tooltip title="Editar">
+      <Tooltip title={t("edit")}>
         <Button icon={<EditOutlined />} size="small" onClick={() => onEdit(record)} />
       </Tooltip>
 
-      <Tooltip title={record.is_banned ? "Reactivar cuenta" : "Desactivar cuenta"}>
+      <Tooltip title={record.is_banned ? tu("reactivate") : tu("deactivate")}>
         <Popconfirm
-          title={record.is_banned ? "¿Reactivar cuenta?" : "¿Desactivar cuenta?"}
+          title={record.is_banned ? tu("reactivateConfirmTitle") : tu("deactivateConfirmTitle")}
           description={record.is_banned
-            ? "El usuario podrá volver a iniciar sesión."
-            : "El usuario no podrá iniciar sesión hasta que se reactive."}
+            ? tu("reactivateDesc")
+            : tu("deactivateDesc")}
           onConfirm={() => onToggleBan(record)}
-          okText={record.is_banned ? "Reactivar" : "Desactivar"}
-          cancelText="Cancelar"
+          okText={record.is_banned ? tu("reactivate") : tu("deactivate")}
+          cancelText={t("cancel")}
           okButtonProps={{ danger: !record.is_banned }}
         >
           <Button
@@ -48,13 +52,13 @@ export function UsersTable({ users, branches, loading, onCreate, onEdit, onToggl
         </Popconfirm>
       </Tooltip>
 
-      <Tooltip title={record.has_orders ? "No se puede eliminar: tiene ventas registradas" : "Eliminar usuario"}>
+      <Tooltip title={record.has_orders ? tu("deleteBlockedTooltip") : tu("deleteTooltip")}>
         <Popconfirm
-          title="¿Eliminar usuario?"
-          description="Esta acción no se puede deshacer."
+          title={tu("deleteConfirmTitle")}
+          description={tu("deleteConfirmDesc")}
           onConfirm={() => onDelete(record.id)}
-          okText="Eliminar"
-          cancelText="Cancelar"
+          okText={t("delete")}
+          cancelText={t("cancel")}
           okButtonProps={{ danger: true }}
           disabled={record.has_orders}
         >
@@ -71,7 +75,7 @@ export function UsersTable({ users, branches, loading, onCreate, onEdit, onToggl
 
   const columns = [
     {
-      title: "Nombre",
+      title: tu("columns.name"),
       dataIndex: "full_name",
       key: "full_name",
       sorter: (a: User, b: User) => a.full_name.localeCompare(b.full_name),
@@ -80,34 +84,34 @@ export function UsersTable({ users, branches, loading, onCreate, onEdit, onToggl
           <Text delete={record.is_banned} style={record.is_banned ? { color: "#9ca3af" } : {}}>
             {name || "—"}
           </Text>
-          {record.is_banned && <Tag color="default">Inactivo</Tag>}
+          {record.is_banned && <Tag color="default">{tu("inactiveTag")}</Tag>}
         </Space>
       ),
     },
-    { title: "Email", dataIndex: "email", key: "email" },
+    { title: tu("columns.email"), dataIndex: "email", key: "email" },
     {
-      title: "Rol",
+      title: tu("columns.role"),
       dataIndex: "role",
       key: "role",
       render: (role: string) => (
-        <Tag color={ROLE_COLORS[role] ?? "default"}>{ROLE_LABELS[role] ?? role}</Tag>
+        <Tag color={ROLE_COLORS[role] ?? "default"}>{roleLabels[role] ?? role}</Tag>
       ),
     },
     {
-      title: "Sucursal",
+      title: tu("columns.branch"),
       dataIndex: "branch_id",
       key: "branch_id",
       render: (id: string | null) => branchName(id),
     },
     {
-      title: "Fecha de creación",
+      title: tu("columns.createdAt"),
       dataIndex: "created_at",
       key: "created_at",
       render: (date: string) =>
         new Date(date).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }),
     },
     {
-      title: "Acciones",
+      title: t("actions"),
       key: "actions",
       width: 130,
       render: (_: unknown, record: User) => renderActions(record),
@@ -116,9 +120,9 @@ export function UsersTable({ users, branches, loading, onCreate, onEdit, onToggl
 
   const header = (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 8 }}>
-      <Title level={4} style={{ margin: 0 }}>Usuarios</Title>
+      <Title level={4} style={{ margin: 0 }}>{tu("title")}</Title>
       <Button type="primary" icon={<PlusOutlined />} onClick={onCreate}>
-        {isMobile ? "Nuevo" : "Nuevo usuario"}
+        {isMobile ? tu("newShort") : tu("new")}
       </Button>
     </div>
   );
@@ -128,7 +132,7 @@ export function UsersTable({ users, branches, loading, onCreate, onEdit, onToggl
       <>
         {header}
         {loading ? (
-          <div style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>Cargando...</div>
+          <div style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>{t("loading")}</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {users.map((user) => (
@@ -148,14 +152,14 @@ export function UsersTable({ users, branches, loading, onCreate, onEdit, onToggl
                       <Text strong style={{ fontSize: 15, textDecoration: user.is_banned ? "line-through" : "none", color: user.is_banned ? "#9ca3af" : undefined }}>
                         {user.full_name || "—"}
                       </Text>
-                      {user.is_banned && <Tag color="default" style={{ margin: 0 }}>Inactivo</Tag>}
+                      {user.is_banned && <Tag color="default" style={{ margin: 0 }}>{tu("inactiveTag")}</Tag>}
                     </Space>
                     <Text type="secondary" style={{ fontSize: 13, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {user.email}
                     </Text>
                     <div style={{ marginTop: 6, display: "flex", gap: 4, flexWrap: "wrap" }}>
                       <Tag color={ROLE_COLORS[user.role] ?? "default"} style={{ margin: 0 }}>
-                        {ROLE_LABELS[user.role] ?? user.role}
+                        {roleLabels[user.role] ?? user.role}
                       </Tag>
                       {user.branch_id && (
                         <Tag style={{ margin: 0 }}>{branchName(user.branch_id)}</Tag>

@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { message } from "antd";
+import { useTranslations } from "next-intl";
 import { ReportsService } from "../services/reports.service";
 import type { Order } from "../types/reports.types";
 
 export function useOrderCancellation(onSuccess: () => void) {
+  const t = useTranslations("reports");
   const [cancelModal, setCancelModal] = useState<Order | null>(null);
   const [cancelling, setCancelling] = useState(false);
 
@@ -18,10 +20,10 @@ export function useOrderCancellation(onSuccess: () => void) {
     setCancelling(false);
     if (result.ok) {
       setCancelModal(null);
-      message.success("Orden anulada correctamente. Stock restaurado.");
+      message.success(t("cancelSuccess"));
       onSuccess();
     } else {
-      message.error(result.error ?? "Error al anular la orden");
+      message.error(result.error ?? t("cancelError"));
     }
   };
 

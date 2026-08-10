@@ -2,16 +2,11 @@
 
 import { Button, Select, InputNumber, Typography } from "antd";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import { useIngredientSearch } from "../hooks/useIngredientSearch";
 import type { Variant, RecipeItem, Ingredient } from "../types/product.types";
 
 const { Text } = Typography;
-
-const CONDITION_OPTIONS = [
-  { value: "always", label: "Siempre" },
-  { value: "takeaway", label: "Para llevar" },
-  { value: "dine_in", label: "En local" },
-];
 
 interface Props {
   variants: Variant[];
@@ -32,6 +27,8 @@ export function ProductStepRecipes({
   onAddRecipeItem, onUpdateRecipeItem, onRemoveRecipeItem,
   onPrev, onSave,
 }: Props) {
+  const tf = useTranslations("products.form");
+
   return (
     <div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 12, marginBottom: 12 }}>
@@ -48,9 +45,9 @@ export function ProductStepRecipes({
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 24 }}>
-        <Button onClick={onPrev}>Anterior</Button>
+        <Button onClick={onPrev}>{tf("previous")}</Button>
         <Button type="primary" onClick={onSave} loading={saving} disabled={saving}>
-          {editing ? "Guardar cambios" : "Crear producto"}
+          {editing ? tf("saveChanges") : tf("createProduct")}
         </Button>
       </div>
     </div>
@@ -68,6 +65,14 @@ interface CardProps {
 function VariantRecipeCard({ variant, variantIndex, onAddRecipeItem, onUpdateRecipeItem, onRemoveRecipeItem }: CardProps) {
   const usedIngredientIds = variant.recipes.map((r) => r.ingredient_id);
   const { options, loading, search } = useIngredientSearch();
+  const t = useTranslations("products");
+  const tf = useTranslations("products.form");
+  const tc = useTranslations("products.variants.conditions");
+  const CONDITION_OPTIONS = [
+    { value: "always", label: tc("always") },
+    { value: "takeaway", label: tc("takeaway") },
+    { value: "dine_in", label: tc("dine_in") },
+  ];
 
   const handleAddIngredient = (ingredientId: string | null) => {
     if (!ingredientId) return;
@@ -79,14 +84,14 @@ function VariantRecipeCard({ variant, variantIndex, onAddRecipeItem, onUpdateRec
     <div style={{ padding: "14px 16px", background: "#f9fafb", borderRadius: 10, border: "1px solid #e5e7eb" }}>
       {/* Card header */}
       <div style={{ marginBottom: 10, paddingBottom: 8, borderBottom: "1px solid #e5e7eb" }}>
-        <Text type="secondary" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>Receta</Text>
+        <Text type="secondary" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>{t("recipe.title")}</Text>
         <Text strong style={{ fontSize: 14, display: "block", color: "#c2410c" }}>{variant.name}</Text>
       </div>
 
       {/* Recipe rows */}
       <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
         {variant.recipes.length === 0 && (
-          <Text type="secondary" style={{ fontSize: 12, fontStyle: "italic" }}>Sin ingredientes aún</Text>
+          <Text type="secondary" style={{ fontSize: 12, fontStyle: "italic" }}>{tf("recipeNoIngredients")}</Text>
         )}
         {variant.recipes.map((recipe, ri) => (
           <div key={ri} style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -120,13 +125,13 @@ function VariantRecipeCard({ variant, variantIndex, onAddRecipeItem, onUpdateRec
 
       {/* Add ingredient — server-side search, only the top 10 matches are ever loaded */}
       <Select
-        placeholder={<><PlusOutlined style={{ marginRight: 4 }} />Agregar insumo...</>}
+        placeholder={<><PlusOutlined style={{ marginRight: 4 }} />{tf("addIngredientPlaceholder")}</>}
         showSearch
         style={{ width: "100%" }}
         size="small"
         filterOption={false}
         loading={loading}
-        notFoundContent={loading ? "Buscando..." : "Sin resultados"}
+        notFoundContent={loading ? tf("searching") : tf("noResults")}
         onSearch={search}
         options={options
           .filter((i) => !usedIngredientIds.includes(i.id))

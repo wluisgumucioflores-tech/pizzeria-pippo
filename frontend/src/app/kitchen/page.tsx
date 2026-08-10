@@ -5,6 +5,7 @@ import Image from "next/image";
 import { getUserProfile } from "@/lib/auth";
 import { formatTimeBolivia } from "@/lib/timezone";
 import { KitchenService } from "@/features/kitchen/services/kitchen.service";
+import { LocaleSwitcher } from "@/features/i18n/components/LocaleSwitcher";
 import type { KitchenOrder } from "@/features/kitchen/types/kitchen.types";
 
 function useTimer(createdAt: string) {
@@ -201,7 +202,7 @@ export default function KitchenPage() {
       <div className="bg-gray-950 border-b border-gray-800 px-6 py-3 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <Image
-            src="/pippo.jpg"
+            src="/logo.png"
             alt="Pippo"
             width={36}
             height={36}
@@ -227,6 +228,7 @@ export default function KitchenPage() {
               : `${pendingCount} pedido${pendingCount > 1 ? "s" : ""} pendiente${pendingCount > 1 ? "s" : ""}`}
           </span>
           <span className="text-gray-300 font-mono text-xl">{currentTime}</span>
+          <LocaleSwitcher dark />
         </div>
       </div>
 

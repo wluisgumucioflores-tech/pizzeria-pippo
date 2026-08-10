@@ -2,6 +2,7 @@
 
 import { Modal, Typography, Button, message } from "antd";
 import { CopyOutlined, PrinterOutlined, ShareAltOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import type { EmployeeCredential } from "../types/employee.types";
 
 const { Text } = Typography;
@@ -12,12 +13,13 @@ interface Props {
 }
 
 export function EmployeeCredentialModal({ credential, onClose }: Props) {
+  const t = useTranslations("employees.credentialModal");
   const canShare = typeof navigator !== "undefined" && !!navigator.share && !!navigator.canShare;
 
   const handleCopyCode = async () => {
     if (!credential) return;
     await navigator.clipboard.writeText(credential.manual_code);
-    message.success("Código copiado al portapapeles");
+    message.success(t("copyCodeSuccess"));
   };
 
   const handlePrint = () => window.print();
@@ -31,7 +33,7 @@ export function EmployeeCredentialModal({ credential, onClose }: Props) {
       const blob = await (await fetch(credential.qr_image_data_url)).blob();
       const file = new File([blob], "credencial-qr.png", { type: "image/png" });
       if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: "Credencial de fichaje" });
+        await navigator.share({ files: [file], title: t("shareTitle") });
       }
     } catch {
       // El usuario canceló el share o el navegador lo rechazó — no es un error real.
@@ -40,18 +42,17 @@ export function EmployeeCredentialModal({ credential, onClose }: Props) {
 
   return (
     <Modal
-      title="Credencial del empleado"
+      title={t("title")}
       open={!!credential}
       onOk={onClose}
       onCancel={onClose}
-      okText="Ya la guardé"
+      okText={t("gotIt")}
       cancelButtonProps={{ style: { display: "none" } }}
       closable={false}
       maskClosable={false}
     >
       <Text type="warning" strong style={{ display: "block", marginBottom: 16 }}>
-        Descargá, imprimí o compartí esto ahora — no vas a poder volver a verlo. Si se
-        pierde, regeneralo (esto invalida la credencial actual).
+        {t("warning")}
       </Text>
 
       {credential && (
@@ -60,22 +61,22 @@ export function EmployeeCredentialModal({ credential, onClose }: Props) {
           <img src={credential.qr_image_data_url} alt="Credencial QR" style={{ width: 200, height: 200 }} />
 
           <div style={{ marginTop: 16 }}>
-            <Text type="secondary" style={{ display: "block", fontSize: 12 }}>Código de respaldo (para tipear a mano)</Text>
+            <Text type="secondary" style={{ display: "block", fontSize: 12 }}>{t("backupCodeLabel")}</Text>
             <Text strong style={{ fontSize: 28, letterSpacing: 4, fontFamily: "monospace" }}>{credential.manual_code}</Text>
           </div>
         </div>
       )}
 
       <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 20 }}>
-        <Button icon={<CopyOutlined />} onClick={handleCopyCode}>Copiar código</Button>
-        <Button icon={<PrinterOutlined />} onClick={handlePrint}>Imprimir</Button>
+        <Button icon={<CopyOutlined />} onClick={handleCopyCode}>{t("copyCode")}</Button>
+        <Button icon={<PrinterOutlined />} onClick={handlePrint}>{t("print")}</Button>
         {credential && (
           <Button href={credential.qr_image_data_url} download="credencial-qr.png">
-            Descargar QR
+            {t("downloadQr")}
           </Button>
         )}
         {canShare && (
-          <Button icon={<ShareAltOutlined />} onClick={handleShare}>Compartir</Button>
+          <Button icon={<ShareAltOutlined />} onClick={handleShare}>{t("share")}</Button>
         )}
       </div>
     </Modal>

@@ -7,12 +7,14 @@ describe('PublicMenuService', () => {
   let prisma: {
     product: { findMany: jest.Mock };
     branch: { findMany: jest.Mock };
+    business: { findFirst: jest.Mock };
   };
 
   beforeEach(async () => {
     prisma = {
       product: { findMany: jest.fn() },
       branch: { findMany: jest.fn() },
+      business: { findFirst: jest.fn().mockResolvedValue({ id: 'biz1' }) },
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -37,7 +39,7 @@ describe('PublicMenuService', () => {
       const result = await service.listPizzas();
 
       expect(prisma.product.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { isActive: true, category: 'pizza' } }),
+        expect.objectContaining({ where: { businessId: 'biz1', isActive: true, category: 'pizza' } }),
       );
       expect(result).toEqual([
         {
@@ -70,7 +72,9 @@ describe('PublicMenuService', () => {
 
       const result = await service.listBranches();
 
-      expect(prisma.branch.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { isActive: true } }));
+      expect(prisma.branch.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { businessId: 'biz1', isActive: true } }),
+      );
       expect(result).toEqual([{ id: 'b1', name: 'Centro', address: 'Av. Siempre Viva 123', phone: '67106933' }]);
     });
   });

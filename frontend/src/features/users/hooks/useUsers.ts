@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Form, notification } from "antd";
+import { useTranslations } from "next-intl";
 import { UsersService } from "../services/users.service";
 import type { User, Branch, UserRole } from "../types/user.types";
 
 export function useUsers() {
+  const t = useTranslations("users.toasts");
   const [users, setUsers] = useState<User[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(false);
@@ -83,9 +85,9 @@ export function useUsers() {
     if (result.ok) {
       setModalOpen(false);
       fetchUsers();
-      notification.success({ message: editing ? "Usuario actualizado" : "Usuario creado" });
+      notification.success({ message: editing ? t("updated") : t("created") });
     } else {
-      notification.error({ message: result.error ?? "Error al guardar" });
+      notification.error({ message: result.error ?? t("saveError") });
     }
     setSaving(false);
   };
@@ -94,9 +96,9 @@ export function useUsers() {
     const result = await UsersService.toggleBan(user.id, !user.is_banned);
     if (result.ok) {
       fetchUsers();
-      notification.success({ message: user.is_banned ? `Cuenta de ${user.full_name} reactivada` : `Cuenta de ${user.full_name} desactivada` });
+      notification.success({ message: user.is_banned ? t("accountReactivated", { name: user.full_name }) : t("accountDeactivated", { name: user.full_name }) });
     } else {
-      notification.error({ message: result.error ?? "Error al actualizar" });
+      notification.error({ message: result.error ?? t("updateError") });
     }
   };
 
@@ -104,9 +106,9 @@ export function useUsers() {
     const result = await UsersService.deleteUser(id);
     if (result.ok) {
       fetchUsers();
-      notification.success({ message: "Usuario eliminado" });
+      notification.success({ message: t("deleted") });
     } else {
-      notification.error({ message: result.error ?? "Error al eliminar" });
+      notification.error({ message: result.error ?? t("deleteError") });
     }
   };
 

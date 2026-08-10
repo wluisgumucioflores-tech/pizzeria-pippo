@@ -29,12 +29,10 @@ export class SettingsController {
     return this.settingsService.updateSettings(user, dto);
   }
 
-  // No RolesGuard: any authenticated user (POS/cashier) can read the paper width.
+  // No RolesGuard: any authenticated user (POS/cashier) can read ticket settings.
   @Get('printer')
   getPrinterSettings(@CurrentUser() user: CurrentUserPayload) {
-    return this.settingsService
-      .getPrinterPaperWidth(user)
-      .then((printer_paper_width) => ({ printer_paper_width }));
+    return this.settingsService.getPrinterSettings(user);
   }
 
   // No RolesGuard: fix for the RLS bug — cocinero needs to read this (see Fase 3 plan).

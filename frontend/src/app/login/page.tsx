@@ -21,7 +21,9 @@ export default function LoginPage() {
       const { user } = await signIn(email, password);
       const role = user.role;
 
-      if (role === "admin") {
+      if (role === "superadmin") {
+        window.location.href = "/businesses";
+      } else if (role === "admin") {
         window.location.href = "/dashboard";
       } else if (role === "cocinero") {
         window.location.href = "/kitchen";
@@ -39,7 +41,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-sm bg-white rounded-lg shadow-md p-8">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-semibold text-gray-800 mb-1">Pizzería Pippo</h1>
+          <h1 className="text-2xl font-semibold text-gray-800 mb-1">Login</h1>
           <p className="text-gray-500 text-sm">Ingresá con tu cuenta</p>
         </div>
 

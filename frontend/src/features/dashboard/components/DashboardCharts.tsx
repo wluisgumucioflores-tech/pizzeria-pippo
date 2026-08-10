@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Row, Col, Card, Space, Table, Typography, Tag } from "antd";
 import dayjs from "dayjs";
+import { useTranslations } from "next-intl";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
@@ -23,40 +24,44 @@ const IconArrow = () => (
   </svg>
 );
 
-const topColumns = [
-  {
-    title: "Producto",
-    key: "product",
-    render: (_: unknown, r: TopProduct) => (
-      <Space direction="vertical" size={0}>
-        <Text strong style={{ fontSize: 13 }}>{r.product_name}</Text>
-        <Text type="secondary" style={{ fontSize: 11 }}>{r.variant_name}</Text>
-      </Space>
-    ),
-  },
-  {
-    title: "Cat.",
-    dataIndex: "category",
-    key: "category",
-    render: (cat: string) => (
-      <Tag color={cat === "pizza" ? "red" : cat === "bebida" ? "blue" : "green"}>{cat}</Tag>
-    ),
-  },
-  {
-    title: "Uds.",
-    dataIndex: "qty",
-    key: "qty",
-    render: (qty: number) => <Text strong>{qty}</Text>,
-  },
-  {
-    title: "Ingresos",
-    dataIndex: "revenue",
-    key: "revenue",
-    render: (rev: number) => (
-      <Text strong style={{ color: "#f97316" }}>Bs {rev.toFixed(2)}</Text>
-    ),
-  },
-];
+type DashboardTranslator = ReturnType<typeof useTranslations>;
+
+function buildTopColumns(t: DashboardTranslator) {
+  return [
+    {
+      title: t("columns.product"),
+      key: "product",
+      render: (_: unknown, r: TopProduct) => (
+        <Space direction="vertical" size={0}>
+          <Text strong style={{ fontSize: 13 }}>{r.product_name}</Text>
+          <Text type="secondary" style={{ fontSize: 11 }}>{r.variant_name}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: t("columns.category"),
+      dataIndex: "category",
+      key: "category",
+      render: (cat: string) => (
+        <Tag color={cat === "pizza" ? "red" : cat === "bebida" ? "blue" : "green"}>{cat}</Tag>
+      ),
+    },
+    {
+      title: t("columns.units"),
+      dataIndex: "qty",
+      key: "qty",
+      render: (qty: number) => <Text strong>{qty}</Text>,
+    },
+    {
+      title: t("columns.revenue"),
+      dataIndex: "revenue",
+      key: "revenue",
+      render: (rev: number) => (
+        <Text strong style={{ color: "#f97316" }}>Bs {rev.toFixed(2)}</Text>
+      ),
+    },
+  ];
+}
 
 interface Props {
   dailyData: DailyData[];
@@ -66,15 +71,17 @@ interface Props {
 }
 
 export function DashboardCharts({ dailyData, topProducts, loading, showingYesterday }: Props) {
+  const t = useTranslations("dashboard");
+  const topColumns = buildTopColumns(t);
   return (
     <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
       <Col xs={24} lg={14}>
         <Card
-          title="Ventas últimos 7 días"
+          title={t("salesLast7Days")}
           size="small"
           extra={
             <Link href="/reports" className="flex items-center gap-1 text-sm text-gray-600 hover:text-blue-600">
-              Ver reportes <IconArrow />
+              {t("viewReports")} <IconArrow />
             </Link>
           }
         >
@@ -89,7 +96,7 @@ export function DashboardCharts({ dailyData, topProducts, loading, showingYester
                 />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip
-                  formatter={(v) => [`Bs ${Number(v).toFixed(2)}`, "Ventas"]}
+                  formatter={(v) => [`Bs ${Number(v).toFixed(2)}`, t("sales")]}
                   labelFormatter={(d) => dayjs(d).format("DD/MM/YYYY")}
                 />
                 <Line
@@ -105,7 +112,7 @@ export function DashboardCharts({ dailyData, topProducts, loading, showingYester
             </ResponsiveContainer>
           ) : (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 220, color: "#94a3b8" }}>
-              Sin ventas en los últimos 7 días
+              {t("noSalesLast7Days")}
             </div>
           )}
         </Card>
@@ -116,7 +123,7 @@ export function DashboardCharts({ dailyData, topProducts, loading, showingYester
           title={
             <Space>
               <IconFire />
-              {showingYesterday ? "Top 5 de ayer" : "Top 5 hoy"}
+              {showingYesterday ? t("top5Yesterday") : t("top5Today")}
             </Space>
           }
           size="small"
@@ -133,7 +140,7 @@ export function DashboardCharts({ dailyData, topProducts, loading, showingYester
             />
           ) : (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 180, color: "#94a3b8" }}>
-              {showingYesterday ? "Sin ventas ayer" : "Sin ventas hoy"}
+              {showingYesterday ? t("noSalesYesterday") : t("noSalesToday")}
             </div>
           )}
         </Card>

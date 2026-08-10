@@ -1,6 +1,7 @@
 "use client";
 
 import { Select, DatePicker, Typography, Space } from "antd";
+import { useTranslations } from "next-intl";
 import type { Dayjs } from "dayjs";
 import type { Branch } from "@/features/branches/types/branch.types";
 
@@ -17,12 +18,13 @@ interface Props {
 }
 
 export function AttendanceFilters({ branches, selectedBranch, dateRange, expectedStartTime, onBranchChange, onDateRangeChange }: Props) {
+  const t = useTranslations("attendance");
   return (
     <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", marginBottom: 16, gap: 12 }}>
       <div>
-        <Title level={4} style={{ margin: 0 }}>Asistencia</Title>
+        <Title level={4} style={{ margin: 0 }}>{t("title")}</Title>
         {expectedStartTime && (
-          <Text type="secondary" style={{ fontSize: 12 }}>Horario de entrada: {expectedStartTime}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{t("expectedStart", { time: expectedStartTime })}</Text>
         )}
       </div>
 
@@ -40,7 +42,7 @@ export function AttendanceFilters({ branches, selectedBranch, dateRange, expecte
           onChange={onBranchChange}
           style={{ width: 180 }}
           size="small"
-          options={[{ value: "all", label: "Todas las sucursales" }, ...branches.map((b) => ({ value: b.id, label: b.name }))]}
+          options={[{ value: "all", label: t("allBranches") }, ...branches.map((b) => ({ value: b.id, label: b.name }))]}
         />
       </Space>
     </div>

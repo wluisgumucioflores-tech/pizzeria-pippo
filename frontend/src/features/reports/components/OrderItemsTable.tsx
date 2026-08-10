@@ -2,6 +2,7 @@
 
 import { Table, Tag, Typography, Space } from "antd";
 import { FileTextOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/lib/useIsMobile";
 import type { OrderItem } from "../types/reports.types";
 
@@ -9,50 +10,54 @@ const { Text } = Typography;
 
 const CATEGORY_COLOR: Record<string, string> = { pizza: "red", bebida: "blue", otro: "green" };
 
-export const orderItemColumns = [
-  {
-    title: "Producto",
-    key: "product",
-    render: (_: unknown, item: OrderItem) => (
-      <Space direction="vertical" size={0}>
-        <Text strong>{item.product_variants?.products?.name}</Text>
-        <Text type="secondary" style={{ fontSize: 11 }}>{item.product_variants?.name}</Text>
-      </Space>
-    ),
-  },
-  {
-    title: "Categoría",
-    key: "category",
-    render: (_: unknown, item: OrderItem) => {
-      const cat = item.product_variants?.products?.category ?? "";
-      return <Tag color={CATEGORY_COLOR[cat] ?? "default"}>{cat}</Tag>;
+type ReportsTranslator = ReturnType<typeof useTranslations>;
+
+function buildOrderItemColumns(t: ReportsTranslator) {
+  return [
+    {
+      title: t("columns.product"),
+      key: "product",
+      render: (_: unknown, item: OrderItem) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{item.product_variants?.products?.name}</Text>
+          <Text type="secondary" style={{ fontSize: 11 }}>{item.product_variants?.name}</Text>
+        </Space>
+      ),
     },
-  },
-  { title: "Cant.", dataIndex: "qty", key: "qty", width: 60, render: (qty: number) => <Text strong>{qty}</Text> },
-  { title: "Precio unit.", dataIndex: "unit_price", key: "unit_price", render: (p: number) => `Bs ${Number(p).toFixed(2)}` },
-  {
-    title: "Descuento",
-    dataIndex: "discount_applied",
-    key: "discount_applied",
-    render: (d: number) =>
-      Number(d) > 0 ? <Text style={{ color: "#ef4444" }}>-Bs {Number(d).toFixed(2)}</Text> : <Text type="secondary">—</Text>,
-  },
-  {
-    title: "Promoción",
-    dataIndex: "promo_label",
-    key: "promo_label",
-    render: (label: string | null, item: OrderItem) =>
-      label && Number(item.discount_applied) > 0 ? <Tag color="orange">{label}</Tag> : <Text type="secondary">—</Text>,
-  },
-  {
-    title: "Subtotal",
-    key: "subtotal",
-    render: (_: unknown, item: OrderItem) => {
-      const sub = (Number(item.unit_price) * item.qty) - Number(item.discount_applied);
-      return <Text strong style={{ color: "#f97316" }}>Bs {sub.toFixed(2)}</Text>;
+    {
+      title: t("columns.category"),
+      key: "category",
+      render: (_: unknown, item: OrderItem) => {
+        const cat = item.product_variants?.products?.category ?? "";
+        return <Tag color={CATEGORY_COLOR[cat] ?? "default"}>{cat}</Tag>;
+      },
     },
-  },
-];
+    { title: t("columns.qty"), dataIndex: "qty", key: "qty", width: 60, render: (qty: number) => <Text strong>{qty}</Text> },
+    { title: t("columns.unitPrice"), dataIndex: "unit_price", key: "unit_price", render: (p: number) => `Bs ${Number(p).toFixed(2)}` },
+    {
+      title: t("columns.discount"),
+      dataIndex: "discount_applied",
+      key: "discount_applied",
+      render: (d: number) =>
+        Number(d) > 0 ? <Text style={{ color: "#ef4444" }}>-Bs {Number(d).toFixed(2)}</Text> : <Text type="secondary">{t("payment.none")}</Text>,
+    },
+    {
+      title: t("columns.promo"),
+      dataIndex: "promo_label",
+      key: "promo_label",
+      render: (label: string | null, item: OrderItem) =>
+        label && Number(item.discount_applied) > 0 ? <Tag color="orange">{label}</Tag> : <Text type="secondary">{t("payment.none")}</Text>,
+    },
+    {
+      title: t("columns.subtotal"),
+      key: "subtotal",
+      render: (_: unknown, item: OrderItem) => {
+        const sub = (Number(item.unit_price) * item.qty) - Number(item.discount_applied);
+        return <Text strong style={{ color: "#f97316" }}>Bs {sub.toFixed(2)}</Text>;
+      },
+    },
+  ];
+}
 
 interface Props {
   items: OrderItem[];
@@ -70,7 +75,9 @@ function OrderNote({ notes }: { notes?: string | null }) {
 }
 
 export function OrderItemsTable({ items, notes }: Props) {
+  const t = useTranslations("reports");
   const isMobile = useIsMobile();
+  const orderItemColumns = buildOrderItemColumns(t);
 
   if (isMobile) {
     return (

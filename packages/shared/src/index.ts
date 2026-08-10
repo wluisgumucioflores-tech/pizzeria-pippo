@@ -1,4 +1,5 @@
 export * from "./models/branch";
+export * from "./models/business";
 export * from "./models/ingredient";
 export * from "./models/variant-type";
 export * from "./models/product";

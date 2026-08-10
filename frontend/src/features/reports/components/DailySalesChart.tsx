@@ -2,6 +2,7 @@
 
 import { Card } from "antd";
 import dayjs from "dayjs";
+import { useTranslations } from "next-intl";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
@@ -13,8 +14,9 @@ interface Props {
 }
 
 export function DailySalesChart({ dailyData }: Props) {
+  const t = useTranslations("reports");
   return (
-    <Card title="Ventas por día" size="small">
+    <Card title={t("dailySales")} size="small">
       {dailyData.length > 0 ? (
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={dailyData}>
@@ -26,7 +28,7 @@ export function DailySalesChart({ dailyData }: Props) {
             />
             <YAxis tick={{ fontSize: 11 }} />
             <Tooltip
-              formatter={(v) => [`Bs ${Number(v).toFixed(2)}`, "Ventas"]}
+              formatter={(v) => [`Bs ${Number(v).toFixed(2)}`, t("totalSales")]}
               labelFormatter={(d) => dayjs(d).format("DD/MM/YYYY")}
             />
             <Line
@@ -42,7 +44,7 @@ export function DailySalesChart({ dailyData }: Props) {
         </ResponsiveContainer>
       ) : (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 192, color: "#9ca3af" }}>
-          Sin datos para el período
+          {t("summary.noDataPeriod")}
         </div>
       )}
     </Card>

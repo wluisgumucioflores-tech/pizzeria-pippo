@@ -3,6 +3,7 @@
 import { Modal, Form, Input, Button, TimePicker } from "antd";
 import type { FormInstance } from "antd";
 import type { Dayjs } from "dayjs";
+import { useTranslations } from "next-intl";
 import type { Branch } from "../types/branch.types";
 
 interface Props {
@@ -15,35 +16,38 @@ interface Props {
 }
 
 export function BranchModal({ open, editing, saving, form, onClose, onSubmit }: Props) {
+  const t = useTranslations("common");
+  const tb = useTranslations("branches.modal");
+
   return (
     <Modal
-      title={editing ? "Editar sucursal" : "Nueva sucursal"}
+      title={editing ? tb("editTitle") : tb("createTitle")}
       open={open}
       onCancel={onClose}
       footer={null}
       destroyOnHidden
     >
       <Form form={form} layout="vertical" onFinish={onSubmit} className="mt-4">
-        <Form.Item label="Nombre" name="name" rules={[{ required: true, message: "Ingresá el nombre" }]}>
-          <Input placeholder="Ej: Sucursal Centro" />
+        <Form.Item label={tb("name")} name="name" rules={[{ required: true, message: tb("nameRequired") }]}>
+          <Input placeholder={tb("namePlaceholder")} />
         </Form.Item>
-        <Form.Item label="Dirección" name="address">
-          <Input placeholder="Ej: Av. Corrientes 1234" />
+        <Form.Item label={tb("address")} name="address">
+          <Input placeholder={tb("addressPlaceholder")} />
         </Form.Item>
-        <Form.Item label="Teléfono" name="phone">
-          <Input placeholder="Ej: 67106933" />
+        <Form.Item label={tb("phone")} name="phone">
+          <Input placeholder={tb("phonePlaceholder")} />
         </Form.Item>
         <Form.Item
-          label="Horario de entrada"
+          label={tb("startTime")}
           name="expected_start_time"
-          extra="Solo informativo — se muestra junto al historial de asistencia, no marca tardanzas."
+          extra={tb("startTimeHint")}
         >
-          <TimePicker format="HH:mm" style={{ width: "100%" }} placeholder="Ej: 08:00" />
+          <TimePicker format="HH:mm" style={{ width: "100%" }} placeholder={tb("startTimePlaceholder")} />
         </Form.Item>
         <div className="flex justify-end gap-2 mt-4">
-          <Button onClick={onClose}>Cancelar</Button>
+          <Button onClick={onClose}>{t("cancel")}</Button>
           <Button type="primary" htmlType="submit" loading={saving}>
-            {editing ? "Guardar cambios" : "Crear sucursal"}
+            {editing ? tb("saveChanges") : tb("create")}
           </Button>
         </div>
       </Form>

@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { randomBytes, randomInt } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { PasswordHasherService } from '../auth/password/password-hasher.service';
 import { generateQrDataUrl } from '../common/utils/qr-code.util';
+import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import type { CreateEmployeeDto } from './dto/create-employee.dto';
 import type { UpdateEmployeeDto } from './dto/update-employee.dto';
 import type { ListEmployeesQueryDto } from './dto/list-employees-query.dto';
@@ -21,11 +22,12 @@ export class EmployeesService {
     private readonly passwordHasher: PasswordHasherService,
   ) {}
 
-  async list(query: ListEmployeesQueryDto): Promise<EmployeeResult[]> {
+  async list(query: ListEmployeesQueryDto, user: CurrentUserPayload): Promise<EmployeeResult[]> {
     const showInactive = query.showInactive === 'true';
 
     const employees = await this.prisma.employee.findMany({
       where: {
+        businessId: this.resolveBusinessId(user),
         ...(showInactive ? {} : { isActive: true }),
         ...(query.branchId && { branchId: query.branchId }),
       },
@@ -35,11 +37,12 @@ export class EmployeesService {
     return employees.map(this.toResult);
   }
 
-  async create(dto: CreateEmployeeDto): Promise<CreateEmployeeResult> {
+  async create(dto: CreateEmployeeDto, user: CurrentUserPayload): Promise<CreateEmployeeResult> {
     const { token, manualCode, credentialHash, manualCodeHash } = await this.generateCredential();
 
     const employee = await this.prisma.employee.create({
       data: {
+        businessId: this.resolveBusinessId(user),
         branchId: dto.branch_id,
         fullName: dto.full_name,
         position: dto.position,
@@ -58,22 +61,26 @@ export class EmployeesService {
     };
   }
 
-  async update(id: string, dto: UpdateEmployeeDto): Promise<void> {
+  async update(id: string, dto: UpdateEmployeeDto, user: CurrentUserPayload): Promise<void> {
+    await this.assertOwnership(id, user);
     await this.prisma.employee.update({
       where: { id },
       data: { branchId: dto.branch_id, fullName: dto.full_name, position: dto.position },
     });
   }
 
-  async setActive(id: string, isActive: boolean): Promise<void> {
+  async setActive(id: string, isActive: boolean, user: CurrentUserPayload): Promise<void> {
+    await this.assertOwnership(id, user);
     await this.prisma.employee.update({ where: { id }, data: { isActive } });
   }
 
   // Invalida la credencial vieja (token + código) y genera una nueva —
   // misma forma de respuesta que create(), para reusar el mismo modal en el frontend.
-  async regenerateCredential(id: string): Promise<CreateEmployeeResult> {
+  async regenerateCredential(id: string, user: CurrentUserPayload): Promise<CreateEmployeeResult> {
     const existing = await this.prisma.employee.findUnique({ where: { id } });
-    if (!existing) throw new NotFoundException('Empleado no encontrado');
+    if (!existing || existing.businessId !== this.resolveBusinessId(user)) {
+      throw new NotFoundException('Empleado no encontrado');
+    }
 
     const { token, manualCode, credentialHash, manualCodeHash } = await this.generateCredential();
 
@@ -112,6 +119,23 @@ export class EmployeesService {
     }
 
     return null;
+  }
+
+  private resolveBusinessId(user: CurrentUserPayload): string {
+    if (!user.business_id) {
+      throw new InternalServerErrorException('El usuario no tiene un negocio asociado');
+    }
+    return user.business_id;
+  }
+
+  // Evita que un admin del negocio B opere sobre un empleado del negocio A
+  // conociendo su UUID — 404 en vez de 403 para no revelar que el id existe.
+  private async assertOwnership(id: string, user: CurrentUserPayload): Promise<void> {
+    const businessId = this.resolveBusinessId(user);
+    const employee = await this.prisma.employee.findUnique({ where: { id }, select: { businessId: true } });
+    if (!employee || employee.businessId !== businessId) {
+      throw new NotFoundException('Empleado no encontrado');
+    }
   }
 
   private async generateCredential() {

@@ -2,10 +2,14 @@ export const TYPE_COLORS: Record<string, string> = {
   compra: "green",
   venta: "blue",
   ajuste: "orange",
+  anulacion: "red",
 };
 
-export const TYPE_LABELS: Record<string, string> = {
-  compra: "Compra",
-  venta: "Venta",
-  ajuste: "Ajuste",
-};
+export function getTypeLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    compra: t("compra"),
+    venta: t("venta"),
+    ajuste: t("ajuste"),
+    anulacion: t("anulacion"),
+  };
+}

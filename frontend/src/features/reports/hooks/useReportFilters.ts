@@ -5,11 +5,15 @@ import dayjs, { type Dayjs } from "dayjs";
 import { ReportsService } from "../services/reports.service";
 import type { Branch } from "../types/reports.types";
 
-export const PRESET_RANGES: { label: string; range: [Dayjs, Dayjs] }[] = [
-  { label: "Hoy", range: [dayjs(), dayjs()] },
-  { label: "Esta semana", range: [dayjs().startOf("week"), dayjs()] },
-  { label: "Este mes", range: [dayjs().startOf("month"), dayjs()] },
-];
+type Translate = (key: string) => string;
+
+export function getPresetRanges(t: Translate): { label: string; range: [Dayjs, Dayjs] }[] {
+  return [
+    { label: t("today"), range: [dayjs(), dayjs()] },
+    { label: t("thisWeek"), range: [dayjs().startOf("week"), dayjs()] },
+    { label: t("thisMonth"), range: [dayjs().startOf("month"), dayjs()] },
+  ];
+}
 
 export function useReportFilters() {
   const [branches, setBranches] = useState<Branch[]>([]);

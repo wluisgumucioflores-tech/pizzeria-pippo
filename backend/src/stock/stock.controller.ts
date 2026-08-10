@@ -28,73 +28,74 @@ export class StockController {
 
   @UseGuards(OwnBranchOrAdminGuard)
   @Get()
-  list(@Query() query: ListStockQueryDto) {
-    return this.stockService.list(query);
+  list(@Query() query: ListStockQueryDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.stockService.list(query, user);
   }
 
   @UseGuards(OwnBranchOrAdminGuard)
   @Get('alerts')
-  getAlerts(@Query() query: ListAlertsQueryDto) {
-    return this.stockService.getAlerts(query);
+  getAlerts(@Query() query: ListAlertsQueryDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.stockService.getAlerts(query, user);
   }
 
   @UseGuards(OwnBranchOrAdminGuard)
   @Get('movements')
-  getMovements(@Query() query: ListMovementsQueryDto) {
-    return this.stockService.getMovements(query);
+  getMovements(@Query() query: ListMovementsQueryDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.stockService.getMovements(query, user);
   }
 
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Post('purchase')
   purchase(@Body() dto: PurchaseStockDto, @CurrentUser() user: CurrentUserPayload) {
-    return this.stockService.purchase(dto, user.id);
+    return this.stockService.purchase(dto, user);
   }
 
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Post('adjust')
   adjust(@Body() dto: AdjustStockDto, @CurrentUser() user: CurrentUserPayload) {
-    return this.stockService.adjust(dto, user.id);
+    return this.stockService.adjust(dto, user);
   }
 
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Patch(':id')
-  updateMinQuantity(@Param('id') id: string, @Body() dto: UpdateMinQuantityDto) {
-    return this.stockService.updateMinQuantity(id, dto.min_quantity);
+  updateMinQuantity(@Param('id') id: string, @Body() dto: UpdateMinQuantityDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.stockService.updateMinQuantity(id, dto.min_quantity, user);
   }
 
   // Resale stock (branch_product_stock / product_stock_movements) — real RLS is
   // "any authenticated user" with no role/branch restriction, see 2026-07-02-nestjs-fase2-rls-guards.
-  // That's why these endpoints only carry JwtAuthGuard, no RolesGuard or OwnBranchOrAdminGuard.
+  // That's why these endpoints only carry JwtAuthGuard, no RolesGuard or OwnBranchOrAdminGuard
+  // (el scoping por negocio se hace en el service, no acá).
   @Get('products')
-  listProductStock(@Query() query: ListProductStockQueryDto) {
-    return this.productStockService.list(query);
+  listProductStock(@Query() query: ListProductStockQueryDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.productStockService.list(query, user);
   }
 
   @Get('product-movements')
-  getProductMovements(@Query() query: ListProductMovementsQueryDto) {
-    return this.productStockService.getMovements(query);
+  getProductMovements(@Query() query: ListProductMovementsQueryDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.productStockService.getMovements(query, user);
   }
 
   @Get('resale-variants')
-  getResaleVariants() {
-    return this.productStockService.getResaleVariants();
+  getResaleVariants(@CurrentUser() user: CurrentUserPayload) {
+    return this.productStockService.getResaleVariants(user);
   }
 
   @Post('product-purchase')
   productPurchase(@Body() dto: PurchaseProductStockDto, @CurrentUser() user: CurrentUserPayload) {
-    return this.productStockService.purchase(dto, user.id);
+    return this.productStockService.purchase(dto, user);
   }
 
   @Post('product-adjust')
   productAdjust(@Body() dto: AdjustProductStockDto, @CurrentUser() user: CurrentUserPayload) {
-    return this.productStockService.adjust(dto, user.id);
+    return this.productStockService.adjust(dto, user);
   }
 
   @Patch('products/:id')
-  updateProductMinQuantity(@Param('id') id: string, @Body() dto: UpdateMinQuantityDto) {
-    return this.productStockService.updateMinQuantity(id, dto.min_quantity);
+  updateProductMinQuantity(@Param('id') id: string, @Body() dto: UpdateMinQuantityDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.productStockService.updateMinQuantity(id, dto.min_quantity, user);
   }
 }

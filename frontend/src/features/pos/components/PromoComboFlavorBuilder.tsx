@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Typography, Select } from "antd";
 import { PlusOutlined, MinusOutlined, DeleteOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import type { Product, Variant } from "../types/pos.types";
 import type { FlavorEntry } from "../types/promo-combo.types";
 
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export function PromoComboFlavorBuilder({ selectedVariant, product, products, onChange }: Props) {
+  const t = useTranslations("pos.flavors");
   const [flavors, setFlavors] = useState<FlavorEntry[]>([
     { variantId: selectedVariant.id, productName: product.name, parts: 1 },
   ]);
@@ -51,7 +53,7 @@ export function PromoComboFlavorBuilder({ selectedVariant, product, products, on
 
   return (
     <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
-      <Text type="secondary" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>Sabores</Text>
+      <Text type="secondary" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>{t("title")}</Text>
       {flavors.map((flavor, idx) => {
         const fraction = `${flavor.parts}/${totalParts}`;
         const barWidth = Math.round((flavor.parts / totalParts) * 100);
@@ -79,14 +81,14 @@ export function PromoComboFlavorBuilder({ selectedVariant, product, products, on
               <button onClick={() => updateParts(idx, 1)} style={{ width: 26, height: 26, borderRadius: 6, border: "1px solid #d1d5db", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <PlusOutlined style={{ fontSize: 10 }} />
               </button>
-              <Text type="secondary" style={{ fontSize: 11 }}>{flavor.parts === 1 ? "parte" : "partes"}</Text>
+              <Text type="secondary" style={{ fontSize: 11 }}>{t("partsCount", { count: flavor.parts })}</Text>
             </div>
           </div>
         );
       })}
       {flavorOptions.length > 0 && (
         <Select
-          placeholder="+ Agregar otro sabor"
+          placeholder={t("addAnother")}
           value={undefined}
           onChange={addFlavor}
           options={flavorOptions}

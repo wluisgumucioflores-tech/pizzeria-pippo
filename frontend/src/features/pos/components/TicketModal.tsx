@@ -3,19 +3,25 @@
 import { Modal, Button, Tag, Typography, Divider } from "antd";
 import { PrinterOutlined } from "@ant-design/icons";
 import { PAYMENT_PROVIDERS } from "@pippo/shared";
+import { useTranslations } from "next-intl";
 import type { TicketData } from "../types/pos.types";
 
 const { Text } = Typography;
 
-function paymentLabel(method: TicketData["paymentMethod"], provider: string | null, payments: TicketData["payments"]): string {
-  if (method === "efectivo") return "💵 Efectivo";
-  if (method === "qr") return "📱 QR";
+function paymentLabel(
+  method: TicketData["paymentMethod"],
+  provider: string | null,
+  payments: TicketData["payments"],
+  labels: { cash: string; qr: string; online: string },
+): string {
+  if (method === "efectivo") return labels.cash;
+  if (method === "qr") return labels.qr;
   if (method === "mixto" && payments?.length) {
     return payments.map((p) => `${p.method === "efectivo" ? "💵" : "📱"} Bs ${p.amount.toFixed(2)}`).join(" + ");
   }
   if (method === "online") {
     const known = provider ? PAYMENT_PROVIDERS[provider as keyof typeof PAYMENT_PROVIDERS] : undefined;
-    return known ? `${known.emoji} ${known.label}` : "🌐 Pago online";
+    return known ? `${known.emoji} ${known.label}` : labels.online;
   }
   return "—";
 }
@@ -29,9 +35,13 @@ interface Props {
 }
 
 export function TicketModal({ ticket, onClose, onPrint, printing, canPrint }: Props) {
+  const t = useTranslations("pos");
+  const tt = useTranslations("pos.ticketModal");
+  const labels = { cash: t("paymentLabel.cash"), qr: t("paymentLabel.qr"), online: t("paymentLabel.online") };
+
   return (
     <Modal
-      title="✅ Venta confirmada"
+      title={tt("title")}
       open={!!ticket}
       onCancel={onClose}
       footer={
@@ -44,11 +54,11 @@ export function TicketModal({ ticket, onClose, onPrint, printing, canPrint }: Pr
               onClick={onPrint}
               style={{ flex: 1 }}
             >
-              Imprimir
+              {tt("print")}
             </Button>
           )}
           <Button type="primary" size="large" onClick={onClose} style={{ flex: 2 }}>
-            Nueva venta
+            {t("newSale")}
           </Button>
         </div>
       }
@@ -67,7 +77,7 @@ export function TicketModal({ ticket, onClose, onPrint, printing, canPrint }: Pr
                 <Text>
                   {item.qty_physical}x {item.product_name}
                   {item.flavors?.length
-                    ? ` — Mit. ${item.flavors[0].product_name} / Mit. ${item.flavors[1].product_name}`
+                    ? ` — ${t("halfAndHalf", { first: item.flavors[0].product_name, second: item.flavors[1].product_name })}`
                     : ` (${item.variant_name})`}
                 </Text>
                 {item.promo_label && <Tag color="red" className="!ml-1 !text-xs">{item.promo_label}</Tag>}
@@ -77,12 +87,12 @@ export function TicketModal({ ticket, onClose, onPrint, printing, canPrint }: Pr
           ))}
           <Divider className="!my-2" />
           <div className="flex justify-between mb-1">
-            <Text strong>Total cobrado</Text>
+            <Text strong>{tt("totalCharged")}</Text>
             <Text strong className="text-orange-600">Bs {ticket.total.toFixed(2)}</Text>
           </div>
           <div className="flex justify-between">
-            <Text type="secondary">Método de pago</Text>
-            <Text>{paymentLabel(ticket.paymentMethod, ticket.paymentProvider, ticket.payments)}</Text>
+            <Text type="secondary">{tt("paymentMethodLabel")}</Text>
+            <Text>{paymentLabel(ticket.paymentMethod, ticket.paymentProvider, ticket.payments, labels)}</Text>
           </div>
         </div>
       )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, Table, Tag, Typography, Space } from "antd";
+import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/lib/useIsMobile";
 import type { TopProduct } from "../types/reports.types";
 
@@ -15,49 +16,56 @@ const CATEGORY_COLOR: Record<string, string> = {
   pizza: "red", bebida: "blue", otro: "green",
 };
 
-const columns = [
-  {
-    title: "Producto",
-    key: "product",
-    render: (_: unknown, r: TopProduct) => (
-      <Space direction="vertical" size={0}>
-        <Text strong>{r.product_name}</Text>
-        <Text type="secondary" style={{ fontSize: 11 }}>{r.variant_name}</Text>
-      </Space>
-    ),
-  },
-  {
-    title: "Categoría",
-    dataIndex: "category",
-    key: "category",
-    render: (cat: string) => <Tag color={CATEGORY_COLOR[cat] ?? "default"}>{cat}</Tag>,
-  },
-  {
-    title: "Unidades",
-    dataIndex: "qty",
-    key: "qty",
-    sorter: (a: TopProduct, b: TopProduct) => b.qty - a.qty,
-    render: (qty: number) => <Text strong>{qty}</Text>,
-  },
-  {
-    title: "Ingresos",
-    dataIndex: "revenue",
-    key: "revenue",
-    sorter: (a: TopProduct, b: TopProduct) => b.revenue - a.revenue,
-    render: (rev: number) => <Text strong style={{ color: "#f97316" }}>Bs {rev.toFixed(2)}</Text>,
-  },
-];
+type ReportsTranslator = ReturnType<typeof useTranslations>;
+
+function buildColumns(t: ReportsTranslator) {
+  return [
+    {
+      title: t("columns.product"),
+      key: "product",
+      render: (_: unknown, r: TopProduct) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{r.product_name}</Text>
+          <Text type="secondary" style={{ fontSize: 11 }}>{r.variant_name}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: t("columns.category"),
+      dataIndex: "category",
+      key: "category",
+      render: (cat: string) => <Tag color={CATEGORY_COLOR[cat] ?? "default"}>{cat}</Tag>,
+    },
+    {
+      title: t("columns.units"),
+      dataIndex: "qty",
+      key: "qty",
+      sorter: (a: TopProduct, b: TopProduct) => b.qty - a.qty,
+      render: (qty: number) => <Text strong>{qty}</Text>,
+    },
+    {
+      title: t("columns.revenue"),
+      dataIndex: "revenue",
+      key: "revenue",
+      sorter: (a: TopProduct, b: TopProduct) => b.revenue - a.revenue,
+      render: (rev: number) => <Text strong style={{ color: "#f97316" }}>Bs {rev.toFixed(2)}</Text>,
+    },
+  ];
+}
 
 export function TopProductsTable({ topProducts, loading }: Props) {
+  const t = useTranslations("reports");
+  const tc = useTranslations("common");
   const isMobile = useIsMobile();
+  const columns = buildColumns(t);
 
   return (
-    <Card title="Productos más vendidos" size="small" style={{ marginBottom: 24 }}>
+    <Card title={t("topProducts")} size="small" style={{ marginBottom: 24 }}>
       {isMobile ? (
         loading ? (
-          <div style={{ textAlign: "center", padding: 32, color: "#9ca3af" }}>Cargando...</div>
+          <div style={{ textAlign: "center", padding: 32, color: "#9ca3af" }}>{tc("loading")}</div>
         ) : topProducts.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 32, color: "#9ca3af" }}>Sin datos</div>
+          <div style={{ textAlign: "center", padding: 32, color: "#9ca3af" }}>{t("summary.noDataPeriod")}</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {topProducts.map((r, i) => (
@@ -77,7 +85,7 @@ export function TopProductsTable({ topProducts, loading }: Props) {
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
                   <Text strong style={{ color: "#f97316", display: "block", fontSize: 14 }}>Bs {r.revenue.toFixed(2)}</Text>
-                  <Text type="secondary" style={{ fontSize: 12 }}>{r.qty} uds.</Text>
+                  <Text type="secondary" style={{ fontSize: 12 }}>{r.qty} {t("unitsShort")}</Text>
                 </div>
               </div>
             ))}

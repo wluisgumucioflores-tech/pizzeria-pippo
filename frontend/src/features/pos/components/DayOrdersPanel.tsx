@@ -2,6 +2,7 @@
 
 import { Button, Empty, Tag, Tooltip, Typography } from "antd";
 import { CheckCircleOutlined, FileTextOutlined, StopOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import { formatTimeBolivia } from "@/lib/timezone";
 import { useIsMobile } from "@/lib/useIsMobile";
 import type { DayOrder } from "../types/pos.types";
@@ -17,15 +18,17 @@ interface Props {
 
 export function DayOrdersPanel({ dayOrders, markingReady, onMarkReady, onCancel }: Props) {
   const isMobile = useIsMobile();
+  const t = useTranslations("pos");
+  const td = useTranslations("pos.dayOrders");
 
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? 12 : 24, background: "#f5f5f5" }}>
       <Text strong style={{ fontSize: 15, color: "#374151", display: "block", marginBottom: 12 }}>
-        Pedidos del día ({dayOrders.length})
+        {td("title", { count: dayOrders.length })}
       </Text>
 
       {dayOrders.length === 0 ? (
-        <Empty description="Sin ventas registradas hoy." style={{ marginTop: 60 }} />
+        <Empty description={td("empty")} style={{ marginTop: 60 }} />
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {dayOrders.map((order) => {
@@ -65,7 +68,7 @@ export function DayOrdersPanel({ dayOrders, markingReady, onMarkReady, onCancel 
                   {/* Row 3: tags + actions */}
                   <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                     <Tag color={order.order_type === "takeaway" ? "blue" : "green"} style={{ margin: 0, fontSize: 11 }}>
-                      {order.order_type === "takeaway" ? "🥡 Para llevar" : "🍽️ Local"}
+                      {order.order_type === "takeaway" ? t("orderType.takeawayLocal") : t("orderType.dineInLocal")}
                     </Tag>
                     {order.notes && (
                       <Tooltip title={order.notes}>
@@ -74,7 +77,7 @@ export function DayOrdersPanel({ dayOrders, markingReady, onMarkReady, onCancel 
                     )}
                     <div style={{ flex: 1 }} />
                     {isCancelled ? (
-                      <Tag color="red" icon={<StopOutlined />} style={{ margin: 0 }}>Anulada</Tag>
+                      <Tag color="red" icon={<StopOutlined />} style={{ margin: 0 }}>{td("cancelled")}</Tag>
                     ) : isPending ? (
                       <>
                         <Button
@@ -85,14 +88,14 @@ export function DayOrdersPanel({ dayOrders, markingReady, onMarkReady, onCancel 
                           onClick={() => onMarkReady(order.id)}
                           style={{ background: "#ea580c", borderColor: "#ea580c", fontSize: 12 }}
                         >
-                          Listo
+                          {td("readyShort")}
                         </Button>
                         <Button size="small" danger ghost icon={<StopOutlined />} onClick={() => onCancel(order)} />
                       </>
                     ) : (
                       <>
                         <span style={{ color: "#16a34a", fontWeight: 600, fontSize: 12, display: "flex", alignItems: "center", gap: 3 }}>
-                          <CheckCircleOutlined /> Listo
+                          <CheckCircleOutlined /> {td("readyShort")}
                         </span>
                         <Button size="small" danger ghost icon={<StopOutlined />} onClick={() => onCancel(order)} />
                       </>
@@ -137,7 +140,7 @@ export function DayOrdersPanel({ dayOrders, markingReady, onMarkReady, onCancel 
                 </div>
                 <div style={{ marginLeft: 12, flexShrink: 0, display: "flex", gap: 8, alignItems: "center" }}>
                   {isCancelled ? (
-                    <Tag color="red" icon={<StopOutlined />}>Anulada</Tag>
+                    <Tag color="red" icon={<StopOutlined />}>{td("cancelled")}</Tag>
                   ) : isPending ? (
                     <>
                       <Button
@@ -148,19 +151,19 @@ export function DayOrdersPanel({ dayOrders, markingReady, onMarkReady, onCancel 
                         onClick={() => onMarkReady(order.id)}
                         style={{ background: "#ea580c", borderColor: "#ea580c" }}
                       >
-                        Marcar listo
+                        {td("markReady")}
                       </Button>
                       <Button size="small" danger ghost icon={<StopOutlined />} onClick={() => onCancel(order)}>
-                        Anular
+                        {td("cancelAction")}
                       </Button>
                     </>
                   ) : (
                     <>
                       <span style={{ color: "#16a34a", fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
-                        <CheckCircleOutlined /> Listo
+                        <CheckCircleOutlined /> {td("readyShort")}
                       </span>
                       <Button size="small" danger ghost icon={<StopOutlined />} onClick={() => onCancel(order)}>
-                        Anular
+                        {td("cancelAction")}
                       </Button>
                     </>
                   )}

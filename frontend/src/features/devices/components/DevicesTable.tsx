@@ -2,6 +2,7 @@
 
 import { Table, Button, Tag, Space, Switch, Typography, Popconfirm } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import type { Branch } from "@/features/branches/types/branch.types";
 import type { Device } from "../types/device.types";
 
@@ -18,14 +19,16 @@ interface Props {
 }
 
 export function DevicesTable({ devices, branches, loading, onCreate, onEdit, onToggleActive, onDelete }: Props) {
+  const t = useTranslations("common");
+  const td = useTranslations("devices");
   const branchName = (branchId: string) => branches.find((b) => b.id === branchId)?.name ?? "—";
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <Typography.Title level={5} style={{ margin: 0 }}>Dispositivos</Typography.Title>
+        <Typography.Title level={5} style={{ margin: 0 }}>{td("title")}</Typography.Title>
         <Button type="primary" icon={<PlusOutlined />} onClick={onCreate}>
-          Agregar dispositivo
+          {td("new")}
         </Button>
       </div>
 
@@ -37,26 +40,26 @@ export function DevicesTable({ devices, branches, loading, onCreate, onEdit, onT
         pagination={false}
         columns={[
           {
-            title: "Nombre",
+            title: td("columns.name"),
             dataIndex: "name",
           },
           {
-            title: "Sucursal",
+            title: td("columns.branch"),
             dataIndex: "branch_id",
             render: (branchId: string) => branchName(branchId),
           },
           {
-            title: "Última conexión",
+            title: td("columns.lastSeen"),
             dataIndex: "last_seen_at",
             render: (lastSeenAt: string | null) =>
               lastSeenAt ? (
                 <Text type="secondary">{new Date(lastSeenAt).toLocaleString("es-BO")}</Text>
               ) : (
-                <Tag>Nunca</Tag>
+                <Tag>{td("never")}</Tag>
               ),
           },
           {
-            title: "Activo",
+            title: td("columns.active"),
             dataIndex: "is_active",
             width: 80,
             render: (_: unknown, row: Device) => (
@@ -64,17 +67,17 @@ export function DevicesTable({ devices, branches, loading, onCreate, onEdit, onT
             ),
           },
           {
-            title: "Acciones",
+            title: t("actions"),
             width: 100,
             render: (_: unknown, row: Device) => (
               <Space>
                 <Button size="small" icon={<EditOutlined />} onClick={() => onEdit(row)} />
                 <Popconfirm
-                  title="¿Eliminar este dispositivo?"
-                  description="Podrás reactivarlo después desde el switch."
+                  title={td("deleteConfirmTitle")}
+                  description={td("deleteConfirmDesc")}
                   onConfirm={() => onDelete(row)}
-                  okText="Eliminar"
-                  cancelText="Cancelar"
+                  okText={t("delete")}
+                  cancelText={t("cancel")}
                   okButtonProps={{ danger: true }}
                 >
                   <Button size="small" danger icon={<DeleteOutlined />} />

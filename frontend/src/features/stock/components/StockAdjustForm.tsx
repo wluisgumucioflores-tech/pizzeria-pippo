@@ -1,6 +1,7 @@
 "use client";
 
 import { Form, Select, InputNumber, Input, Button, Typography } from "antd";
+import { useTranslations } from "next-intl";
 
 const IconTool = () => (
   <svg className="inline w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -19,28 +20,30 @@ interface Props {
 }
 
 export function StockAdjustForm({ form, ingredients, onSubmit }: Props) {
+  const t = useTranslations("stock.adjustForm");
+
   return (
     <div className="max-w-md">
       <Text type="secondary" className="block mb-4">
-        Ingresá la cantidad real contada físicamente. El sistema calculará la diferencia.
+        {t("helperText")}
       </Text>
       <Form form={form} layout="vertical" onFinish={onSubmit}>
-        <Form.Item label="Insumo" name="ingredient_id" rules={[{ required: true, message: "Requerido" }]}>
+        <Form.Item label={t("ingredientLabel")} name="ingredient_id" rules={[{ required: true, message: t("required") }]}>
           <Select
             showSearch
-            placeholder="Seleccionar insumo"
+            placeholder={t("ingredientPlaceholder")}
             options={ingredients.map((i) => ({ value: i.id, label: `${i.name} (${i.unit})` }))}
             filterOption={(input, option) => (option?.label ?? "").toLowerCase().includes(input.toLowerCase())}
           />
         </Form.Item>
-        <Form.Item label="Cantidad real (conteo físico)" name="real_quantity" rules={[{ required: true, message: "Requerido" }]}>
-          <InputNumber min={0} style={{ width: "100%" }} placeholder="Ej: 1200" />
+        <Form.Item label={t("realQuantity")} name="real_quantity" rules={[{ required: true, message: t("required") }]}>
+          <InputNumber min={0} style={{ width: "100%" }} placeholder={t("realQuantityPlaceholderIngredient")} />
         </Form.Item>
-        <Form.Item label="Motivo del ajuste" name="notes">
-          <Input.TextArea rows={2} placeholder="Ej: Merma, error de conteo anterior..." />
+        <Form.Item label={t("reason")} name="notes">
+          <Input.TextArea rows={2} placeholder={t("reasonPlaceholder")} />
         </Form.Item>
         <Button type="primary" htmlType="submit" icon={<IconTool />}>
-          Aplicar ajuste
+          {t("submit")}
         </Button>
       </Form>
     </div>

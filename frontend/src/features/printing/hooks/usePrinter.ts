@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { message } from "antd";
 import type { TicketData } from "@/features/pos/types/pos.types";
 import { BluetoothPrinterService } from "../services/bluetooth-printer.service";
-import { getPaperWidth } from "../services/printer-config.service";
+import { getPrinterConfig } from "../services/printer-config.service";
 import { buildTicketBytes } from "../services/ticket-builder.service";
 import type { PrinterStatus } from "../types/printing.types";
 
@@ -53,9 +53,9 @@ export function usePrinter() {
       }
       setPrinting(true);
       try {
-        const paperWidth = await getPaperWidth();
+        const { paperWidth, businessName } = await getPrinterConfig();
         await BluetoothPrinterService.write(
-          buildTicketBytes(ticket, { paperWidth, branchName })
+          buildTicketBytes(ticket, { paperWidth, businessName, branchName })
         );
         return true;
       } catch (err) {

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Row, Col, Card, Space, Typography, Tag, Badge } from "antd";
+import { useTranslations } from "next-intl";
 import type { StockAlert, WarehouseAlert } from "../types/dashboard.types";
 
 const { Text } = Typography;
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export function DashboardStockAlerts({ stockAlerts, warehouseAlerts }: Props) {
+  const t = useTranslations("dashboard");
   return (
     <>
       {stockAlerts.length > 0 && (
@@ -31,7 +33,7 @@ export function DashboardStockAlerts({ stockAlerts, warehouseAlerts }: Props) {
           title={
             <Space>
               <IconWarning color="#ef4444" />
-              <Text>Insumos bajo mínimo en sucursales</Text>
+              <Text>{t("lowStockBranches")}</Text>
               <Badge count={stockAlerts.length} color="#ef4444" />
             </Space>
           }
@@ -39,7 +41,7 @@ export function DashboardStockAlerts({ stockAlerts, warehouseAlerts }: Props) {
           style={{ marginBottom: 16 }}
           extra={
             <Link href="/stock" className="flex items-center gap-1 text-sm text-gray-600 hover:text-blue-600">
-              Ir a stock <IconArrow />
+              {t("goToStock")} <IconArrow />
             </Link>
           }
         >
@@ -56,7 +58,7 @@ export function DashboardStockAlerts({ stockAlerts, warehouseAlerts }: Props) {
                     <Text type="secondary" style={{ fontSize: 12 }}>{alert.branches?.name}</Text>
                     <Space>
                       <Text style={{ color: "#ef4444", fontWeight: 700 }}>{alert.quantity}</Text>
-                      <Text type="secondary" style={{ fontSize: 12 }}>/ mín. {alert.min_quantity}</Text>
+                      <Text type="secondary" style={{ fontSize: 12 }}>/ {t("minShort", { min: alert.min_quantity })}</Text>
                     </Space>
                   </Space>
                 </Card>
@@ -71,14 +73,14 @@ export function DashboardStockAlerts({ stockAlerts, warehouseAlerts }: Props) {
           title={
             <Space>
               <IconWarning color="#f97316" />
-              <Text>Insumos bajo mínimo en bodega</Text>
+              <Text>{t("lowStockWarehouse")}</Text>
               <Badge count={warehouseAlerts.length} color="#f97316" />
             </Space>
           }
           size="small"
           extra={
             <Link href="/warehouse" className="flex items-center gap-1 text-sm text-gray-600 hover:text-blue-600">
-              Ir a bodega <IconArrow />
+              {t("goToWarehouse")} <IconArrow />
             </Link>
           }
         >
@@ -92,10 +94,10 @@ export function DashboardStockAlerts({ stockAlerts, warehouseAlerts }: Props) {
                       <Text strong style={{ fontSize: 13 }}>{alert.ingredients?.name}</Text>
                       <Tag>{alert.ingredients?.unit}</Tag>
                     </Space>
-                    <Text type="secondary" style={{ fontSize: 12 }}>Bodega central</Text>
+                    <Text type="secondary" style={{ fontSize: 12 }}>{t("centralWarehouse")}</Text>
                     <Space>
                       <Text style={{ color: "#f97316", fontWeight: 700 }}>{alert.quantity}</Text>
-                      <Text type="secondary" style={{ fontSize: 12 }}>/ mín. {alert.min_quantity}</Text>
+                      <Text type="secondary" style={{ fontSize: 12 }}>/ {t("minShort", { min: alert.min_quantity })}</Text>
                     </Space>
                   </Space>
                 </Card>

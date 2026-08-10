@@ -32,74 +32,74 @@ export class WarehouseController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Get('stock')
-  listStock(@Query() query: ListWarehouseStockQueryDto) {
-    return this.warehouseService.list(query);
+  listStock(@Query() query: ListWarehouseStockQueryDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.warehouseService.list(query, user);
   }
 
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Get('movements')
-  getMovements(@Query() query: ListWarehouseMovementsQueryDto) {
-    return this.warehouseService.getMovements(query);
+  getMovements(@Query() query: ListWarehouseMovementsQueryDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.warehouseService.getMovements(query, user);
   }
 
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Patch('stock/:id')
-  updateMinQuantity(@Param('id') id: string, @Body() dto: UpdateWarehouseMinQuantityDto) {
-    return this.warehouseService.updateMinQuantity(id, dto);
+  updateMinQuantity(@Param('id') id: string, @Body() dto: UpdateWarehouseMinQuantityDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.warehouseService.updateMinQuantity(id, dto, user);
   }
 
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Delete('stock/:id')
-  removeStock(@Param('id') id: string) {
-    return this.warehouseService.remove(id);
+  removeStock(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    return this.warehouseService.remove(id, user);
   }
 
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Post('purchase')
   purchase(@Body() dto: PurchaseWarehouseStockDto, @CurrentUser() user: CurrentUserPayload) {
-    return this.warehouseService.purchase(dto, user.id);
+    return this.warehouseService.purchase(dto, user);
   }
 
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Post('adjust')
   adjust(@Body() dto: AdjustWarehouseStockDto, @CurrentUser() user: CurrentUserPayload) {
-    return this.warehouseService.adjust(dto, user.id);
+    return this.warehouseService.adjust(dto, user);
   }
 
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Post('transfer')
   transfer(@Body() dto: TransferWarehouseStockDto, @CurrentUser() user: CurrentUserPayload) {
-    return this.warehouseService.transfer(dto, user.id);
+    return this.warehouseService.transfer(dto, user);
   }
 
   @Get('product-stock')
-  listProductStock() {
-    return this.warehouseProductService.list();
+  listProductStock(@CurrentUser() user: CurrentUserPayload) {
+    return this.warehouseProductService.list(user);
   }
 
   @Get('product-movements')
-  getProductMovements(@Query() query: ListWarehouseProductMovementsQueryDto) {
-    return this.warehouseProductService.getMovements(query);
+  getProductMovements(@Query() query: ListWarehouseProductMovementsQueryDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.warehouseProductService.getMovements(query, user);
   }
 
   @Post('product-purchase')
   productPurchase(@Body() dto: PurchaseWarehouseProductStockDto, @CurrentUser() user: CurrentUserPayload) {
-    return this.warehouseProductService.purchase(dto, user.id);
+    return this.warehouseProductService.purchase(dto, user);
   }
 
   @Post('product-adjust')
   productAdjust(@Body() dto: AdjustWarehouseProductStockDto, @CurrentUser() user: CurrentUserPayload) {
-    return this.warehouseProductService.adjust(dto, user.id);
+    return this.warehouseProductService.adjust(dto, user);
   }
 
   @Post('product-transfer')
   productTransfer(@Body() dto: TransferWarehouseProductStockDto, @CurrentUser() user: CurrentUserPayload) {
-    return this.warehouseProductService.transfer(dto, user.id);
+    return this.warehouseProductService.transfer(dto, user);
   }
 }

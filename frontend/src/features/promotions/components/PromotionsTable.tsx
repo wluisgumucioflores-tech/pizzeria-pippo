@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { Table, Button, Space, Tag, Typography, Switch, Tooltip } from "antd";
 import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, EyeOutlined } from "@ant-design/icons";
-import { TYPE_OPTIONS, TYPE_COLORS, DAYS } from "../constants/promotion.constants";
+import { useTranslations } from "next-intl";
+import { getTypeOptions, TYPE_COLORS, getDays } from "../constants/promotion.constants";
 import { useIsMobile } from "@/lib/useIsMobile";
 import type { Promotion, Branch } from "../types/promotion.types";
 
@@ -24,17 +25,21 @@ interface Props {
 export function PromotionsTable({ promotions, branches, loading, showInactive, onToggleInactive, onCreate, onEdit, onToggleActive, onToggleIsActive }: Props) {
   const router = useRouter();
   const isMobile = useIsMobile();
+  const tCommon = useTranslations("common");
+  const tp = useTranslations("promotions");
+  const TYPE_OPTIONS = getTypeOptions(tp);
+  const DAYS = getDays(tp);
 
   const columns = [
-    { title: "Nombre", dataIndex: "name", key: "name" },
+    { title: tp("name"), dataIndex: "name", key: "name" },
     {
-      title: "Tipo",
+      title: tp("type"),
       dataIndex: "type",
       key: "type",
       render: (t: string) => <Tag color={TYPE_COLORS[t]}>{TYPE_OPTIONS.find((o) => o.value === t)?.label ?? t}</Tag>,
     },
     {
-      title: "Días",
+      title: tp("days"),
       dataIndex: "days_of_week",
       key: "days_of_week",
       render: (days: number[]) => (
@@ -46,40 +51,40 @@ export function PromotionsTable({ promotions, branches, loading, showInactive, o
       ),
     },
     {
-      title: "Vigencia",
+      title: tp("validity"),
       key: "dates",
       render: (_: unknown, r: Promotion) => (
         <Text style={{ fontSize: 12 }}>{r.start_date} → {r.end_date}</Text>
       ),
     },
     {
-      title: "Sucursal",
+      title: tp("branch"),
       key: "branch",
       render: (_: unknown, r: Promotion) =>
         r.branch_id
           ? <Tag>{branches.find((b) => b.id === r.branch_id)?.name ?? r.branch_id}</Tag>
-          : <Tag color="purple">Todas</Tag>,
+          : <Tag color="purple">{tp("allBranches")}</Tag>,
     },
     {
-      title: "Activa",
+      title: tp("active"),
       key: "active",
       render: (_: unknown, r: Promotion) => (
         <Switch checked={r.active} size="small" onChange={(val) => onToggleActive(r.id, val)} />
       ),
     },
     {
-      title: "Acciones",
+      title: tCommon("actions"),
       key: "actions",
       width: 100,
       render: (_: unknown, r: Promotion) => (
         <Space>
-          <Tooltip title="Ver detalle">
+          <Tooltip title={tp("viewDetail")}>
             <Button icon={<EyeOutlined />} size="small" onClick={() => router.push(`/promotions/${r.id}`)} />
           </Tooltip>
-          <Tooltip title="Editar">
+          <Tooltip title={tCommon("edit")}>
             <Button icon={<EditOutlined />} size="small" onClick={() => onEdit(r)} />
           </Tooltip>
-          <Tooltip title={r.is_active ? "Desactivar" : "Reactivar"}>
+          <Tooltip title={r.is_active ? tp("deactivate") : tp("reactivate")}>
             <Button
               icon={r.is_active ? <StopOutlined /> : <CheckCircleOutlined />}
               size="small"
@@ -94,15 +99,15 @@ export function PromotionsTable({ promotions, branches, loading, showInactive, o
 
   const header = (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 8 }}>
-      <Title level={4} style={{ margin: 0 }}>Promociones</Title>
+      <Title level={4} style={{ margin: 0 }}>{tp("title")}</Title>
       <Space wrap>
         <Space size={4}>
           <EyeOutlined style={{ color: "#6b7280" }} />
-          {!isMobile && <Text type="secondary">Ver inactivas</Text>}
+          {!isMobile && <Text type="secondary">{tp("showInactive")}</Text>}
           <Switch size="small" checked={showInactive} onChange={onToggleInactive} />
         </Space>
         <Button type="primary" icon={<PlusOutlined />} onClick={onCreate}>
-          {isMobile ? "Nueva" : "Nueva promoción"}
+          {isMobile ? tp("newShort") : tp("new")}
         </Button>
       </Space>
     </div>
@@ -113,7 +118,7 @@ export function PromotionsTable({ promotions, branches, loading, showInactive, o
       <>
         {header}
         {loading ? (
-          <div style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>Cargando...</div>
+          <div style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>{tCommon("loading")}</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {promotions.map((promo) => {
@@ -141,7 +146,7 @@ export function PromotionsTable({ promotions, branches, loading, showInactive, o
                         </Tag>
                         {branchName
                           ? <Tag style={{ margin: 0 }}>{branchName}</Tag>
-                          : <Tag color="purple" style={{ margin: 0 }}>Todas</Tag>}
+                          : <Tag color="purple" style={{ margin: 0 }}>{tp("allBranches")}</Tag>}
                       </div>
                     </div>
                     <Switch checked={promo.active} size="small" onChange={(val) => onToggleActive(promo.id, val)} />
@@ -152,10 +157,10 @@ export function PromotionsTable({ promotions, branches, loading, showInactive, o
                   <Text type="secondary" style={{ fontSize: 12 }}>{promo.start_date} → {promo.end_date}</Text>
                   <div style={{ display: "flex", gap: 8, marginTop: 10, borderTop: "1px solid #f3f4f6", paddingTop: 10 }}>
                     <Button size="small" icon={<EyeOutlined />} onClick={() => router.push(`/promotions/${promo.id}`)} style={{ flex: 1 }}>
-                      Ver
+                      {tp("view")}
                     </Button>
                     <Button size="small" icon={<EditOutlined />} onClick={() => onEdit(promo)} style={{ flex: 1 }}>
-                      Editar
+                      {tCommon("edit")}
                     </Button>
                     <Button
                       size="small"
@@ -164,7 +169,7 @@ export function PromotionsTable({ promotions, branches, loading, showInactive, o
                       onClick={() => onToggleIsActive(promo)}
                       style={{ flex: 1 }}
                     >
-                      {promo.is_active ? "Desactivar" : "Reactivar"}
+                      {promo.is_active ? tp("deactivate") : tp("reactivate")}
                     </Button>
                   </div>
                 </div>

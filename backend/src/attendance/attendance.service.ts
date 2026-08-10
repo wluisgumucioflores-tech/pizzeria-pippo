@@ -1,7 +1,8 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmployeesService } from '../employees/employees.service';
 import { todayInBolivia, dateRangeFrom, dateRangeTo } from '../common/utils/timezone';
+import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import type { ScanAttendanceDto } from './dto/scan-attendance.dto';
 import type { AttendanceHistoryQueryDto } from './dto/attendance-history-query.dto';
 import type { AttendanceScanResult, AttendanceHistoryRow } from './types/attendance-result.types';
@@ -42,9 +43,10 @@ export class AttendanceService {
     };
   }
 
-  async history(query: AttendanceHistoryQueryDto): Promise<AttendanceHistoryRow[]> {
+  async history(query: AttendanceHistoryQueryDto, user: CurrentUserPayload): Promise<AttendanceHistoryRow[]> {
     const records = await this.prisma.attendanceRecord.findMany({
       where: {
+        branch: { businessId: this.resolveBusinessId(user) },
         ...(query.branchId && { branchId: query.branchId }),
         ...((query.from || query.to) && {
           createdAt: {
@@ -65,5 +67,12 @@ export class AttendanceService {
       type: record.type,
       created_at: record.createdAt.toISOString(),
     }));
+  }
+
+  private resolveBusinessId(user: CurrentUserPayload): string {
+    if (!user.business_id) {
+      throw new InternalServerErrorException('El usuario no tiene un negocio asociado');
+    }
+    return user.business_id;
   }
 }

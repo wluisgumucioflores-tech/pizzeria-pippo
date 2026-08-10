@@ -3,44 +3,51 @@
 import Link from "next/link";
 import { Card, Table, Tag, Typography, Space, Button } from "antd";
 import { WarningOutlined, ArrowRightOutlined } from "@ant-design/icons";
+import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/lib/useIsMobile";
 import type { StockAlert } from "../types/reports.types";
 
 const { Text } = Typography;
 
-const alertColumns = [
-  {
-    title: "Insumo",
-    key: "ingredient",
-    render: (_: unknown, r: StockAlert) => (
-      <Space>
-        <WarningOutlined style={{ color: "#ef4444" }} />
-        <Text>{r.ingredients?.name}</Text>
-      </Space>
-    ),
-  },
-  { title: "Unidad", key: "unit", render: (_: unknown, r: StockAlert) => <Tag>{r.ingredients?.unit}</Tag> },
-  { title: "Sucursal", key: "branch", render: (_: unknown, r: StockAlert) => r.branches?.name },
-  {
-    title: "Stock actual",
-    dataIndex: "quantity",
-    key: "quantity",
-    render: (q: number) => <Text style={{ color: "#ef4444", fontWeight: 700 }}>{q}</Text>,
-  },
-  {
-    title: "Mínimo",
-    dataIndex: "min_quantity",
-    key: "min_quantity",
-    render: (m: number) => <Text type="secondary">{m}</Text>,
-  },
-];
+type ReportsTranslator = ReturnType<typeof useTranslations>;
+
+function buildAlertColumns(t: ReportsTranslator) {
+  return [
+    {
+      title: t("columns.ingredient"),
+      key: "ingredient",
+      render: (_: unknown, r: StockAlert) => (
+        <Space>
+          <WarningOutlined style={{ color: "#ef4444" }} />
+          <Text>{r.ingredients?.name}</Text>
+        </Space>
+      ),
+    },
+    { title: t("columns.unit"), key: "unit", render: (_: unknown, r: StockAlert) => <Tag>{r.ingredients?.unit}</Tag> },
+    { title: t("columns.branch"), key: "branch", render: (_: unknown, r: StockAlert) => r.branches?.name },
+    {
+      title: t("columns.currentStock"),
+      dataIndex: "quantity",
+      key: "quantity",
+      render: (q: number) => <Text style={{ color: "#ef4444", fontWeight: 700 }}>{q}</Text>,
+    },
+    {
+      title: t("columns.minStock"),
+      dataIndex: "min_quantity",
+      key: "min_quantity",
+      render: (m: number) => <Text type="secondary">{m}</Text>,
+    },
+  ];
+}
 
 interface Props {
   stockAlerts: StockAlert[];
 }
 
 export function StockAlerts({ stockAlerts }: Props) {
+  const t = useTranslations("reports");
   const isMobile = useIsMobile();
+  const alertColumns = buildAlertColumns(t);
 
   if (stockAlerts.length === 0) return null;
 
@@ -49,13 +56,13 @@ export function StockAlerts({ stockAlerts }: Props) {
       title={
         <Space>
           <WarningOutlined style={{ color: "#ef4444" }} />
-          <Text>Insumos bajo mínimo ({stockAlerts.length})</Text>
+          <Text>{t("stockAlerts.title", { count: stockAlerts.length })}</Text>
         </Space>
       }
       size="small"
       extra={
         <Link href="/stock">
-          <Button size="small" icon={<ArrowRightOutlined />}>Ir a stock</Button>
+          <Button size="small" icon={<ArrowRightOutlined />}>{t("stockAlerts.goToStock")}</Button>
         </Link>
       }
     >
@@ -76,11 +83,11 @@ export function StockAlerts({ stockAlerts }: Props) {
               </div>
               <div style={{ display: "flex", gap: 16 }}>
                 <div>
-                  <Text type="secondary" style={{ fontSize: 12 }}>Actual: </Text>
+                  <Text type="secondary" style={{ fontSize: 12 }}>{t("currentShort")}: </Text>
                   <Text strong style={{ color: "#ef4444" }}>{r.quantity}</Text>
                 </div>
                 <div>
-                  <Text type="secondary" style={{ fontSize: 12 }}>Mínimo: </Text>
+                  <Text type="secondary" style={{ fontSize: 12 }}>{t("columns.minStock")}: </Text>
                   <Text type="secondary">{r.min_quantity}</Text>
                 </div>
               </div>

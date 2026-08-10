@@ -51,6 +51,7 @@ export const authProvider: AuthProvider = {
       name: profile.full_name ?? profile.email,
       role: profile.role,
       branch_id: profile.branch_id,
+      business_name: profile.business_name,
       avatar: null,
     };
   },

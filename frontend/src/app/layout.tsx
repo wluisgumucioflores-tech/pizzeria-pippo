@@ -10,13 +10,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Pizzería Pippo",
-  description: "Sistema de gestión para Pizzería Pippo",
+  title: "GU PIZZA",
+  description: "Sistema de gestión para GU PIZZA",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Pippo",
+    title: "GU PIZZA",
   },
   icons: {
     apple: "/icons/apple-touch-icon.png",
@@ -41,7 +41,7 @@ export default async function RootLayout({
           </>
         )}
         <NextTopLoader color="#c0392b" showSpinner={false} />
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider locale={locale} messages={messages}>
           {children}
         </NextIntlClientProvider>
       </body>

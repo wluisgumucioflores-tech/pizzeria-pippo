@@ -8,5 +8,6 @@ export type PrinterStatus =
 
 export interface TicketPrintConfig {
   paperWidth: PaperWidth;
+  businessName?: string | null;
   branchName?: string | null;
 }

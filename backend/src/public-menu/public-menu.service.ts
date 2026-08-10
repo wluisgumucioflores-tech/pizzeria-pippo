@@ -7,13 +7,23 @@ import type { PublicBranch } from './types/public-branch.types';
 // recipes, branch prices and role-scoped branch filtering meant for
 // authenticated staff. This service only selects the fields safe to expose
 // on the public, unauthenticated marketing site.
+//
+// No JWT means no business context — same "first business" pattern already
+// used for the Telegram bot (SettingsService.getRawSettingsForFirstBusiness).
+// Multitenant subdomains/branding are explicitly out of scope for this plan.
 @Injectable()
 export class PublicMenuService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private async resolveFirstBusinessId(): Promise<string | undefined> {
+    const business = await this.prisma.business.findFirst();
+    return business?.id;
+  }
+
   async listPizzas(): Promise<PublicPizza[]> {
+    const businessId = await this.resolveFirstBusinessId();
     const products = await this.prisma.product.findMany({
-      where: { isActive: true, category: 'pizza' },
+      where: { businessId, isActive: true, category: 'pizza' },
       select: {
         id: true,
         name: true,
@@ -34,8 +44,9 @@ export class PublicMenuService {
   }
 
   async listBranches(): Promise<PublicBranch[]> {
+    const businessId = await this.resolveFirstBusinessId();
     const branches = await this.prisma.branch.findMany({
-      where: { isActive: true },
+      where: { businessId, isActive: true },
       select: { id: true, name: true, address: true, phone: true },
       orderBy: { name: 'asc' },
     });
