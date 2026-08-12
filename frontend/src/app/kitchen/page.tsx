@@ -152,6 +152,7 @@ export default function KitchenPage() {
   const [currentTime, setCurrentTime] = useState("");
   const [lateThreshold, setLateThreshold] = useState(10);
   const [connected, setConnected] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     unlockAudioOnFirstInteraction();
@@ -235,6 +236,14 @@ export default function KitchenPage() {
     window.location.href = "/login";
   };
 
+  // Botón manual para cuando el realtime no reconecta bien solo — refresca
+  // la lista completa de pedidos pendientes sin depender del socket.
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchOrders();
+    setRefreshing(false);
+  };
+
   const pendingCount = orders.length;
   const lateCount = orders.filter((o) => {
     const minutes = Math.floor((Date.now() - new Date(o.created_at).getTime()) / 60000);
@@ -279,6 +288,13 @@ export default function KitchenPage() {
           </span>
           <span className="text-gray-300 font-mono text-xl">{currentTime}</span>
           <LocaleSwitcher dark />
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="text-gray-300 hover:text-white text-sm font-semibold px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span className={refreshing ? "inline-block animate-spin" : "inline-block"}>🔄</span> Actualizar
+          </button>
           <button
             onClick={handleLogout}
             className="text-gray-300 hover:text-white text-sm font-semibold px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-colors whitespace-nowrap"
