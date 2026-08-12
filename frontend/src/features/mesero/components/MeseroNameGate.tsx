@@ -27,8 +27,8 @@ export function MeseroNameGate({ children }: { children: React.ReactNode }) {
           }}
         >
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-semibold text-gray-800 mb-1">¿Cómo te llamás?</h1>
-            <p className="text-gray-500 text-sm">Tu nombre se va a usar para identificar tus pedidos</p>
+            <h1 className="text-3xl font-bold text-gray-800 mb-1">¿Cómo te llamás?</h1>
+            <p className="text-gray-500 text-base">Tu nombre se va a usar para identificar tus pedidos</p>
           </div>
           <input
             name="waiterName"
@@ -36,11 +36,11 @@ export function MeseroNameGate({ children }: { children: React.ReactNode }) {
             required
             autoFocus
             placeholder="Tu nombre"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-3 border border-gray-300 rounded-md text-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <button
             type="submit"
-            className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md text-sm transition-colors cursor-pointer"
+            className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md text-lg transition-colors cursor-pointer"
           >
             Empezar
           </button>
@@ -59,21 +59,21 @@ export function MeseroNameGate({ children }: { children: React.ReactNode }) {
               <circle cx="12" cy="7" r="4" />
             </svg>
           </span>
-          <span className="font-medium text-gray-800">{name}</span>
+          <span className="font-semibold text-gray-800 text-lg">{name}</span>
         </div>
         <div className="flex items-center gap-3">
           <LocaleSwitcher />
           <button
             type="button"
             onClick={clearName}
-            className="text-sm text-gray-500 hover:text-gray-700 cursor-pointer"
+            className="text-base text-gray-500 hover:text-gray-700 cursor-pointer"
           >
             Cambiar de mesero
           </button>
           <button
             type="button"
             onClick={handleLogout}
-            className="text-sm text-red-500 hover:text-red-700 cursor-pointer"
+            className="text-base text-red-500 hover:text-red-700 cursor-pointer"
           >
             Cerrar sesión
           </button>

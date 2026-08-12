@@ -14,8 +14,8 @@ interface Props {
 }
 
 export function MeseroOrdersList({ orders, loading, onAddItems }: Props) {
-  if (loading) return <p className="text-gray-400 text-sm text-center py-8">Cargando...</p>;
-  if (orders.length === 0) return <p className="text-gray-400 text-sm text-center py-8">Todavía no creaste pedidos hoy</p>;
+  if (loading) return <p className="text-gray-400 text-base text-center py-8">Cargando...</p>;
+  if (orders.length === 0) return <p className="text-gray-400 text-base text-center py-8">Todavía no creaste pedidos hoy</p>;
 
   return (
     <div className="space-y-3 p-4">
@@ -25,11 +25,11 @@ export function MeseroOrdersList({ orders, loading, onAddItems }: Props) {
         return (
           <div key={order.id} className="bg-white rounded-lg shadow p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="font-semibold text-gray-800">#{String(order.daily_number).padStart(2, "0")}</span>
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${badge.className}`}>{badge.label}</span>
+              <span className="font-bold text-gray-800 text-lg">#{String(order.daily_number).padStart(2, "0")}</span>
+              <span className={`text-sm font-bold px-2 py-0.5 rounded-full ${badge.className}`}>{badge.label}</span>
             </div>
-            {order.table_number && <div className="text-sm text-gray-500 mb-1">🪑 {order.table_number}</div>}
-            <ul className="text-sm text-gray-600 mb-2">
+            {order.table_number && <div className="text-base text-gray-500 mb-1">🪑 {order.table_number}</div>}
+            <ul className="text-base text-gray-600 mb-2">
               {order.order_items.map((item, idx) => (
                 <li key={idx}>
                   {item.qty}x {item.product_variants?.products?.name ?? "?"} {item.product_variants?.name ?? ""}
@@ -48,12 +48,12 @@ export function MeseroOrdersList({ orders, loading, onAddItems }: Props) {
                 <button
                   type="button"
                   onClick={() => onAddItems(order.id, order.daily_number)}
-                  className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer"
+                  className="text-base text-blue-600 hover:text-blue-800 cursor-pointer"
                 >
                   + Agregar items
                 </button>
               ) : <span />}
-              <div className="text-right font-medium text-gray-800">Bs {order.total.toFixed(2)}</div>
+              <div className="text-right font-semibold text-gray-800 text-lg">Bs {order.total.toFixed(2)}</div>
             </div>
           </div>
         );

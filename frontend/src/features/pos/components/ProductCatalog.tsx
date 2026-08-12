@@ -22,9 +22,12 @@ interface Props {
   getVariantPrice: (variant: Product["product_variants"][0], branchId: string) => number;
   getPromoLabel: (variantId: string) => string | null;
   onProductClick: (product: Product) => void;
+  // Mesero pide nombre/precio más grandes que POS en estos mismos cards —
+  // sin tocar cómo se ve en POS (componente compartido entre ambos).
+  large?: boolean;
 }
 
-export function ProductCatalog({ products, loading, branchId, useStock, getVariantPrice, getPromoLabel, onProductClick }: Props) {
+export function ProductCatalog({ products, loading, branchId, useStock, getVariantPrice, getPromoLabel, onProductClick, large = false }: Props) {
   const [filterCategory, setFilterCategory] = useState("all");
   const t = useTranslations("pos");
   const CATEGORY_OPTIONS = [
@@ -140,15 +143,15 @@ export function ProductCatalog({ products, loading, branchId, useStock, getVaria
 
                   {/* Info */}
                   <div style={{ padding: "10px 12px" }}>
-                    <Text strong style={{ fontSize: 13, display: "block", lineHeight: "1.3", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <Text strong style={{ fontSize: large ? 16 : 13, display: "block", lineHeight: "1.3", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {product.name}
                     </Text>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
-                      <Text style={{ color: soldOut ? "#9ca3af" : "#ea580c", fontWeight: 700, fontSize: 14 }}>
+                      <Text style={{ color: soldOut ? "#9ca3af" : "#ea580c", fontWeight: 700, fontSize: large ? 18 : 14 }}>
                         {soldOut ? t("catalog.soldOut") : hasMultipleVariants ? t("catalog.fromPrice", { price }) : `Bs ${price}`}
                       </Text>
                       {!soldOut && hasMultipleVariants && (
-                        <Text type="secondary" style={{ fontSize: 11 }}>{t("catalog.various")}</Text>
+                        <Text type="secondary" style={{ fontSize: large ? 13 : 11 }}>{t("catalog.various")}</Text>
                       )}
                     </div>
                   </div>

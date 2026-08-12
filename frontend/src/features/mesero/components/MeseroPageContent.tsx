@@ -26,33 +26,33 @@ export function MeseroPageContent() {
         <button
           type="button"
           onClick={() => p.setTab("nuevo")}
-          className={`flex-1 py-3 text-sm font-medium cursor-pointer ${p.tab === "nuevo" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-500"}`}
+          className={`flex-1 py-3 text-base font-semibold cursor-pointer ${p.tab === "nuevo" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-500"}`}
         >
           Nuevo pedido
         </button>
         <button
           type="button"
           onClick={() => p.setTab("mis-pedidos")}
-          className={`flex-1 py-3 text-sm font-medium cursor-pointer ${p.tab === "mis-pedidos" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-500"}`}
+          className={`flex-1 py-3 text-base font-semibold cursor-pointer ${p.tab === "mis-pedidos" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-500"}`}
         >
           Mis pedidos
         </button>
       </div>
 
       {!p.connected && (
-        <div className="mx-4 mt-3 px-4 py-2 bg-red-50 border border-red-200 rounded-md text-sm text-red-700 animate-pulse">
+        <div className="mx-4 mt-3 px-4 py-2 bg-red-50 border border-red-200 rounded-md text-base text-red-700 animate-pulse">
           🔴 Sin conexión — reconectando...
         </div>
       )}
 
       {p.submitError && (
-        <div className="mx-4 mt-3 px-4 py-2 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
+        <div className="mx-4 mt-3 px-4 py-2 bg-red-50 border border-red-200 rounded-md text-base text-red-700">
           {p.submitError}
         </div>
       )}
 
       {p.tab === "nuevo" && p.addingToOrder && (
-        <div className="mx-4 mt-3 px-4 py-2 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-700 flex items-center justify-between">
+        <div className="mx-4 mt-3 px-4 py-2 bg-blue-50 border border-blue-200 rounded-md text-base text-blue-700 flex items-center justify-between">
           <span>Agregando items al pedido #{String(p.addingToOrder.dailyNumber).padStart(2, "0")}</span>
           <button type="button" onClick={p.cancelAddItems} className="text-blue-600 hover:text-blue-800 font-medium cursor-pointer">
             Cancelar
@@ -71,6 +71,7 @@ export function MeseroPageContent() {
               getVariantPrice={p.getVariantPrice}
               getPromoLabel={() => null}
               onProductClick={p.handleProductClick}
+              large
             />
           </div>
           <div className="hidden lg:flex lg:flex-col overflow-hidden bg-white rounded-lg shadow">
