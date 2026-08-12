@@ -19,6 +19,7 @@ interface PosCache {
   cachedAt: number;
   products: Product[];
   promotions: Promotion[];
+  useStock: boolean;
 }
 
 function getCached(branchId: string): PosCache | null {
@@ -34,9 +35,9 @@ function getCached(branchId: string): PosCache | null {
   }
 }
 
-function setCache(branchId: string, products: Product[], promotions: Promotion[]) {
+function setCache(branchId: string, products: Product[], promotions: Promotion[], useStock: boolean) {
   try {
-    const payload: PosCache = { date: todayInBolivia(), branchId, cachedAt: Date.now(), products, promotions };
+    const payload: PosCache = { date: todayInBolivia(), branchId, cachedAt: Date.now(), products, promotions, useStock };
     sessionStorage.setItem("pos_cache", JSON.stringify(payload));
   } catch {
     // sessionStorage full or unavailable — continue without cache
@@ -46,6 +47,7 @@ function setCache(branchId: string, products: Product[], promotions: Promotion[]
 export function usePosProducts(branchId: string | undefined) {
   const [products, setProducts] = useState<Product[]>([]);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [useStock, setUseStock] = useState(true);
   const [loading, setLoading] = useState(false);
 
   const fetchData = useCallback(async (id: string, skipCache = false) => {
@@ -53,13 +55,15 @@ export function usePosProducts(branchId: string | undefined) {
     if (cached) {
       setProducts(cached.products);
       setPromotions(cached.promotions);
+      setUseStock(cached.useStock);
     } else {
       setLoading(true);
     }
     const result = await PosService.getProductsAndPromotions(id);
     setProducts(result.products);
     setPromotions(result.promotions);
-    setCache(id, result.products, result.promotions);
+    setUseStock(result.useStock);
+    setCache(id, result.products, result.promotions, result.useStock);
     setLoading(false);
   }, []);
 
@@ -113,13 +117,16 @@ export function usePosProducts(branchId: string | undefined) {
     return null;
   }, [promotions, variantMeta]);
 
+  // Si el negocio desactivó el control de stock (Configuración → Inventario),
+  // nunca hay límite de cantidad — se vende sin importar lo cargado en stock_quantity.
   const getStockQty = useCallback((variantId: string): number | null => {
+    if (!useStock) return null;
     for (const p of products) {
       const v = p.product_variants?.find((pv) => pv.id === variantId);
       if (v) return v.stock_quantity !== undefined ? (v.stock_quantity ?? null) : null;
     }
     return null;
-  }, [products]);
+  }, [products, useStock]);
 
-  return { products, promotions, loading, getVariantPrice, getPromoLabel, getStockQty, refresh };
+  return { products, promotions, useStock, loading, getVariantPrice, getPromoLabel, getStockQty, refresh };
 }

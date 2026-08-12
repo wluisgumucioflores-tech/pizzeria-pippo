@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, Put, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -25,7 +33,10 @@ export class SettingsController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Put()
-  updateSettings(@CurrentUser() user: CurrentUserPayload, @Body() dto: UpdateSettingsDto) {
+  updateSettings(
+    @CurrentUser() user: CurrentUserPayload,
+    @Body() dto: UpdateSettingsDto,
+  ) {
     return this.settingsService.updateSettings(user, dto);
   }
 
@@ -40,7 +51,17 @@ export class SettingsController {
   getKitchenThreshold(@CurrentUser() user: CurrentUserPayload) {
     return this.settingsService
       .getKitchenLateThresholdMinutes(user)
-      .then((kitchen_late_threshold_minutes) => ({ kitchen_late_threshold_minutes }));
+      .then((kitchen_late_threshold_minutes) => ({
+        kitchen_late_threshold_minutes,
+      }));
+  }
+
+  // No RolesGuard: cajero/mesero necesitan saber esto para el catálogo del POS.
+  @Get('stock')
+  getUseStock(@CurrentUser() user: CurrentUserPayload) {
+    return this.settingsService
+      .isStockTrackingEnabled(user)
+      .then((use_stock) => ({ use_stock }));
   }
 
   @UseGuards(RolesGuard)
@@ -55,14 +76,20 @@ export class SettingsController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Get('raw')
-  getRawSettings(@CurrentUser() user: CurrentUserPayload, @Query() query: GetRawSettingsQueryDto) {
+  getRawSettings(
+    @CurrentUser() user: CurrentUserPayload,
+    @Query() query: GetRawSettingsQueryDto,
+  ) {
     return this.settingsService.getRawSettings(user, query.keys.split(','));
   }
 
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Put('raw')
-  saveRawSettings(@CurrentUser() user: CurrentUserPayload, @Body() dto: SaveRawSettingsDto) {
+  saveRawSettings(
+    @CurrentUser() user: CurrentUserPayload,
+    @Body() dto: SaveRawSettingsDto,
+  ) {
     return this.settingsService.saveRawSettings(user, dto.updates);
   }
 }

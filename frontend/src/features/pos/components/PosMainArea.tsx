@@ -16,6 +16,7 @@ interface Props {
   products: Product[];
   loading: boolean;
   branchId: string;
+  useStock: boolean;
   getVariantPrice: (variant: Variant, branchId: string) => number;
   getPromoLabel: (variantId: string) => string | null;
   onProductClick: (product: Product) => void;
@@ -28,7 +29,7 @@ interface Props {
 
 export function PosMainArea({
   activeTab, isMobile, mobileView, onMobileViewChange,
-  products, loading, branchId, getVariantPrice, getPromoLabel, onProductClick,
+  products, loading, branchId, useStock, getVariantPrice, getPromoLabel, onProductClick,
   cart, onOpenPayment, activePromotions, onAddItems, onAddSingleVariant,
 }: Props) {
   const t = useTranslations("pos.mobileNav");
@@ -49,7 +50,7 @@ export function PosMainArea({
   if (activeTab === "sale" && !isMobile) {
     return (
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        <ProductCatalog products={products} loading={loading} branchId={branchId} getVariantPrice={getVariantPrice} getPromoLabel={getPromoLabel} onProductClick={onProductClick} />
+        <ProductCatalog products={products} loading={loading} branchId={branchId} useStock={useStock} getVariantPrice={getVariantPrice} getPromoLabel={getPromoLabel} onProductClick={onProductClick} />
         {cartPanel}
       </div>
     );
@@ -68,7 +69,7 @@ export function PosMainArea({
     return (
       <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
         <div style={{ flex: 1, overflow: "hidden", display: mobileView === "catalog" ? "flex" : "none", flexDirection: "column" }}>
-          <ProductCatalog products={products} loading={loading} branchId={branchId} getVariantPrice={getVariantPrice} getPromoLabel={getPromoLabel} onProductClick={onProductClick} />
+          <ProductCatalog products={products} loading={loading} branchId={branchId} useStock={useStock} getVariantPrice={getVariantPrice} getPromoLabel={getPromoLabel} onProductClick={onProductClick} />
         </div>
         <div style={{ flex: 1, overflow: "hidden", display: mobileView === "cart" ? "flex" : "none", flexDirection: "column" }}>
           {cartPanel}

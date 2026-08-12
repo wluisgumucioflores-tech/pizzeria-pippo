@@ -1,4 +1,11 @@
-import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 
 export class UpdateSettingsDto {
   @IsOptional()
@@ -25,4 +32,8 @@ export class UpdateSettingsDto {
   @IsOptional()
   @IsString()
   printer_business_name?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  use_stock?: boolean;
 }

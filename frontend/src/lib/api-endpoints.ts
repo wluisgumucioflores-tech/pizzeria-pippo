@@ -89,6 +89,7 @@ export const API_ENDPOINTS = {
     rawByKeys: (keys: string[]) => `/settings/raw?keys=${keys.join(",")}`,
     printer: "/settings/printer",
     kitchenThreshold: "/settings/kitchen-threshold",
+    stock: "/settings/stock",
   },
   paymentValidation: {
     start: "/payment-validation/start",

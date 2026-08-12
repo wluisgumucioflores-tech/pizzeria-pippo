@@ -801,7 +801,8 @@
       "kitchen": "Cocina",
       "bot": "Bot de IA",
       "printer": "Impresora",
-      "devices": "Dispositivos"
+      "devices": "Dispositivos",
+      "stock": "Inventario"
     },
     "testConnection": "Probar conexión",
     "testSuccess": "Mensaje enviado correctamente",
@@ -810,6 +811,13 @@
       "description": "Configura el umbral de tiempo tras el cual un pedido se marca como demorado.",
       "thresholdLabel": "Minutos para marcar como demorado",
       "thresholdExtra": "Los pedidos que superen este tiempo se resaltan en rojo en la pantalla de cocina."
+    },
+    "stock": {
+      "title": "Control de inventario",
+      "description": "Si tu negocio no maneja stock (solo creás el producto y lo vendés), podés desactivar el control acá.",
+      "enabledLabel": "Controlar stock e insumos",
+      "enabledExtra": "Activado: el POS bloquea productos de reventa sin stock cargado y las ventas descuentan insumos/stock automáticamente. Desactivado: se vende libremente, sin validar ni descontar nada.",
+      "disabledWarning": "Con el control de stock desactivado, el POS no va a bloquear ningún producto por falta de stock y las ventas no van a descontar insumos ni stock."
     },
     "printer": {
       "title": "Impresora de tickets",

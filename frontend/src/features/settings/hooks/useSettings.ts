@@ -15,6 +15,7 @@ export function useSettings() {
     kitchen_late_threshold_minutes: 10,
     printer_paper_width: 58,
     printer_business_name: "GU PIZZA",
+    use_stock: true,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

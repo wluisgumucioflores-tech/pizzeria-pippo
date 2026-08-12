@@ -801,7 +801,8 @@
       "kitchen": "Kitchen",
       "bot": "AI Bot",
       "printer": "Printer",
-      "devices": "Devices"
+      "devices": "Devices",
+      "stock": "Inventory"
     },
     "testConnection": "Test connection",
     "testSuccess": "Message sent successfully",
@@ -810,6 +811,13 @@
       "description": "Set the time threshold after which an order is marked as delayed.",
       "thresholdLabel": "Minutes to mark as delayed",
       "thresholdExtra": "Orders that exceed this time are highlighted in red on the kitchen screen."
+    },
+    "stock": {
+      "title": "Inventory control",
+      "description": "If your business doesn't track stock (you just create the product and sell it), you can turn tracking off here.",
+      "enabledLabel": "Track stock and ingredients",
+      "enabledExtra": "On: the POS blocks resale products with no stock loaded and sales automatically deduct ingredients/stock. Off: everything sells freely, with no validation or deduction.",
+      "disabledWarning": "With stock tracking off, the POS won't block any product for lack of stock and sales won't deduct ingredients or stock."
     },
     "printer": {
       "title": "Receipt printer",

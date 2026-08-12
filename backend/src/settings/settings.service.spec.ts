@@ -7,7 +7,11 @@ import type { CurrentUserPayload } from '../auth/types/jwt.types';
 describe('SettingsService', () => {
   let service: SettingsService;
   let prisma: {
-    appSetting: { findMany: jest.Mock; findUnique: jest.Mock; upsert: jest.Mock };
+    appSetting: {
+      findMany: jest.Mock;
+      findUnique: jest.Mock;
+      upsert: jest.Mock;
+    };
     business: { findFirst: jest.Mock };
   };
 
@@ -30,12 +34,19 @@ describe('SettingsService', () => {
 
   beforeEach(async () => {
     prisma = {
-      appSetting: { findMany: jest.fn(), findUnique: jest.fn(), upsert: jest.fn() },
+      appSetting: {
+        findMany: jest.fn(),
+        findUnique: jest.fn(),
+        upsert: jest.fn(),
+      },
       business: { findFirst: jest.fn() },
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [SettingsService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        SettingsService,
+        { provide: PrismaService, useValue: prisma },
+      ],
     }).compile();
 
     service = module.get(SettingsService);
@@ -50,7 +61,10 @@ describe('SettingsService', () => {
       const result = await service.getSettings(admin);
 
       expect(prisma.appSetting.findMany).toHaveBeenCalledWith({
-        where: { businessId: 'biz1', key: { in: expect.arrayContaining(['telegram_bot_token']) } },
+        where: {
+          businessId: 'biz1',
+          key: { in: expect.arrayContaining(['telegram_bot_token']) },
+        },
       });
       expect(result).toEqual({
         telegram_bot_token: '123456***def',
@@ -59,11 +73,14 @@ describe('SettingsService', () => {
         kitchen_late_threshold_minutes: 10,
         printer_paper_width: 58,
         printer_business_name: 'GU PIZZA',
+        use_stock: true,
       });
     });
 
     it('lanza si el usuario no tiene business_id', async () => {
-      await expect(service.getSettings(adminSinNegocio)).rejects.toThrow(InternalServerErrorException);
+      await expect(service.getSettings(adminSinNegocio)).rejects.toThrow(
+        InternalServerErrorException,
+      );
     });
   });
 
@@ -77,10 +94,18 @@ describe('SettingsService', () => {
         printer_paper_width: 80,
       });
 
-      const keysUpserted = prisma.appSetting.upsert.mock.calls.map((call) => call[0].where.businessId_key.key);
+      const keysUpserted = prisma.appSetting.upsert.mock.calls.map(
+        (call) => call[0].where.businessId_key.key,
+      );
       expect(keysUpserted).not.toContain('telegram_bot_token');
       expect(keysUpserted).toEqual(
-        expect.arrayContaining(['telegram_chat_id', 'telegram_enabled', 'kitchen_late_threshold_minutes', 'printer_paper_width', 'printer_business_name']),
+        expect.arrayContaining([
+          'telegram_chat_id',
+          'telegram_enabled',
+          'kitchen_late_threshold_minutes',
+          'printer_paper_width',
+          'printer_business_name',
+        ]),
       );
     });
 
@@ -104,7 +129,7 @@ describe('SettingsService', () => {
         telegram_chat_id: '',
         telegram_enabled: false,
         kitchen_late_threshold_minutes: 10,
-        printer_paper_width: 999 as unknown as number,
+        printer_paper_width: 999,
       });
 
       const paperCall = prisma.appSetting.upsert.mock.calls.find(
@@ -137,21 +162,34 @@ describe('SettingsService', () => {
         { key: 'telegram_ai_model', value: 'claude-haiku-4-5-20251001' },
       ]);
 
-      const result = await service.getRawSettings(admin, ['ai_provider', 'telegram_ai_model']);
+      const result = await service.getRawSettings(admin, [
+        'ai_provider',
+        'telegram_ai_model',
+      ]);
 
       expect(prisma.appSetting.findMany).toHaveBeenCalledWith({
-        where: { businessId: 'biz1', key: { in: ['ai_provider', 'telegram_ai_model'] } },
+        where: {
+          businessId: 'biz1',
+          key: { in: ['ai_provider', 'telegram_ai_model'] },
+        },
       });
-      expect(result).toEqual({ ai_provider: 'anthropic', telegram_ai_model: 'claude-haiku-4-5-20251001' });
+      expect(result).toEqual({
+        ai_provider: 'anthropic',
+        telegram_ai_model: 'claude-haiku-4-5-20251001',
+      });
     });
   });
 
   describe('getRawSettingsForFirstBusiness', () => {
     it('resuelve el business_id tomando el único negocio existente, sin usuario', async () => {
       prisma.business.findFirst.mockResolvedValue({ id: 'biz1' });
-      prisma.appSetting.findMany.mockResolvedValue([{ key: 'telegram_webhook_secret', value: 'shh' }]);
+      prisma.appSetting.findMany.mockResolvedValue([
+        { key: 'telegram_webhook_secret', value: 'shh' },
+      ]);
 
-      const result = await service.getRawSettingsForFirstBusiness(['telegram_webhook_secret']);
+      const result = await service.getRawSettingsForFirstBusiness([
+        'telegram_webhook_secret',
+      ]);
 
       expect(prisma.appSetting.findMany).toHaveBeenCalledWith({
         where: { businessId: 'biz1', key: { in: ['telegram_webhook_secret'] } },
@@ -162,7 +200,9 @@ describe('SettingsService', () => {
     it('devuelve un objeto vacío si no existe ningún negocio', async () => {
       prisma.business.findFirst.mockResolvedValue(null);
 
-      const result = await service.getRawSettingsForFirstBusiness(['telegram_webhook_secret']);
+      const result = await service.getRawSettingsForFirstBusiness([
+        'telegram_webhook_secret',
+      ]);
 
       expect(result).toEqual({});
       expect(prisma.appSetting.findMany).not.toHaveBeenCalled();
@@ -180,7 +220,11 @@ describe('SettingsService', () => {
       expect(prisma.appSetting.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { businessId_key: { businessId: 'biz1', key: 'ai_provider' } },
-          create: { businessId: 'biz1', key: 'ai_provider', value: 'anthropic' },
+          create: {
+            businessId: 'biz1',
+            key: 'ai_provider',
+            value: 'anthropic',
+          },
         }),
       );
     });

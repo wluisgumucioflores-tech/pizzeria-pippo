@@ -18,12 +18,13 @@ interface Props {
   products: Product[];
   loading: boolean;
   branchId: string;
+  useStock: boolean;
   getVariantPrice: (variant: Product["product_variants"][0], branchId: string) => number;
   getPromoLabel: (variantId: string) => string | null;
   onProductClick: (product: Product) => void;
 }
 
-export function ProductCatalog({ products, loading, branchId, getVariantPrice, getPromoLabel, onProductClick }: Props) {
+export function ProductCatalog({ products, loading, branchId, useStock, getVariantPrice, getPromoLabel, onProductClick }: Props) {
   const [filterCategory, setFilterCategory] = useState("all");
   const t = useTranslations("pos");
   const CATEGORY_OPTIONS = [
@@ -39,10 +40,11 @@ export function ProductCatalog({ products, loading, branchId, getVariantPrice, g
   const filterActiveVariants = (product: Product) => {
     const active = (product.product_variants ?? []).filter((v) => v.is_active !== false);
     if (!active.some(isResaleVariant)) return active;
-    // Resale variants: must have a stock row AND a branch_price for this branch
+    // Resale variants: must have a branch_price for this branch, and (solo si
+    // el negocio controla stock — Configuración → Inventario) una fila de stock cargada.
     return active.filter((v) => {
       if (!isResaleVariant(v)) return true;
-      const hasStock = v.stock_quantity !== null;
+      const hasStock = !useStock || v.stock_quantity !== null;
       const hasPrice = v.branch_prices?.some((bp) => bp.branch_id === branchId);
       return hasStock && hasPrice;
     });
@@ -91,7 +93,7 @@ export function ProductCatalog({ products, loading, branchId, getVariantPrice, g
               const promoLabels = variants.map((v) => getPromoLabel(v.id)).filter(Boolean);
               const promoLabel = promoLabels?.[0] ?? null;
               const allResale = variants.length > 0 && variants.every(isResaleVariant);
-              const soldOut = allResale && variants.every((v) => v.stock_quantity === 0);
+              const soldOut = useStock && allResale && variants.every((v) => v.stock_quantity === 0);
 
               return (
                 <div
