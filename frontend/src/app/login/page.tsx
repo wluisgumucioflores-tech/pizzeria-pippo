@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "@/lib/auth";
+import { signIn, type UserRole } from "@/lib/auth";
+
+const ROLE_REDIRECTS: Partial<Record<UserRole, string>> = {
+  superadmin: "/businesses",
+  admin: "/dashboard",
+  cocinero: "/kitchen",
+  mesero: "/mesero",
+};
+const DEFAULT_REDIRECT = "/pos";
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
@@ -19,17 +27,7 @@ export default function LoginPage() {
 
     try {
       const { user } = await signIn(email, password);
-      const role = user.role;
-
-      if (role === "superadmin") {
-        window.location.href = "/businesses";
-      } else if (role === "admin") {
-        window.location.href = "/dashboard";
-      } else if (role === "cocinero") {
-        window.location.href = "/kitchen";
-      } else {
-        window.location.href = "/pos";
-      }
+      window.location.href = ROLE_REDIRECTS[user.role] ?? DEFAULT_REDIRECT;
     } catch {
       setError("Credenciales incorrectas. Verificá tu email y contraseña.");
     } finally {

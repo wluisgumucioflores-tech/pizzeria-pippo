@@ -70,6 +70,12 @@ export function TicketModal({ ticket, onClose, onPrint, printing, canPrint }: Pr
             <Text strong className="text-4xl text-orange-600">
               #{String(ticket.dailyNumber).padStart(2, "0")}
             </Text>
+            {(ticket.tableNumber || ticket.waiterName) && (
+              <div className="mt-1">
+                {ticket.tableNumber && <Text type="secondary" className="block text-sm">🪑 Mesa {ticket.tableNumber}</Text>}
+                {ticket.waiterName && <Text type="secondary" className="block text-sm">🙋 {ticket.waiterName}</Text>}
+              </div>
+            )}
           </div>
           {ticket.items.map((item, idx) => (
             <div key={`${item.variant_id}-${idx}`} className="flex justify-between py-1 border-b last:border-0">
@@ -94,6 +100,13 @@ export function TicketModal({ ticket, onClose, onPrint, printing, canPrint }: Pr
             <Text type="secondary">{tt("paymentMethodLabel")}</Text>
             <Text>{paymentLabel(ticket.paymentMethod, ticket.paymentProvider, ticket.payments, labels)}</Text>
           </div>
+          {ticket.notes && (
+            <>
+              <Divider className="!my-2" />
+              <Text type="secondary" className="block text-xs">Nota:</Text>
+              <Text className="block text-sm">{ticket.notes}</Text>
+            </>
+          )}
         </div>
       )}
     </Modal>

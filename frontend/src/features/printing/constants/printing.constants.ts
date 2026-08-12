@@ -18,6 +18,8 @@ export const PAYMENT_METHOD_LABELS: Record<string, string> = {
 export const ORDER_TYPE_LABELS: Record<string, string> = {
   dine_in: "Para comer aquí",
   takeaway: "Para llevar",
+  delivery: "Delivery",
+  pedidos_ya: "Pedidos Ya",
 };
 
 // GATT services exposed by common generic BLE thermal printers.

@@ -13,12 +13,13 @@ interface Props {
   totalDiscount: number;
   onUpdateQty: (variantId: string, delta: number) => void;
   onRemove: (variantId: string) => void;
+  onEditPrice: (variantId: string, newPrice: number) => void;
   onConfirm: () => void;
   onClear: () => void;
   getStockQty: (variantId: string) => number | null;
 }
 
-export function PosCart({ discountedCart, total, totalDiscount, onUpdateQty, onRemove, onConfirm, onClear, getStockQty }: Props) {
+export function PosCart({ discountedCart, total, totalDiscount, onUpdateQty, onRemove, onEditPrice, onConfirm, onClear, getStockQty }: Props) {
   const isMobile = useIsMobile();
   const t = useTranslations("pos.cartPanel");
 
@@ -35,7 +36,7 @@ export function PosCart({ discountedCart, total, totalDiscount, onUpdateQty, onR
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
-        <PosCartItemsList discountedCart={discountedCart} onUpdateQty={onUpdateQty} onRemove={onRemove} getStockQty={getStockQty} />
+        <PosCartItemsList discountedCart={discountedCart} onUpdateQty={onUpdateQty} onRemove={onRemove} onEditPrice={onEditPrice} getStockQty={getStockQty} />
       </div>
 
       <PosCartFooter total={total} totalDiscount={totalDiscount} isEmpty={discountedCart.length === 0} onConfirm={onConfirm} onClear={onClear} />

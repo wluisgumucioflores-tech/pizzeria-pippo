@@ -13,7 +13,7 @@ const { Text } = Typography;
 // ready for cashiers to use yet.
 const ENABLE_QR_AUTO_VALIDATION = false;
 
-type OrderType = "dine_in" | "takeaway";
+type OrderType = "dine_in" | "takeaway" | "delivery" | "pedidos_ya";
 
 function paymentLabel(
   method: PaymentMethod,
@@ -107,7 +107,13 @@ export function ConfirmSaleModal({ open, discountedCart, total, totalDiscount, p
           </div>
           <div className="flex gap-2 flex-wrap justify-center">
             <span className="inline-flex items-center gap-1 bg-white rounded-full px-3 py-1 text-sm">
-              {orderType === "takeaway" ? t("orderType.takeawayEmoji") : t("orderType.dineInEmoji")}
+              {orderType === "takeaway"
+                ? t("orderType.takeawayEmoji")
+                : orderType === "delivery"
+                ? t("orderType.deliveryEmoji")
+                : orderType === "pedidos_ya"
+                ? t("orderType.pedidosYaEmoji")
+                : t("orderType.dineInEmoji")}
             </span>
             {paymentMethod && (
               <span className="inline-flex items-center gap-1 bg-white rounded-full px-3 py-1 text-sm">

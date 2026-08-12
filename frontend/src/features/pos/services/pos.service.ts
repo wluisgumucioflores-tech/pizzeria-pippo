@@ -67,7 +67,9 @@ export const PosService = {
     signal?: AbortSignal,
     idempotencyKey?: string,
     payments?: SplitPayment[],
-    notes?: string | null
+    notes?: string | null,
+    tableNumber?: string | null,
+    waiterName?: string | null
   ): Promise<{ ok: boolean; order_id?: string; daily_number?: number; error?: string }> {
     try {
       const res = await nestFetch(API_ENDPOINTS.orders.base, {
@@ -80,6 +82,8 @@ export const PosService = {
           payment_provider: paymentProvider,
           payments: payments ?? null,
           order_type: orderType,
+          table_number: tableNumber?.trim() || null,
+          waiter_name: waiterName?.trim() || null,
           notes: notes?.trim() || null,
           idempotency_key: idempotencyKey ?? null,
           // The server recalculates prices, promos and physical units from
@@ -89,6 +93,7 @@ export const PosService = {
             qty: i.qty,
             flavors: (i.flavors as FlavorItem[] | undefined) ?? null,
             promo_id: i.promo_id ?? null,
+            unit_price: i.price_edited ? i.unit_price : undefined,
           })),
         }),
       });
@@ -112,16 +117,29 @@ export const PosService = {
 
   subscribeToKitchenStatus(
     branchId: string,
-    onUpdate: (payload: { new: { id: string; kitchen_status: string } }) => void
+    onUpdate: (payload: { new: { id: string; kitchen_status: string; payment_method?: string | null } }) => void,
+    onInsert?: () => void,
+    onConnectionChange?: (connected: boolean) => void
   ): KitchenStatusSubscription {
     const socket: Socket = io(NEST_API_URL, {
       auth: (cb) => { PosService.getToken().then((token) => cb({ token })); },
       query: { branchId },
       transports: ["websocket"],
     });
-    socket.on("order:updated", (payload: { id: string; kitchen_status: string }) => {
+    socket.on("order:updated", (payload: { id: string; kitchen_status: string; payment_method?: string | null }) => {
       onUpdate({ new: payload });
     });
+    if (onInsert) socket.on("order:created", onInsert);
+
+    // Fase 6 — robustez realtime, mismo patrón que KitchenService.subscribeToOrders.
+    let everConnected = false;
+    socket.on("connect", () => {
+      onConnectionChange?.(true);
+      if (everConnected) onInsert?.();
+      everConnected = true;
+    });
+    socket.on("disconnect", () => onConnectionChange?.(false));
+
     return { socket };
   },
 
@@ -134,5 +152,26 @@ export const PosService = {
     if (res.ok) return { ok: true };
     const data = await res.json().catch(() => ({}));
     return { ok: false, error: data.error ?? "Error al anular la orden" };
+  },
+
+  // Fase 4 (docs/features/mesero-y-mejoras-pos/) — cobro diferido: cobra una
+  // orden que se creó sin método de pago (ej. creada por un mesero).
+  async payOrder(
+    orderId: string,
+    paymentMethod: PaymentMethod,
+    paymentProvider: string | null,
+    payments: SplitPayment[] | null
+  ): Promise<{ ok: boolean; error?: string }> {
+    const res = await nestFetch(API_ENDPOINTS.orders.pay(orderId), {
+      method: "POST",
+      body: JSON.stringify({
+        payment_method: payments ? "mixto" : paymentMethod,
+        payment_provider: paymentProvider,
+        payments: payments ?? null,
+      }),
+    });
+    if (res.ok) return { ok: true };
+    const data = await res.json().catch(() => ({}));
+    return { ok: false, error: data.error ?? "Error al cobrar la orden" };
   },
 };

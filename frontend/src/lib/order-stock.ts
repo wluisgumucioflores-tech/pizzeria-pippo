@@ -4,7 +4,7 @@
  * and create_order_atomic() applies them transactionally.
  */
 
-export type OrderType = "dine_in" | "takeaway";
+export type OrderType = "dine_in" | "takeaway" | "delivery" | "pedidos_ya";
 
 export interface RecipeRow {
   ingredient_id: string;

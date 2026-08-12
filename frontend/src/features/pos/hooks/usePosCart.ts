@@ -7,7 +7,7 @@ import {
 } from "@/lib/promotions";
 import type { Product } from "../types/pos.types";
 
-type OrderType = "dine_in" | "takeaway";
+type OrderType = "dine_in" | "takeaway" | "delivery" | "pedidos_ya";
 
 export function usePosCart(
   promotions: Promotion[],
@@ -79,6 +79,19 @@ export function usePosCart(
     setCart((prev) => prev.filter((i) => i.variant_id !== variantId));
   };
 
+  // Fase 3 (docs/features/mesero-y-mejoras-pos/) — editar precio al vender.
+  // Solo aplica a items sin promo/sabores mixtos (mismo criterio que extras),
+  // igual que addToCart los mergea en una sola línea por variant_id.
+  const updatePrice = (variantId: string, newPrice: number) => {
+    setCart((prev) =>
+      prev.map((i) =>
+        i.variant_id === variantId && !i.flavors && !i.promo_id
+          ? { ...i, unit_price: newPrice, price_edited: true }
+          : i
+      )
+    );
+  };
+
   const addItemsToCart = (items: CartItem[]) => {
     setCart((prev) => {
       let next = [...prev];
@@ -115,7 +128,7 @@ export function usePosCart(
   return {
     cart, discountedCart, total, totalDiscount,
     orderType, setOrderType,
-    addToCart, addItemsToCart, updateQty, removeFromCart, clearCart, suppressNextClear,
+    addToCart, addItemsToCart, updateQty, updatePrice, removeFromCart, clearCart, suppressNextClear,
     getStockQty: getStockQty ?? (() => null),
   };
 }

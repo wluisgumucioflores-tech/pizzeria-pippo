@@ -23,6 +23,8 @@ export interface KitchenOrder {
   daily_number: number;
   created_at: string;
   kitchen_status: string;
-  order_type: "dine_in" | "takeaway";
+  order_type: "dine_in" | "takeaway" | "delivery" | "pedidos_ya";
+  table_number: string | null;
+  waiter_name: string | null;
   order_items: OrderItem[];
 }

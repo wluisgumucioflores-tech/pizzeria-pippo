@@ -4,7 +4,7 @@ export class UpdateUserDto {
   @IsString()
   full_name!: string;
 
-  @IsIn(['admin', 'cajero', 'cocinero'])
+  @IsIn(['admin', 'cajero', 'cocinero', 'mesero'])
   role!: string;
 
   @IsOptional()

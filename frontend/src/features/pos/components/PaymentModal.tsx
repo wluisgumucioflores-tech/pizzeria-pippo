@@ -14,7 +14,7 @@ const { Text } = Typography;
 // once a second provider (e.g. a payment gateway) exists, this becomes a picker.
 const ONLINE_PROVIDER = "pedidos_ya" as const;
 
-type OrderType = "dine_in" | "takeaway";
+type OrderType = "dine_in" | "takeaway" | "delivery" | "pedidos_ya";
 
 interface Props {
   open: boolean;
@@ -29,7 +29,7 @@ interface Props {
   ) => void;
 }
 
-interface OptionCardProps {
+export interface OptionCardProps {
   selected: boolean;
   emoji: string;
   label: string;
@@ -37,7 +37,7 @@ interface OptionCardProps {
   onClick: () => void;
 }
 
-function OptionCard({ selected, emoji, label, accent, onClick }: OptionCardProps) {
+export function OptionCard({ selected, emoji, label, accent, onClick }: OptionCardProps) {
   const colors =
     accent === "orange"
       ? { border: "#f97316", bg: "#fff7ed", text: "#ea580c", badge: "#ffedd5" }
@@ -100,7 +100,12 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
 
   const handleToggleOnlinePayment = (checked: boolean) => {
     setOnlinePayment(checked);
-    setOrderType(checked ? "takeaway" : null);
+    // Fase 7 (docs/features/mesero-y-mejoras-pos/) — antes esto forzaba
+    // order_type "takeaway", chocando con el order_type real "pedidos_ya"
+    // que existe desde la Fase 0. Ahora quedan atados: tildar este check es
+    // la única forma de crear un pedido pedidos_ya desde POS, así
+    // order_type y payment_provider nunca quedan desincronizados.
+    setOrderType(checked ? "pedidos_ya" : null);
     setPaymentMethod(null);
   };
 
@@ -169,6 +174,13 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
           label={t("orderType.takeaway")}
           accent="orange"
           onClick={() => setOrderType("takeaway")}
+        />
+        <OptionCard
+          selected={orderType === "delivery"}
+          emoji="🛵"
+          label={t("orderType.delivery")}
+          accent="orange"
+          onClick={() => setOrderType("delivery")}
         />
       </div>
       {!orderType && (

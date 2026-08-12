@@ -9,6 +9,20 @@ import type { Order, SalesSummary } from "../types/reports.types";
 
 const { Text } = Typography;
 
+const ORDER_TYPE_COLOR: Record<string, string> = {
+  dine_in: "orange",
+  takeaway: "purple",
+  delivery: "cyan",
+  pedidos_ya: "gold",
+};
+
+const ORDER_TYPE_SHORT_KEY: Record<string, string> = {
+  dine_in: "orderType.dineInShort",
+  takeaway: "orderType.takeawayShort",
+  delivery: "orderType.deliveryShort",
+  pedidos_ya: "orderType.pedidosYaShort",
+};
+
 const IconExcel = () => (
   <svg className="inline w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
@@ -61,9 +75,9 @@ export function OrdersMobileList({ orders, ordersTotal, ordersPage, ordersPageSi
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
                         <Text style={{ fontSize: 12, color: "#6b7280" }}>{fecha}</Text>
-                        {order.order_type === "takeaway"
-                          ? <Tag color="purple" style={{ margin: 0, fontSize: 10 }}>{t("orderType.takeawayShort")}</Tag>
-                          : <Tag color="orange" style={{ margin: 0, fontSize: 10 }}>{t("orderType.dineInShort")}</Tag>}
+                        <Tag color={ORDER_TYPE_COLOR[order.order_type] ?? "default"} style={{ margin: 0, fontSize: 10 }}>
+                          {t(ORDER_TYPE_SHORT_KEY[order.order_type] ?? "orderType.dineInShort")}
+                        </Tag>
                         {order.payment_method === "efectivo"
                           ? <Tag color="green" style={{ margin: 0, fontSize: 10 }}>💵</Tag>
                           : order.payment_method === "qr"
@@ -76,6 +90,8 @@ export function OrdersMobileList({ orders, ordersTotal, ordersPage, ordersPageSi
                           )
                           : order.payment_method === "online"
                           ? <Tag color="geekblue" style={{ margin: 0, fontSize: 10 }}>🌐</Tag>
+                          : !order.cancelled_at
+                          ? <Tag color="volcano" style={{ margin: 0, fontSize: 10 }}>Pendiente</Tag>
                           : null}
                       </div>
                       <Text style={{ fontSize: 12, color: "#9ca3af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block", maxWidth: 200 }}>{nombres}</Text>

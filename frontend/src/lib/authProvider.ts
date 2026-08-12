@@ -4,6 +4,7 @@ import { getUserProfile, getToken, signIn, signOut, UserRole } from "./auth";
 function redirectForRole(role: UserRole | undefined): string {
   if (role === "cocinero") return "/kitchen";
   if (role === "cajero") return "/pos";
+  if (role === "mesero") return "/mesero";
   return "/login";
 }
 

@@ -220,7 +220,14 @@ describe('OrdersService', () => {
           paymentMethod: 'efectivo',
           orderType: 'dine_in',
           cancelledAt: null,
-          items: [{ qty: 1, variant: { name: 'Familiar', product: { name: 'Hawaiana' } } }],
+          items: [{
+            qty: 1,
+            qtyPhysical: 1,
+            unitPrice: decimal(75),
+            discountApplied: decimal(0),
+            promoLabel: null,
+            variant: { name: 'Familiar', product: { name: 'Hawaiana' } },
+          }],
           payments: [],
         },
         {
@@ -252,7 +259,14 @@ describe('OrdersService', () => {
         payment_method: 'efectivo',
         order_type: 'dine_in',
         cancelled_at: null,
-        order_items: [{ qty: 1, product_variants: { name: 'Familiar', products: { name: 'Hawaiana' } } }],
+        order_items: [{
+          qty: 1,
+          qty_physical: 1,
+          unit_price: 75,
+          discount_applied: 0,
+          promo_label: null,
+          product_variants: { name: 'Familiar', products: { name: 'Hawaiana' } },
+        }],
         payments: [],
       });
       expect(result[1].cancelled_at).toBe('2026-07-05T17:05:00.000Z');

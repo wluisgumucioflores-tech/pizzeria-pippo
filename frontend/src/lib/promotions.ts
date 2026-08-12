@@ -10,6 +10,11 @@ export interface FlavorItem {
   proportion: number; // fraction of the pizza (e.g. 0.5, 0.25, 0.33...)
 }
 
+export interface ExtraItem {
+  name: string;
+  price: number;
+}
+
 export interface CartItem {
   variant_id: string;
   qty: number;
@@ -19,6 +24,8 @@ export interface CartItem {
   category: string;
   flavors?: FlavorItem[]; // only present for mixed pizzas (mitad/mitad)
   promo_id?: string; // set when added via the POS "Promociones" tab — ties this line to that specific promotion
+  extras?: ExtraItem[]; // mesero only, never combined with flavors/promo_id — survives passthrough/split since both do `{...item}`
+  price_edited?: boolean; // cajero/admin manual override at sale time, never combined with promo_id/flavors — same passthrough pattern
 }
 
 export interface PromotionRule {

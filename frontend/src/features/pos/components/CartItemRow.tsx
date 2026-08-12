@@ -1,7 +1,8 @@
 "use client";
 
-import { Typography, Tag } from "antd";
-import { PlusOutlined, MinusOutlined, DeleteOutlined } from "@ant-design/icons";
+import { useState } from "react";
+import { Typography, Tag, InputNumber } from "antd";
+import { PlusOutlined, MinusOutlined, DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
 import type { DiscountedItem } from "@/lib/promotions";
 
@@ -11,14 +12,18 @@ interface Props {
   item: DiscountedItem;
   onUpdateQty: (id: string, delta: number) => void;
   onRemove: (id: string) => void;
+  onEditPrice?: (id: string, newPrice: number) => void;
   showPromoTag?: boolean;
   maxQty?: number | null;
 }
 
-export function CartItemRow({ item, onUpdateQty, onRemove, showPromoTag = true, maxQty }: Props) {
+export function CartItemRow({ item, onUpdateQty, onRemove, onEditPrice, showPromoTag = true, maxQty }: Props) {
   const t = useTranslations("pos.cartPanel");
+  const [editingPrice, setEditingPrice] = useState(false);
   const lineTotal = item.unit_price * item.qty_physical - item.discount_applied;
   const atMax = maxQty !== null && maxQty !== undefined && item.qty_physical >= maxQty;
+  // Editar precio: solo en ventas normales, nunca sobre promo/combo o pizza mixta (Fase 3).
+  const canEditPrice = !!onEditPrice && !item.promo_id && !item.promo_label && !item.flavors?.length;
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -76,7 +81,46 @@ export function CartItemRow({ item, onUpdateQty, onRemove, showPromoTag = true, 
             Bs {(item.unit_price * item.qty_physical).toFixed(2)}
           </Text>
         )}
-        <Text strong style={{ fontSize: 13, color: "#ea580c" }}>Bs {lineTotal.toFixed(2)}</Text>
+        {editingPrice ? (
+          <InputNumber
+            size="small"
+            autoFocus
+            min={0}
+            step={0.5}
+            defaultValue={item.unit_price}
+            style={{ width: 80 }}
+            onBlur={(e) => {
+              const value = Number(e.target.value);
+              if (!Number.isNaN(value) && value >= 0) onEditPrice?.(item.variant_id, value);
+              setEditingPrice(false);
+            }}
+            onPressEnter={(e) => {
+              const value = Number((e.target as HTMLInputElement).value);
+              if (!Number.isNaN(value) && value >= 0) onEditPrice?.(item.variant_id, value);
+              setEditingPrice(false);
+            }}
+          />
+        ) : canEditPrice ? (
+          <button
+            type="button"
+            onClick={() => setEditingPrice(true)}
+            style={{
+              cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5,
+              background: "#fff7ed", border: "1px dashed #fdba74", borderRadius: 6,
+              padding: "3px 8px",
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#ffedd5"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#fff7ed"; }}
+          >
+            <Text strong style={{ fontSize: 13, color: "#ea580c" }}>Bs {lineTotal.toFixed(2)}</Text>
+            <EditOutlined style={{ fontSize: 12, color: "#ea580c" }} />
+          </button>
+        ) : (
+          <Text strong style={{ fontSize: 13, color: "#ea580c" }}>Bs {lineTotal.toFixed(2)}</Text>
+        )}
+        {item.price_edited && (
+          <Tag color="purple" style={{ margin: 0, marginTop: 2, fontSize: 10, lineHeight: "14px" }}>Editado</Tag>
+        )}
       </div>
 
       {/* Delete */}

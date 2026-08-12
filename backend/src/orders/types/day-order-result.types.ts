@@ -7,10 +7,16 @@ export interface DayOrderResult {
   payment_method: string | null;
   payment_provider: string | null;
   order_type: string;
+  table_number: string | null;
+  waiter_name: string | null;
   cancelled_at: string | null;
   notes: string | null;
   order_items: {
     qty: number;
+    qty_physical: number;
+    unit_price: number;
+    discount_applied: number;
+    promo_label: string | null;
     product_variants: { name: string; products: { name: string } | null } | null;
   }[];
   payments: { method: string; amount: number }[];

@@ -8,6 +8,8 @@ export interface SalesSummary {
   by_order_type: {
     dine_in: { total: number; count: number };
     takeaway: { total: number; count: number };
+    delivery: { total: number; count: number };
+    pedidos_ya: { total: number; count: number };
   };
   by_payment_method: {
     efectivo: { total: number; count: number };
@@ -45,6 +47,7 @@ export interface OrderItem {
   unit_price: number;
   discount_applied: number;
   promo_label: string | null;
+  price_edited: boolean;
   product_variants: {
     name: string;
     products: { name: string; category: string } | null;
@@ -63,7 +66,7 @@ export interface Order {
   cashier_name: string;
   payment_method: "efectivo" | "qr" | "online" | "mixto" | null;
   payment_provider: string | null;
-  order_type: "dine_in" | "takeaway";
+  order_type: "dine_in" | "takeaway" | "delivery" | "pedidos_ya";
   cancelled_at: string | null;
   cancel_reason: string | null;
   notes: string | null;

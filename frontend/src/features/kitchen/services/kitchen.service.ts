@@ -37,7 +37,8 @@ export const KitchenService = {
   subscribeToOrders(
     branchId: string,
     onInsert: () => void,
-    onUpdate: (payload: OrderUpdatePayload) => void
+    onUpdate: (payload: OrderUpdatePayload) => void,
+    onConnectionChange?: (connected: boolean) => void
   ): OrdersSubscription {
     const socket: Socket = io(NEST_API_URL, {
       auth: (cb) => { getToken().then((token) => cb({ token })); },
@@ -48,6 +49,19 @@ export const KitchenService = {
     socket.on("order:updated", (payload: { id: string; kitchen_status: string; cancelled_at: string | null }) => {
       onUpdate({ new: payload });
     });
+
+    // Fase 6 (docs/features/mesero-y-mejoras-pos/) — robustez realtime.
+    // socket.io ya reintenta la conexión solo; acá solo exponemos el estado
+    // para mostrar un indicador, y re-sincronizamos (onInsert = refetch
+    // completo) al reconectar, por si se perdió algún evento mientras
+    // estuvo caído.
+    let everConnected = false;
+    socket.on("connect", () => {
+      onConnectionChange?.(true);
+      if (everConnected) onInsert();
+      everConnected = true;
+    });
+    socket.on("disconnect", () => onConnectionChange?.(false));
 
     return { socket };
   },

@@ -22,25 +22,31 @@ export function DaySummaryPanel({ dayOrders }: Props) {
   const td = useTranslations("pos.daySummary");
   // Cancelled orders don't count towards the day's sales/stats
   const activeOrders = dayOrders.filter((o) => o.cancelled_at === null);
-  const totalSales = activeOrders.reduce((sum, o) => sum + Number(o.total), 0);
+  // Fase 4 — cobro diferido: una orden sin cobrar (payment_method null,
+  // ej. creada por un mesero y todavía no pasada por "Cobrar") no es una
+  // venta todavía — no debe sumar al total ni a los montos por método.
+  const paidOrders = activeOrders.filter((o) => o.payment_method !== null);
+  const totalSales = paidOrders.reduce((sum, o) => sum + Number(o.total), 0);
   const pendingCount = activeOrders.filter((o) => o.kitchen_status === "pending").length;
   const readyCount = activeOrders.filter((o) => o.kitchen_status === "ready").length;
   const dineInCount = activeOrders.filter((o) => o.order_type === "dine_in").length;
   const takeawayCount = activeOrders.filter((o) => o.order_type === "takeaway").length;
+  const deliveryCount = activeOrders.filter((o) => o.order_type === "delivery").length;
+  const pedidosYaCount = activeOrders.filter((o) => o.order_type === "pedidos_ya").length;
   // Las órdenes "mixto" no calzan con ningún filtro de método puntual — sus
   // dos piernas (efectivo/qr) viven en order.payments y hay que sumarlas
   // ahí, si no quedan afuera de las 3 tarjetas de método pese a contar en
   // el total del día.
-  const mixedOrders = activeOrders.filter((o) => o.payment_method === "mixto");
+  const mixedOrders = paidOrders.filter((o) => o.payment_method === "mixto");
   const sumMixedLeg = (method: "efectivo" | "qr") =>
     mixedOrders
       .flatMap((o) => o.payments ?? [])
       .filter((p) => p.method === method)
       .reduce((s, p) => s + p.amount, 0);
 
-  const efectivoTotal = activeOrders.filter((o) => o.payment_method === "efectivo").reduce((s, o) => s + Number(o.total), 0) + sumMixedLeg("efectivo");
-  const qrTotal = activeOrders.filter((o) => o.payment_method === "qr").reduce((s, o) => s + Number(o.total), 0) + sumMixedLeg("qr");
-  const onlineTotal = activeOrders.filter((o) => o.payment_method === "online").reduce((s, o) => s + Number(o.total), 0);
+  const efectivoTotal = paidOrders.filter((o) => o.payment_method === "efectivo").reduce((s, o) => s + Number(o.total), 0) + sumMixedLeg("efectivo");
+  const qrTotal = paidOrders.filter((o) => o.payment_method === "qr").reduce((s, o) => s + Number(o.total), 0) + sumMixedLeg("qr");
+  const onlineTotal = paidOrders.filter((o) => o.payment_method === "online").reduce((s, o) => s + Number(o.total), 0);
 
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: 24, background: "#f5f5f5" }}>
@@ -83,6 +89,22 @@ export function DaySummaryPanel({ dayOrders }: Props) {
           value={String(takeawayCount)}
           valueColor="#0891b2"
         />
+        {deliveryCount > 0 && (
+          <SummaryCard
+            icon={<span style={{ fontSize: 28 }}>🛵</span>}
+            label={t("orderType.deliveryLocal")}
+            value={String(deliveryCount)}
+            valueColor="#0d9488"
+          />
+        )}
+        {pedidosYaCount > 0 && (
+          <SummaryCard
+            icon={<span style={{ fontSize: 28 }}>📱</span>}
+            label={t("orderType.pedidosYaLocal")}
+            value={String(pedidosYaCount)}
+            valueColor="#b45309"
+          />
+        )}
         <SummaryCard
           icon={<span style={{ fontSize: 28 }}>💵</span>}
           label={t("paymentMethod.cash")}

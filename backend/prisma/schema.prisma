@@ -131,9 +131,10 @@ model Profile {
   // docs/database/migrations/multitenant/002_superadmin_role.sql).
   businessId   String?  @map("business_id") @db.Uuid
 
-  branch   Branch?   @relation(fields: [branchId], references: [id])
-  business Business? @relation(fields: [businessId], references: [id])
-  orders   Order[]
+  branch     Branch?   @relation(fields: [branchId], references: [id])
+  business   Business? @relation(fields: [businessId], references: [id])
+  orders     Order[]   @relation("OrderCashier")
+  paidOrders Order[]   @relation("OrderPaidBy")
 
   @@map("profiles")
 }
@@ -446,6 +447,10 @@ model Order {
   id              String    @id @default(uuid()) @db.Uuid
   branchId        String    @map("branch_id") @db.Uuid
   cashierId       String    @map("cashier_id") @db.Uuid
+  // Quién cobró la orden — no siempre es cashierId (cobro diferido: un
+  // mesero crea la orden, un cajero distinto la cobra después). Null
+  // mientras esté pendiente de cobro.
+  paidById        String?   @map("paid_by") @db.Uuid
   total           Decimal
   createdAt       DateTime  @default(now()) @map("created_at")
   kitchenStatus   String    @default("pending") @map("kitchen_status")
@@ -453,6 +458,8 @@ model Order {
   paymentMethod   String?   @map("payment_method")
   paymentProvider String?   @map("payment_provider")
   orderType       String    @default("dine_in") @map("order_type")
+  tableNumber     String?   @map("table_number")
+  waiterName      String?   @map("waiter_name")
   cancelledAt     DateTime? @map("cancelled_at")
   cancelledBy     String?   @map("cancelled_by") @db.Uuid
   cancelReason    String?   @map("cancel_reason")
@@ -460,7 +467,8 @@ model Order {
   idempotencyKey  String?   @unique @map("idempotency_key")
 
   branch   Branch         @relation(fields: [branchId], references: [id])
-  cashier  Profile        @relation(fields: [cashierId], references: [id])
+  cashier  Profile        @relation("OrderCashier", fields: [cashierId], references: [id])
+  paidBy   Profile?       @relation("OrderPaidBy", fields: [paidById], references: [id])
   items    OrderItem[]
   payments OrderPayment[]
 
@@ -488,10 +496,12 @@ model OrderItem {
   discountApplied Decimal @default(0) @map("discount_applied")
   qtyPhysical     Int     @default(1) @map("qty_physical")
   promoLabel      String? @map("promo_label")
+  priceEdited     Boolean @default(false) @map("price_edited")
 
   order   Order             @relation(fields: [orderId], references: [id])
   variant ProductVariant    @relation(fields: [variantId], references: [id])
   flavors OrderItemFlavor[]
+  extras  OrderItemExtra[]
 
   @@map("order_items")
 }
@@ -506,4 +516,16 @@ model OrderItemFlavor {
   variant   ProductVariant @relation(fields: [variantId], references: [id])
 
   @@map("order_item_flavors")
+}
+
+model OrderItemExtra {
+  id          String   @id @default(uuid()) @db.Uuid
+  orderItemId String   @map("order_item_id") @db.Uuid
+  name        String
+  price       Decimal  @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+
+  @@map("order_item_extras")
 }

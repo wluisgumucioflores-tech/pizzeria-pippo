@@ -15,6 +15,11 @@ export class ReportsService {
   private buildWhere(query: ReportQueryDto, user: CurrentUserPayload) {
     return {
       cancelledAt: null,
+      // Fase 4 — cobro diferido: una orden sin cobrar todavía no es una
+      // venta. Solo afecta a los reportes agregados (ventas, top productos,
+      // por cajero) — el historial (buildOrdersHistoryWhere) sigue
+      // mostrándolas, con una etiqueta de "pendiente de cobro".
+      paymentMethod: { not: null },
       branch: { businessId: this.resolveBusinessId(user) },
       ...(query.branchId && { branchId: query.branchId }),
       ...((query.from || query.to) && {
@@ -45,6 +50,8 @@ export class ReportsService {
 
     const dineIn = orders.filter((o) => o.orderType === 'dine_in');
     const takeaway = orders.filter((o) => o.orderType === 'takeaway');
+    const delivery = orders.filter((o) => o.orderType === 'delivery');
+    const pedidosYa = orders.filter((o) => o.orderType === 'pedidos_ya');
 
     const byMethod = (method: string) => orders.filter((o) => o.paymentMethod === method);
     const sumTotal = (rows: typeof orders) => rows.reduce((sum, o) => sum + o.total.toNumber(), 0);
@@ -74,6 +81,14 @@ export class ReportsService {
         takeaway: {
           total: sumTotal(takeaway),
           count: takeaway.length,
+        },
+        delivery: {
+          total: sumTotal(delivery),
+          count: delivery.length,
+        },
+        pedidos_ya: {
+          total: sumTotal(pedidosYa),
+          count: pedidosYa.length,
         },
       },
       by_payment_method: {
@@ -153,10 +168,13 @@ export class ReportsService {
     const orders = await this.prisma.order.findMany({
       where: {
         ...this.buildWhere(query, user),
-        ...(query.cashierId && { cashierId: query.cashierId }),
+        // Fase 4 — atribuye al cajero que COBRÓ, no a quien creó la orden
+        // (un pedido de mesero lo cobra un cajero distinto). buildWhere ya
+        // filtra paymentMethod != null, así que paidById nunca es null acá.
+        ...(query.cashierId && { paidById: query.cashierId }),
       },
       include: {
-        cashier: true,
+        paidBy: true,
         items: { include: { variant: { include: { product: true } } } },
       },
       orderBy: { createdAt: 'desc' },
@@ -164,11 +182,12 @@ export class ReportsService {
 
     const cashierMap: Record<string, CashierReportResult> = {};
     for (const order of orders) {
-      const cid = order.cashierId;
+      const cid = order.paidById;
+      if (!cid) continue;
       if (!cashierMap[cid]) {
         cashierMap[cid] = {
           cashier_id: cid,
-          cashier_name: order.cashier?.fullName ?? 'Desconocido',
+          cashier_name: order.paidBy?.fullName ?? 'Desconocido',
           orders: 0,
           total: 0,
           items: [],
@@ -259,6 +278,7 @@ export class ReportsService {
       unitPrice: { toNumber(): number };
       discountApplied: { toNumber(): number };
       promoLabel: string | null;
+      priceEdited: boolean;
       variant: { name: string; product: { name: string; category: string } } | null;
     }[];
     payments: { method: string; amount: { toNumber(): number } }[];
@@ -282,6 +302,7 @@ export class ReportsService {
         unit_price: item.unitPrice.toNumber(),
         discount_applied: item.discountApplied.toNumber(),
         promo_label: item.promoLabel,
+        price_edited: item.priceEdited,
         product_variants: item.variant
           ? { name: item.variant.name, products: { name: item.variant.product.name, category: item.variant.product.category } }
           : null,

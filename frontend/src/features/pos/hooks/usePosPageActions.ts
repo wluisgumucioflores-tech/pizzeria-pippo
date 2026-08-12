@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { message } from "antd";
+import { generateUUID } from "@/lib/uuid";
 import { PosService } from "../services/pos.service";
 import type { usePosCart } from "./usePosCart";
 import type { usePaymentValidation } from "./usePaymentValidation";
-import type { Product, TicketData, OrderType, Variant, PosTab, PaymentMethod, SplitPayment } from "../types/pos.types";
-import type { CartItem, FlavorItem } from "@/lib/promotions";
+import type { Product, TicketData, OrderType, Variant, PosTab, PaymentMethod, SplitPayment, DayOrder } from "../types/pos.types";
+import type { CartItem, DiscountedItem, FlavorItem } from "@/lib/promotions";
 
 interface Params {
   branchId: string;
@@ -82,7 +83,7 @@ export function usePosPageActions({
     setPayments(splitPayments);
     setSaleNotes(notes);
     cart.setOrderType(orderType);
-    setIdempotencyKey(crypto.randomUUID());
+    setIdempotencyKey(generateUUID());
     setPaymentModal(false);
     setConfirmModal(true);
   };
@@ -109,10 +110,10 @@ export function usePosPageActions({
         setPaymentMethod(null);
         setPaymentProvider(null);
         setPayments(null);
-        setSaleNotes(null);
         setIdempotencyKey(null);
         setActiveTab("sale");
-        setTicket({ orderId: result.order_id!, dailyNumber: result.daily_number!, items: cart.discountedCart, total: cart.total, paymentMethod, paymentProvider, payments, orderType: cart.orderType });
+        setTicket({ orderId: result.order_id!, dailyNumber: result.daily_number!, items: cart.discountedCart, total: cart.total, paymentMethod, paymentProvider, payments, orderType: cart.orderType, notes: saleNotes });
+        setSaleNotes(null);
         cart.clearCart();
         fetchDayOrders(branchId);
         refreshProducts();
@@ -141,6 +142,37 @@ export function usePosPageActions({
     setValidationModalOpen(false);
   };
 
+  // Fase 5 (docs/features/mesero-y-mejoras-pos/) — "Imprimir" desde Pedidos
+  // del día: la orden ya existe (creada por mesero o por POS), solo arma el
+  // TicketData a partir de lo que ya trae el DayOrder.
+  const handlePrintDayOrder = (order: DayOrder) => {
+    const items: DiscountedItem[] = order.order_items.map((i, idx) => ({
+      variant_id: String(idx),
+      qty: i.qty,
+      qty_physical: i.qty_physical,
+      unit_price: i.unit_price,
+      product_name: i.product_variants?.products?.name ?? "",
+      variant_name: i.product_variants?.name ?? "",
+      category: "",
+      discount_applied: i.discount_applied,
+      final_price: i.unit_price,
+      promo_label: i.promo_label,
+    }));
+    setTicket({
+      orderId: order.id,
+      dailyNumber: order.daily_number,
+      items,
+      total: Number(order.total),
+      paymentMethod: order.payment_method,
+      paymentProvider: order.payment_provider,
+      payments: order.payments,
+      orderType: order.order_type,
+      tableNumber: order.table_number,
+      waiterName: order.waiter_name,
+      notes: order.notes,
+    });
+  };
+
   return {
     variantModal, setVariantModal,
     paymentModal, setPaymentModal,
@@ -155,5 +187,6 @@ export function usePosPageActions({
     handleProductClick, handleVariantSelect, handlePromoItems, handlePromoSingleVariant,
     handlePaymentConfirm, handleConfirmSale,
     handleValidatePayment, handleValidationConfirm, handleValidationCancel,
+    handlePrintDayOrder,
   };
 }

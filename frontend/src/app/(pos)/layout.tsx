@@ -3,6 +3,7 @@ import { ConfigProvider } from "antd";
 import esES from "antd/locale/es_ES";
 import enUS from "antd/locale/en_US";
 import { getLocale } from "next-intl/server";
+import { PosAccessGuard } from "@/features/pos/components/PosAccessGuard";
 
 export default async function PosLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
@@ -10,7 +11,7 @@ export default async function PosLayout({ children }: { children: React.ReactNod
   return (
     <AntdRegistry>
       <ConfigProvider locale={locale === "en" ? enUS : esES}>
-        {children}
+        <PosAccessGuard>{children}</PosAccessGuard>
       </ConfigProvider>
     </AntdRegistry>
   );

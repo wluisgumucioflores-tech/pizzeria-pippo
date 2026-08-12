@@ -40,8 +40,18 @@ export class CreateOrderDto {
   @Type(() => OrderPaymentInputDto)
   payments?: OrderPaymentInputDto[] | null;
 
-  @IsIn(['dine_in', 'takeaway'])
-  order_type!: 'dine_in' | 'takeaway';
+  @IsIn(['dine_in', 'takeaway', 'delivery', 'pedidos_ya'])
+  order_type!: 'dine_in' | 'takeaway' | 'delivery' | 'pedidos_ya';
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 50)
+  table_number?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 100)
+  waiter_name?: string | null;
 
   @IsOptional()
   @IsString()

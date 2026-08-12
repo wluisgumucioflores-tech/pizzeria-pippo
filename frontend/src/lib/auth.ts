@@ -1,4 +1,4 @@
-export type UserRole = "admin" | "cajero" | "cocinero" | "superadmin";
+export type UserRole = "admin" | "cajero" | "cocinero" | "superadmin" | "mesero";
 
 const TOKEN_STORAGE_KEY = "pippo_auth_token";
 const NEST_API_URL = process.env.NEXT_PUBLIC_NEST_API_URL;

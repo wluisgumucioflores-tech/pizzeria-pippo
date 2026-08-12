@@ -443,10 +443,16 @@
     "orderType": {
       "dineIn": "Dine in",
       "takeaway": "Takeaway",
+      "delivery": "Delivery",
+      "pedidosYa": "Pedidos Ya",
       "dineInEmoji": "🍽️ Dine in",
       "takeawayEmoji": "🥡 Takeaway",
+      "deliveryEmoji": "🛵 Delivery",
+      "pedidosYaEmoji": "📱 Pedidos Ya",
       "dineInLocal": "🍽️ Dine in",
-      "takeawayLocal": "🥡 Takeaway"
+      "takeawayLocal": "🥡 Takeaway",
+      "deliveryLocal": "🛵 Delivery",
+      "pedidosYaLocal": "📱 Pedidos Ya"
     },
     "paymentMethod": {
       "cash": "Cash",
@@ -656,8 +662,12 @@
     "orderType": {
       "dineIn": "🍽️ Dine in",
       "takeaway": "🥡 Takeaway",
+      "delivery": "🛵 Delivery",
+      "pedidosYa": "📱 Pedidos Ya",
       "dineInShort": "🍽️ In-house",
-      "takeawayShort": "🥡 Takeaway"
+      "takeawayShort": "🥡 Takeaway",
+      "deliveryShort": "🛵 Delivery",
+      "pedidosYaShort": "📱 Pedidos Ya"
     },
     "payment": {
       "cash": "💵 Cash",
@@ -670,6 +680,8 @@
     "plain": {
       "dineIn": "Dine in",
       "takeaway": "Takeaway",
+      "delivery": "Delivery",
+      "pedidosYa": "Pedidos Ya",
       "cash": "Cash",
       "qr": "QR",
       "online": "Online",
@@ -1136,6 +1148,7 @@
     "roles": {
       "cajero": "Cashier",
       "cocinero": "Cook",
+      "mesero": "Waiter",
       "admin": "Admin"
     },
     "toasts": {

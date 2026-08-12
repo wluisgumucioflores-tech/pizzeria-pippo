@@ -13,6 +13,20 @@ import type { Order, SalesSummary } from "../types/reports.types";
 
 const { Text } = Typography;
 
+const ORDER_TYPE_COLOR: Record<string, string> = {
+  dine_in: "orange",
+  takeaway: "purple",
+  delivery: "cyan",
+  pedidos_ya: "gold",
+};
+
+const ORDER_TYPE_KEY: Record<string, string> = {
+  dine_in: "orderType.dineIn",
+  takeaway: "orderType.takeaway",
+  delivery: "orderType.delivery",
+  pedidos_ya: "orderType.pedidosYa",
+};
+
 const IconExcel = () => (
   <svg className="inline w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
@@ -63,7 +77,7 @@ function buildOrderColumns(onCancel: (order: Order) => void, t: ReportsTranslato
       dataIndex: "order_type",
       key: "order_type",
       render: (type: string) =>
-        type === "takeaway" ? <Tag color="purple">{t("orderType.takeaway")}</Tag> : <Tag color="orange">{t("orderType.dineIn")}</Tag>,
+        <Tag color={ORDER_TYPE_COLOR[type] ?? "default"}>{t(ORDER_TYPE_KEY[type] ?? "orderType.dineIn")}</Tag>,
     },
     {
       title: t("columns.payment"),
@@ -88,6 +102,8 @@ function buildOrderColumns(onCancel: (order: Order) => void, t: ReportsTranslato
             : undefined;
           return <Tag color="geekblue">{known ? `${known.emoji} ${known.label}` : t("payment.online")}</Tag>;
         }
+        // Fase 4 — cobro diferido: sin método de pago y sin cancelar = todavía no se cobró.
+        if (!o.cancelled_at) return <Tag color="volcano">Pendiente de cobro</Tag>;
         return <Text type="secondary">{t("payment.none")}</Text>;
       },
     },

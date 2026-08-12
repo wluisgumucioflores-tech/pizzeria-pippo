@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Empty, Tag, Tooltip, Typography } from "antd";
-import { CheckCircleOutlined, FileTextOutlined, StopOutlined } from "@ant-design/icons";
+import { CheckCircleOutlined, FileTextOutlined, PrinterOutlined, StopOutlined } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
 import { formatTimeBolivia } from "@/lib/timezone";
 import { useIsMobile } from "@/lib/useIsMobile";
@@ -9,14 +9,30 @@ import type { DayOrder } from "../types/pos.types";
 
 const { Text } = Typography;
 
+const ORDER_TYPE_COLOR: Record<string, string> = {
+  dine_in: "green",
+  takeaway: "blue",
+  delivery: "cyan",
+  pedidos_ya: "gold",
+};
+
+const ORDER_TYPE_LABEL_KEY: Record<string, string> = {
+  dine_in: "orderType.dineInLocal",
+  takeaway: "orderType.takeawayLocal",
+  delivery: "orderType.deliveryLocal",
+  pedidos_ya: "orderType.pedidosYaLocal",
+};
+
 interface Props {
   dayOrders: DayOrder[];
   markingReady: string | null;
   onMarkReady: (orderId: string) => void;
   onCancel: (order: DayOrder) => void;
+  onPay: (order: DayOrder) => void;
+  onPrint: (order: DayOrder) => void;
 }
 
-export function DayOrdersPanel({ dayOrders, markingReady, onMarkReady, onCancel }: Props) {
+export function DayOrdersPanel({ dayOrders, markingReady, onMarkReady, onCancel, onPay, onPrint }: Props) {
   const isMobile = useIsMobile();
   const t = useTranslations("pos");
   const td = useTranslations("pos.dayOrders");
@@ -59,23 +75,32 @@ export function DayOrdersPanel({ dayOrders, markingReady, onMarkReady, onCancel 
                     <Text type="secondary" style={{ fontSize: 12 }}>{timeStr}</Text>
                     <div style={{ flex: 1 }} />
                     <Text strong style={{ color: "#ea580c", fontSize: 14 }}>Bs {Number(order.total).toFixed(2)}</Text>
-                    <span style={{ fontSize: 14 }}>
-                      {order.payment_method === "efectivo" ? "💵" : order.payment_method === "qr" ? "📱" : order.payment_method === "online" ? "🌐" : order.payment_method === "mixto" ? "🔀" : "—"}
-                    </span>
+                    {!order.payment_method && !isCancelled ? (
+                      <Button size="small" type="primary" onClick={() => onPay(order)} style={{ background: "#16a34a", borderColor: "#16a34a", fontSize: 12 }}>
+                        Cobrar
+                      </Button>
+                    ) : (
+                      <span style={{ fontSize: 14 }}>
+                        {order.payment_method === "efectivo" ? "💵" : order.payment_method === "qr" ? "📱" : order.payment_method === "online" ? "🌐" : order.payment_method === "mixto" ? "🔀" : "—"}
+                      </span>
+                    )}
                   </div>
                   {/* Row 2: summary */}
                   <Text style={{ fontSize: 12, color: "#6b7280", display: "block", marginBottom: 8 }} ellipsis>{summary}</Text>
                   {/* Row 3: tags + actions */}
                   <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <Tag color={order.order_type === "takeaway" ? "blue" : "green"} style={{ margin: 0, fontSize: 11 }}>
-                      {order.order_type === "takeaway" ? t("orderType.takeawayLocal") : t("orderType.dineInLocal")}
+                    <Tag color={ORDER_TYPE_COLOR[order.order_type]} style={{ margin: 0, fontSize: 11 }}>
+                      {t(ORDER_TYPE_LABEL_KEY[order.order_type])}
                     </Tag>
+                    {order.table_number && <Tag style={{ margin: 0, fontSize: 11 }}>🪑 {order.table_number}</Tag>}
+                    {order.waiter_name && <Tag style={{ margin: 0, fontSize: 11 }}>🙋 {order.waiter_name}</Tag>}
                     {order.notes && (
                       <Tooltip title={order.notes}>
                         <FileTextOutlined style={{ color: "#9ca3af", fontSize: 13 }} />
                       </Tooltip>
                     )}
                     <div style={{ flex: 1 }} />
+                    <Button size="small" icon={<PrinterOutlined />} onClick={() => onPrint(order)} />
                     {isCancelled ? (
                       <Tag color="red" icon={<StopOutlined />} style={{ margin: 0 }}>{td("cancelled")}</Tag>
                     ) : isPending ? (
@@ -126,19 +151,28 @@ export function DayOrdersPanel({ dayOrders, markingReady, onMarkReady, onCancel 
                   <Text type="secondary" style={{ flexShrink: 0, fontSize: 12 }}>{timeStr}</Text>
                   <Text style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, fontSize: 13, color: "#6b7280" }}>{summary}</Text>
                   <Text strong style={{ flexShrink: 0, color: "#ea580c", fontSize: 14 }}>Bs {Number(order.total).toFixed(2)}</Text>
-                  <Tag color={order.order_type === "takeaway" ? "blue" : "green"} style={{ flexShrink: 0, margin: 0 }}>
-                    {order.order_type === "takeaway" ? "🥡 Para llevar" : "🍽️ Local"}
+                  <Tag color={ORDER_TYPE_COLOR[order.order_type]} style={{ flexShrink: 0, margin: 0 }}>
+                    {t(ORDER_TYPE_LABEL_KEY[order.order_type])}
                   </Tag>
+                  {order.table_number && <Tag style={{ flexShrink: 0, margin: 0 }}>🪑 {order.table_number}</Tag>}
+                  {order.waiter_name && <Tag style={{ flexShrink: 0, margin: 0 }}>🙋 {order.waiter_name}</Tag>}
                   {order.notes && (
                     <Tooltip title={order.notes}>
                       <FileTextOutlined style={{ flexShrink: 0, color: "#9ca3af", fontSize: 14 }} />
                     </Tooltip>
                   )}
-                  <span style={{ flexShrink: 0, fontSize: 14 }}>
-                    {order.payment_method === "efectivo" ? "💵" : order.payment_method === "qr" ? "📱" : order.payment_method === "online" ? "🌐" : order.payment_method === "mixto" ? "🔀" : "—"}
-                  </span>
+                  {!order.payment_method && !isCancelled ? (
+                    <Button size="small" type="primary" onClick={() => onPay(order)} style={{ flexShrink: 0, background: "#16a34a", borderColor: "#16a34a" }}>
+                      Cobrar
+                    </Button>
+                  ) : (
+                    <span style={{ flexShrink: 0, fontSize: 14 }}>
+                      {order.payment_method === "efectivo" ? "💵" : order.payment_method === "qr" ? "📱" : order.payment_method === "online" ? "🌐" : order.payment_method === "mixto" ? "🔀" : "—"}
+                    </span>
+                  )}
                 </div>
                 <div style={{ marginLeft: 12, flexShrink: 0, display: "flex", gap: 8, alignItems: "center" }}>
+                  <Button size="small" icon={<PrinterOutlined />} onClick={() => onPrint(order)} />
                   {isCancelled ? (
                     <Tag color="red" icon={<StopOutlined />}>{td("cancelled")}</Tag>
                   ) : isPending ? (

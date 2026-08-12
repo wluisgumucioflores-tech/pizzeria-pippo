@@ -22,6 +22,12 @@ export class AuthService {
     const passwordMatches = await this.passwordHasher.compare(password, profile.passwordHash);
     if (!passwordMatches) throw new UnauthorizedException('Credenciales incorrectas');
 
+    // Mesero es un login compartido en una tablet fija — sesión más corta
+    // (6h, ~un turno) para no dejarla abierta indefinidamente si nadie la
+    // cierra a mano. El resto de los roles usa el expiry global de siempre.
+    const expiresIn = profile.role === 'mesero' ? '6h' : (process.env.JWT_EXPIRES_IN ?? '10h');
+    //test to validate login expiresIn 20 s
+    // const expiresIn = profile.role === 'mesero' ? '20s' : (process.env.JWT_EXPIRES_IN ?? '10h');
     return {
       // jsonwebtoken types expiresIn as `number | StringValue` (a narrowed
       // literal from the `ms` lib), but an env var is always `string` at
@@ -29,7 +35,7 @@ export class AuthService {
       // pattern at runtime.
       access_token: this.jwtService.sign(
         { sub: profile.id },
-        { secret: process.env.JWT_SECRET, expiresIn: (process.env.JWT_EXPIRES_IN ?? '10h') as unknown as number },
+        { secret: process.env.JWT_SECRET, expiresIn: expiresIn as unknown as number },
       ),
       user: toCurrentUserPayload(profile),
     };

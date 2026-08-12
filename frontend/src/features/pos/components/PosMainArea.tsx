@@ -40,6 +40,7 @@ export function PosMainArea({
       totalDiscount={cart.totalDiscount}
       onUpdateQty={cart.updateQty}
       onRemove={cart.removeFromCart}
+      onEditPrice={cart.updatePrice}
       onConfirm={onOpenPayment}
       onClear={cart.clearCart}
       getStockQty={cart.getStockQty}

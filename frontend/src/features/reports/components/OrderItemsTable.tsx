@@ -33,7 +33,17 @@ function buildOrderItemColumns(t: ReportsTranslator) {
       },
     },
     { title: t("columns.qty"), dataIndex: "qty", key: "qty", width: 60, render: (qty: number) => <Text strong>{qty}</Text> },
-    { title: t("columns.unitPrice"), dataIndex: "unit_price", key: "unit_price", render: (p: number) => `Bs ${Number(p).toFixed(2)}` },
+    {
+      title: t("columns.unitPrice"),
+      dataIndex: "unit_price",
+      key: "unit_price",
+      render: (p: number, item: OrderItem) => (
+        <Space size={4}>
+          {`Bs ${Number(p).toFixed(2)}`}
+          {item.price_edited && <Tag color="purple" style={{ margin: 0, fontSize: 10 }}>Editado</Tag>}
+        </Space>
+      ),
+    },
     {
       title: t("columns.discount"),
       dataIndex: "discount_applied",
@@ -95,6 +105,9 @@ export function OrderItemsTable({ items, notes }: Props) {
                   <Tag color={CATEGORY_COLOR[cat] ?? "default"} style={{ margin: 0, fontSize: 10, lineHeight: "16px" }}>{cat}</Tag>
                   {item.promo_label && Number(item.discount_applied) > 0 && (
                     <Tag color="orange" style={{ margin: 0, fontSize: 10, lineHeight: "16px" }}>{item.promo_label}</Tag>
+                  )}
+                  {item.price_edited && (
+                    <Tag color="purple" style={{ margin: 0, fontSize: 10, lineHeight: "16px" }}>Editado</Tag>
                   )}
                 </div>
               </div>

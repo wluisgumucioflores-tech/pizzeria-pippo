@@ -50,7 +50,13 @@ export function useOrdersReport() {
         [h.date]: dayjs(order.created_at).add(UTC_OFFSET_HOURS, "hour").format("DD/MM/YYYY HH:mm"),
         [h.branch]: order.branches?.name ?? none,
         [h.cashier]: order.cashier_name,
-        [h.type]: order.order_type === "takeaway" ? t("plain.takeaway") : t("plain.dineIn"),
+        [h.type]: order.order_type === "takeaway"
+          ? t("plain.takeaway")
+          : order.order_type === "delivery"
+          ? t("plain.delivery")
+          : order.order_type === "pedidos_ya"
+          ? t("plain.pedidosYa")
+          : t("plain.dineIn"),
         [h.payment]: order.payment_method === "efectivo" ? t("plain.cash")
           : order.payment_method === "qr" ? t("plain.qr")
           : order.payment_method === "online"

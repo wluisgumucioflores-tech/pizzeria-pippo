@@ -37,10 +37,11 @@ interface Props {
   discountedCart: DiscountedItem[];
   onUpdateQty: (variantId: string, delta: number) => void;
   onRemove: (variantId: string) => void;
+  onEditPrice: (variantId: string, newPrice: number) => void;
   getStockQty: (variantId: string) => number | null;
 }
 
-export function PosCartItemsList({ discountedCart, onUpdateQty, onRemove, getStockQty }: Props) {
+export function PosCartItemsList({ discountedCart, onUpdateQty, onRemove, onEditPrice, getStockQty }: Props) {
   const t = useTranslations("pos.cartPanel");
   const groups = buildGroups(discountedCart);
 
@@ -59,7 +60,7 @@ export function PosCartItemsList({ discountedCart, onUpdateQty, onRemove, getSto
         if (group.type === "item") {
           return (
             <div key={`item-${idx}-${group.item.variant_id}`} style={{ padding: "10px 12px", background: "#f9fafb", borderRadius: 10, border: "1px solid #f3f4f6" }}>
-              <CartItemRow item={group.item} onUpdateQty={onUpdateQty} onRemove={onRemove} maxQty={getStockQty(group.item.variant_id)} />
+              <CartItemRow item={group.item} onUpdateQty={onUpdateQty} onRemove={onRemove} onEditPrice={onEditPrice} maxQty={getStockQty(group.item.variant_id)} />
             </div>
           );
         }

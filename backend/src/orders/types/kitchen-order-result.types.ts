@@ -4,6 +4,8 @@ export interface KitchenOrderResult {
   created_at: string;
   kitchen_status: string;
   order_type: string;
+  table_number: string | null;
+  waiter_name: string | null;
   order_items: {
     id: string;
     qty: number;

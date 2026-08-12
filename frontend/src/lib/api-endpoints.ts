@@ -73,6 +73,7 @@ export const API_ENDPOINTS = {
     kitchen: (branchId: string) => `/orders/kitchen?branchId=${branchId}`,
     ready: (id: string) => `/orders/${id}/ready`,
     cancel: (id: string) => `/orders/${id}/cancel`,
+    pay: (id: string) => `/orders/${id}/pay`,
   },
   reports: {
     sales: (qs: string) => `/reports/sales?${qs}`,

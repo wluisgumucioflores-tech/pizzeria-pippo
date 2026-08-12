@@ -10,6 +10,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { GetDayOrdersQueryDto } from './dto/get-day-orders-query.dto';
 import { GetKitchenOrdersQueryDto } from './dto/get-kitchen-orders-query.dto';
 import { CancelOrderDto } from './dto/cancel-order.dto';
+import { PayOrderDto } from './dto/pay-order.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('orders')
@@ -45,7 +46,20 @@ export class OrdersController {
     return this.ordersService.markReady(id, user);
   }
 
+  @Post(':id/pay')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'cajero')
+  payOrder(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: PayOrderDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.ordersService.payOrder(id, dto, user);
+  }
+
   @Post(':id/cancel')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'cajero', 'cocinero')
   cancelOrder(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CancelOrderDto,

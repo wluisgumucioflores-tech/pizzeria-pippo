@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { getUserProfile } from "@/lib/auth";
+import { getUserProfile, signOut } from "@/lib/auth";
 import { formatTimeBolivia } from "@/lib/timezone";
+import { notifyNewOrder, unlockAudioOnFirstInteraction } from "@/lib/notify";
+import { useNewIdAlert } from "@/lib/useNewIdAlert";
 import { KitchenService } from "@/features/kitchen/services/kitchen.service";
 import { LocaleSwitcher } from "@/features/i18n/components/LocaleSwitcher";
 import type { KitchenOrder } from "@/features/kitchen/types/kitchen.types";
@@ -25,6 +27,13 @@ function useTimer(createdAt: string) {
   return minutes;
 }
 
+const ORDER_TYPE_BADGES: Record<KitchenOrder["order_type"], { emoji: string; label: string; className: string }> = {
+  dine_in: { emoji: "🍽️", label: "Local", className: "bg-gray-600 text-gray-200" },
+  takeaway: { emoji: "🥡", label: "Para llevar", className: "bg-blue-500 text-white" },
+  delivery: { emoji: "🛵", label: "Delivery", className: "bg-emerald-500 text-white" },
+  pedidos_ya: { emoji: "📱", label: "Pedidos Ya", className: "bg-orange-500 text-white" },
+};
+
 function OrderCard({ order, onReady, lateThreshold }: { order: KitchenOrder; onReady: (id: string) => void; lateThreshold: number }) {
   const minutes = useTimer(order.created_at);
   const isLate = minutes >= lateThreshold;
@@ -40,24 +49,32 @@ function OrderCard({ order, onReady, lateThreshold }: { order: KitchenOrder; onR
       }`}
     >
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between items-center">
           <span className="text-2xl font-black text-white tracking-wider">{orderLabel}</span>
-          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-            order.order_type === "takeaway"
-              ? "bg-blue-500 text-white"
-              : "bg-gray-600 text-gray-200"
-          }`}>
-            {order.order_type === "takeaway" ? "🥡 Llevar" : "🍽️ Aquí"}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className={`text-sm font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
+              isLate ? "bg-red-500 text-white" : "bg-gray-600 text-gray-200"
+            }`}>
+              🕐 {minutes} min
+            </span>
+            <span className="text-gray-400 text-sm whitespace-nowrap">{localTime}</span>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className={`text-sm font-semibold px-2 py-0.5 rounded-full ${
-            isLate ? "bg-red-500 text-white" : "bg-gray-600 text-gray-200"
-          }`}>
-            🕐 {minutes} min
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={`text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${ORDER_TYPE_BADGES[order.order_type].className}`}>
+            {ORDER_TYPE_BADGES[order.order_type].emoji} {ORDER_TYPE_BADGES[order.order_type].label}
           </span>
-          <span className="text-gray-400 text-sm">{localTime}</span>
+          {order.table_number && (
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-700 text-gray-200 whitespace-nowrap">
+              🪑 {order.table_number}
+            </span>
+          )}
+          {order.waiter_name && (
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-700 text-gray-200 whitespace-nowrap">
+              🙋 {order.waiter_name}
+            </span>
+          )}
         </div>
       </div>
 
@@ -124,6 +141,13 @@ export default function KitchenPage() {
   const [branchName, setBranchName] = useState("");
   const [currentTime, setCurrentTime] = useState("");
   const [lateThreshold, setLateThreshold] = useState(10);
+  const [connected, setConnected] = useState(true);
+
+  useEffect(() => {
+    unlockAudioOnFirstInteraction();
+  }, []);
+
+  useNewIdAlert(orders.map((o) => o.id), notifyNewOrder);
 
   // Load kitchen late threshold from settings
   useEffect(() => {
@@ -178,7 +202,8 @@ export default function KitchenPage() {
         if (payload.new.kitchen_status === "ready" || payload.new.cancelled_at) {
           setOrders((prev) => prev.filter((o) => o.id !== payload.new.id));
         }
-      }
+      },
+      setConnected
     );
 
     return () => { KitchenService.unsubscribe(channel); };
@@ -188,6 +213,11 @@ export default function KitchenPage() {
     // Optimistic update
     setOrders((prev) => prev.filter((o) => o.id !== orderId));
     await KitchenService.markOrderReady(orderId);
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    window.location.href = "/login";
   };
 
   const pendingCount = orders.length;
@@ -217,6 +247,11 @@ export default function KitchenPage() {
         </div>
 
         <div className="flex items-center gap-6">
+          {!connected && (
+            <span className="bg-red-600 text-white text-sm font-bold px-3 py-1 rounded-full animate-pulse">
+              🔴 Sin conexión
+            </span>
+          )}
           {lateCount > 0 && (
             <span className="bg-red-600 text-white text-sm font-bold px-3 py-1 rounded-full animate-pulse">
               ⚠ {lateCount} demorado{lateCount > 1 ? "s" : ""}
@@ -229,6 +264,12 @@ export default function KitchenPage() {
           </span>
           <span className="text-gray-300 font-mono text-xl">{currentTime}</span>
           <LocaleSwitcher dark />
+          <button
+            onClick={handleLogout}
+            className="text-gray-300 hover:text-white text-sm font-semibold px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-colors whitespace-nowrap"
+          >
+            🚪 Salir
+          </button>
         </div>
       </div>
 

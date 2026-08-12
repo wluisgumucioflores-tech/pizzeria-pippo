@@ -48,6 +48,12 @@ export function OrdersStatsRow({ summary, loading }: Props) {
       <StatTile label={t("totalPeriod")} value={summary.total} count={summary.count} accent />
       <StatTile label={t("orderType.dineIn")} value={by_order_type.dine_in.total} count={by_order_type.dine_in.count} />
       <StatTile label={t("orderType.takeaway")} value={by_order_type.takeaway.total} count={by_order_type.takeaway.count} />
+      {by_order_type.delivery.count > 0 && (
+        <StatTile label={t("orderType.delivery")} value={by_order_type.delivery.total} count={by_order_type.delivery.count} />
+      )}
+      {by_order_type.pedidos_ya.count > 0 && (
+        <StatTile label={t("orderType.pedidosYa")} value={by_order_type.pedidos_ya.total} count={by_order_type.pedidos_ya.count} />
+      )}
       <StatTile label={t("payment.cash")} value={by_payment_method.efectivo.total} count={by_payment_method.efectivo.count} />
       <StatTile label={t("payment.qr")} value={by_payment_method.qr.total} count={by_payment_method.qr.count} />
       <StatTile label={t("payment.online")} value={by_payment_method.online.total} count={by_payment_method.online.count} />

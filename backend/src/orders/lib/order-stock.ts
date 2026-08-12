@@ -2,7 +2,7 @@
 // server-side stock deduction calculation stays in exact parity.
 // create_order_atomic() applies these deductions transactionally.
 
-export type OrderType = 'dine_in' | 'takeaway';
+export type OrderType = 'dine_in' | 'takeaway' | 'delivery' | 'pedidos_ya';
 
 export interface RecipeRow {
   ingredient_id: string;

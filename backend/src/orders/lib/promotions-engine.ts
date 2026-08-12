@@ -8,6 +8,11 @@ export interface FlavorItem {
   proportion: number;
 }
 
+export interface ExtraItem {
+  name: string;
+  price: number;
+}
+
 export interface CartItem {
   variant_id: string;
   qty: number;
@@ -17,6 +22,13 @@ export interface CartItem {
   category: string;
   flavors?: FlavorItem[];
   promo_id?: string;
+  // Solo en items sin promo/flavors (ver orders.service.ts) — sobrevive sin
+  // tocar la lógica de abajo porque todo passthrough/split hace `{...item}`.
+  extras?: ExtraItem[];
+  // Fase 3 — precio editado manualmente por cajero/admin al vender (mismo
+  // criterio que extras: solo en items sin promo/flavors). Solo es un flag
+  // para la etiqueta "Editado" en UI/Reportes, no afecta el cálculo acá.
+  price_edited?: boolean;
 }
 
 export interface PromotionRule {

@@ -29,7 +29,12 @@ export default function PosPage() {
   const cart = usePosCart(promotions, effectiveBranchId ?? undefined, broadcast, getStockQty);
   const [activeTab, setActiveTab] = useState<PosTab>("sale");
   const isMobile = useIsMobile();
-  const { dayOrders, markingReady, fetchDayOrders, handleMarkReady, cancelModal, cancelling, openCancelModal, closeCancelModal, handleCancelOrder } = useDayOrders(effectiveBranchId ?? undefined, activeTab !== "sale");
+  const {
+    dayOrders, markingReady, fetchDayOrders, handleMarkReady,
+    cancelModal, cancelling, openCancelModal, closeCancelModal, handleCancelOrder,
+    payModal, paying, openPayModal, closePayModal, handlePayOrder,
+    connected,
+  } = useDayOrders(effectiveBranchId ?? undefined, activeTab !== "sale");
   const printer = usePrinter();
   const paymentValidation = usePaymentValidation(effectiveBranchId ?? undefined);
 
@@ -71,6 +76,7 @@ export default function PosPage() {
         activeTab={activeTab}
         pendingCount={dayOrders.filter((o) => o.kitchen_status === "pending" && !o.cancelled_at).length}
         promoCount={activePromotions.length}
+        connected={connected}
         onTabChange={setActiveTab}
         onLogout={handleLogout}
         printerSlot={
@@ -104,7 +110,7 @@ export default function PosPage() {
       )}
 
       {activeTab === "orders" && (
-        <DayOrdersPanel dayOrders={dayOrders} markingReady={markingReady} onMarkReady={handleMarkReady} onCancel={openCancelModal} />
+        <DayOrdersPanel dayOrders={dayOrders} markingReady={markingReady} onMarkReady={handleMarkReady} onCancel={openCancelModal} onPay={openPayModal} onPrint={actions.handlePrintDayOrder} />
       )}
 
       {activeTab === "summary" && (
@@ -125,6 +131,10 @@ export default function PosPage() {
         cancelling={cancelling}
         onCancelOrder={handleCancelOrder}
         onCloseCancelModal={closeCancelModal}
+        payModal={payModal}
+        paying={paying}
+        onPayOrder={handlePayOrder}
+        onClosePayModal={closePayModal}
       />
     </div>
   );

@@ -6,10 +6,11 @@ import { ConfirmSaleModal } from "./ConfirmSaleModal";
 import { PaymentValidationModal } from "./PaymentValidationModal";
 import { TicketModal } from "./TicketModal";
 import { CancelOrderModal } from "./CancelOrderModal";
+import { CollectPaymentModal } from "./CollectPaymentModal";
 import type { usePosCart } from "../hooks/usePosCart";
 import type { usePaymentValidation } from "../hooks/usePaymentValidation";
 import type { usePosPageActions } from "../hooks/usePosPageActions";
-import type { Product, Branch, Variant, DayOrder } from "../types/pos.types";
+import type { Product, Branch, Variant, DayOrder, PaymentMethod, SplitPayment } from "../types/pos.types";
 import type { usePrinter } from "@/features/printing/hooks/usePrinter";
 
 interface Props {
@@ -26,11 +27,16 @@ interface Props {
   cancelling: boolean;
   onCancelOrder: (orderId: string, reason: string) => void;
   onCloseCancelModal: () => void;
+  payModal: DayOrder | null;
+  paying: boolean;
+  onPayOrder: (paymentMethod: PaymentMethod, payments: SplitPayment[] | null) => void;
+  onClosePayModal: () => void;
 }
 
 export function PosModals({
   branchId, branches, products, cart, paymentValidation, actions,
   getVariantPrice, getPromoLabel, printer, cancelModal, cancelling, onCancelOrder, onCloseCancelModal,
+  payModal, paying, onPayOrder, onClosePayModal,
 }: Props) {
   return (
     <>
@@ -78,6 +84,7 @@ export function PosModals({
         canPrint={printer.status !== "unsupported"}
       />
       <CancelOrderModal order={cancelModal} loading={cancelling} onConfirm={onCancelOrder} onClose={onCloseCancelModal} />
+      <CollectPaymentModal key={payModal?.id ?? "closed"} order={payModal} submitting={paying} onConfirm={onPayOrder} onClose={onClosePayModal} />
     </>
   );
 }

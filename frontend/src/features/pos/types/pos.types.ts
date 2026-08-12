@@ -32,7 +32,7 @@ export interface Branch {
   name: string;
 }
 
-export type OrderType = "dine_in" | "takeaway";
+export type OrderType = "dine_in" | "takeaway" | "delivery" | "pedidos_ya";
 
 export type PosTab = "sale" | "promos" | "orders" | "summary";
 
@@ -53,10 +53,16 @@ export interface DayOrder {
   payment_method: PaymentMethod;
   payment_provider: string | null;
   order_type: OrderType;
+  table_number: string | null;
+  waiter_name: string | null;
   cancelled_at: string | null;
   notes: string | null;
   order_items: {
     qty: number;
+    qty_physical: number;
+    unit_price: number;
+    discount_applied: number;
+    promo_label: string | null;
     product_variants: { name: string; products: { name: string } | null } | null;
   }[];
   payments: SplitPayment[];
@@ -71,4 +77,7 @@ export interface TicketData {
   paymentProvider: string | null;
   payments?: SplitPayment[] | null;
   orderType: OrderType;
+  tableNumber?: string | null;
+  waiterName?: string | null;
+  notes?: string | null;
 }

@@ -111,6 +111,8 @@ describe('ReportsService', () => {
         by_order_type: {
           dine_in: { total: 0, count: 0 },
           takeaway: { total: 0, count: 0 },
+          delivery: { total: 0, count: 0 },
+          pedidos_ya: { total: 0, count: 0 },
         },
         by_payment_method: {
           efectivo: { total: 0, count: 0 },
@@ -191,8 +193,8 @@ describe('ReportsService', () => {
       const variant = { id: 'v1', name: 'Familiar', product: { name: 'Napolitana', category: 'pizza' } };
       prisma.order.findMany.mockResolvedValue([
         {
-          cashierId: 'c1',
-          cashier: { fullName: 'Ana' },
+          paidById: 'c1',
+          paidBy: { fullName: 'Ana' },
           total: decimal(100),
           items: [{ qty: 2, unitPrice: decimal(50), discountApplied: decimal(0), variant }],
         },

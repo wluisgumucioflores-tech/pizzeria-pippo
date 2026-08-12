@@ -3,6 +3,7 @@ export interface OrderReportItemResult {
   unit_price: number;
   discount_applied: number;
   promo_label: string | null;
+  price_edited: boolean;
   product_variants: { name: string; products: { name: string; category: string } | null } | null;
 }
 

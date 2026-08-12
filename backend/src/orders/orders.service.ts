@@ -11,6 +11,7 @@ import type { CartItem, Promotion } from './lib/promotions-engine';
 import type { RecipeRow, StockItem } from './lib/order-stock';
 import type { CreateOrderDto } from './dto/create-order.dto';
 import type { CancelOrderDto } from './dto/cancel-order.dto';
+import type { PayOrderDto } from './dto/pay-order.dto';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import type { CreateOrderResult } from './types/create-order-result.types';
 import type { DayOrderResult } from './types/day-order-result.types';
@@ -61,10 +62,26 @@ export class OrdersService {
       if (!override && productType !== 'resale') {
         throw new BadRequestException(`"${variant.product.name}" no tiene precio en esta sucursal`);
       }
+      // Extras (Fase 0/2 de docs/features/mesero-y-mejoras-pos/) son solo para
+      // ventas normales — nunca sobre un item con promo o pizza mixta, para no
+      // tener que resolver a qué línea queda atado un extra si el motor de
+      // promociones parte el item (ver feature.md, "Extras").
+      if (i.extras?.length && (i.promo_id || i.flavors?.length)) {
+        throw new BadRequestException('No se pueden agregar extras a un item con promoción o sabores mixtos');
+      }
+      // Fase 3 (docs/features/mesero-y-mejoras-pos/) — editar precio al vender.
+      // Solo se honra para cajero/admin (nunca se confía en el cliente para
+      // otros roles) y solo sobre items sin promo/sabores mixtos, mismo
+      // criterio que extras.
+      const canEditPrice = user.role === 'cajero' || user.role === 'admin';
+      const priceOverride = i.unit_price !== undefined && i.unit_price !== null && canEditPrice ? i.unit_price : null;
+      if (priceOverride !== null && (i.promo_id || i.flavors?.length)) {
+        throw new BadRequestException('No se puede editar el precio de un item con promoción o sabores mixtos');
+      }
       return {
         variant_id: i.variant_id,
         qty: i.qty,
-        unit_price: override ? override.price.toNumber() : variant.basePrice.toNumber(),
+        unit_price: priceOverride ?? (override ? override.price.toNumber() : variant.basePrice.toNumber()),
         product_name: variant.product.name,
         variant_name: variant.name,
         category: variant.product.category,
@@ -72,6 +89,8 @@ export class OrdersService {
           ? i.flavors.map((f) => ({ variant_id: f.variant_id, product_name: f.product_name ?? '', proportion: f.proportion }))
           : undefined,
         promo_id: i.promo_id ?? undefined,
+        extras: i.extras?.length ? i.extras.map((e) => ({ name: e.name, price: e.price ?? 0 })) : undefined,
+        price_edited: priceOverride !== null,
       };
     });
 
@@ -80,7 +99,13 @@ export class OrdersService {
     const allPromotions = (await this.promotionsService.list({}, user)) as unknown as Promotion[];
     const activePromotions = getActivePromotions(allPromotions, dto.branch_id, todayInBolivia());
     const discounted = applyPromotions(cart, activePromotions);
-    const serverTotal = round2(getCartTotal(discounted));
+    // Extras no pasan por el motor de promociones (no aplican ahí, ver arriba) —
+    // se suman aparte, precio del extra × cantidad de la línea.
+    const extrasTotal = dto.items.reduce((sum, i) => {
+      const extrasUnitPrice = (i.extras ?? []).reduce((s, e) => s + (e.price ?? 0), 0);
+      return sum + extrasUnitPrice * i.qty;
+    }, 0);
+    const serverTotal = round2(getCartTotal(discounted) + extrasTotal);
 
     // 4. The client total must match — a mismatch means prices/promos changed (or were tampered)
     if (Math.abs(serverTotal - dto.total) > 0.01) {
@@ -129,14 +154,22 @@ export class OrdersService {
     // existing create_order_atomic SQL function (see plan doc for why this
     // isn't reimplemented in Prisma: advisory lock + idempotency race handling).
     const today = todayInBolivia();
+    // Fase 4 (docs/features/mesero-y-mejoras-pos/) — cobro diferido. Si la
+    // orden se crea con método de pago (POS normal), quien la crea la cobró
+    // en el momento. Si no (mesero), queda sin cobrar hasta que un cajero la
+    // cobre después vía payOrder — ahí se setea paid_by.
+    const paidAtCreation = dto.payments || dto.payment_method ? user.id : null;
     const payload = {
       branch_id: dto.branch_id,
       cashier_id: user.id,
+      paid_by: paidAtCreation,
       total: serverTotal,
       payment_method: dto.payments ? 'mixto' : dto.payment_method ?? null,
       payment_provider: dto.payment_provider ?? null,
       payments: dto.payments ?? [],
       order_type: dto.order_type,
+      table_number: dto.table_number?.trim() || null,
+      waiter_name: dto.waiter_name?.trim() || null,
       notes: dto.notes?.trim() || null,
       idempotency_key: dto.idempotency_key ?? null,
       day_start: dateRangeFrom(today),
@@ -149,6 +182,8 @@ export class OrdersService {
         discount_applied: round2(d.discount_applied),
         promo_label: d.promo_label,
         flavors: (d.flavors ?? []).map((f) => ({ variant_id: f.variant_id, proportion: f.proportion })),
+        extras: (d.extras ?? []).map((e) => ({ name: e.name, price: e.price })),
+        price_edited: d.price_edited ?? false,
       })),
       ...deductions,
     };
@@ -202,10 +237,16 @@ export class OrdersService {
       payment_method: order.paymentMethod,
       payment_provider: order.paymentProvider,
       order_type: order.orderType,
+      table_number: order.tableNumber,
+      waiter_name: order.waiterName,
       cancelled_at: order.cancelledAt?.toISOString() ?? null,
       notes: order.notes,
       order_items: order.items.map((item) => ({
         qty: item.qty,
+        qty_physical: item.qtyPhysical,
+        unit_price: item.unitPrice.toNumber(),
+        discount_applied: item.discountApplied.toNumber(),
+        promo_label: item.promoLabel,
         product_variants: item.variant
           ? { name: item.variant.name, products: item.variant.product ? { name: item.variant.product.name } : null }
           : null,
@@ -235,6 +276,8 @@ export class OrdersService {
       created_at: order.createdAt.toISOString(),
       kitchen_status: order.kitchenStatus,
       order_type: order.orderType,
+      table_number: order.tableNumber,
+      waiter_name: order.waiterName,
       order_items: order.items.map((item) => ({
         id: item.id,
         qty: item.qty,
@@ -273,6 +316,64 @@ export class OrdersService {
 
     await this.prisma.order.update({ where: { id: orderId }, data: { kitchenStatus: 'ready' } });
     this.ordersGateway.emitOrderUpdated(order.branchId, { id: orderId, kitchen_status: 'ready', cancelled_at: null });
+  }
+
+  // Fase 4 — cobro diferido. Cobra una orden que se creó sin método de pago
+  // (ej. creada por un mesero). Solo cajero/admin (ver @Roles en el
+  // controller). No usa create_order_atomic — no hay stock ni numeración que
+  // tocar, un update + insert de order_payments alcanza.
+  async payOrder(orderId: string, dto: PayOrderDto, user: CurrentUserPayload): Promise<void> {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      select: {
+        branchId: true,
+        total: true,
+        paymentMethod: true,
+        kitchenStatus: true,
+        cancelledAt: true,
+        branch: { select: { businessId: true } },
+      },
+    });
+    if (!order || order.branch.businessId !== user.business_id) {
+      throw new NotFoundException('Orden no encontrada');
+    }
+    if (order.cancelledAt) throw new ConflictException('La orden está anulada');
+    if (order.paymentMethod !== null) throw new ConflictException('La orden ya fue cobrada');
+    if (user.role !== 'admin' && user.branch_id !== order.branchId) {
+      throw new ForbiddenException('No tenés permiso para esta orden');
+    }
+
+    if (dto.payments?.length) {
+      const methods = new Set(dto.payments.map((p) => p.method));
+      if (methods.size !== dto.payments.length) {
+        throw new BadRequestException('El pago mixto no puede repetir el mismo método');
+      }
+      const paymentsSum = round2(dto.payments.reduce((sum, p) => sum + p.amount, 0));
+      if (Math.abs(paymentsSum - order.total.toNumber()) > 0.01) {
+        throw new BadRequestException('La suma de los montos del pago mixto no coincide con el total');
+      }
+    }
+
+    const finalMethod = dto.payments?.length ? 'mixto' : dto.payment_method;
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.order.update({
+        where: { id: orderId },
+        data: { paymentMethod: finalMethod, paymentProvider: dto.payment_provider ?? null, paidById: user.id },
+      });
+      if (dto.payments?.length) {
+        await tx.orderPayment.createMany({
+          data: dto.payments.map((p) => ({ orderId, method: p.method, amount: p.amount })),
+        });
+      }
+    });
+
+    this.ordersGateway.emitOrderUpdated(order.branchId, {
+      id: orderId,
+      kitchen_status: order.kitchenStatus,
+      cancelled_at: null,
+      payment_method: finalMethod,
+    });
   }
 
   async cancelOrder(orderId: string, dto: CancelOrderDto, user: CurrentUserPayload): Promise<void> {

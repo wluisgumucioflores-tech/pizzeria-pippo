@@ -60,6 +60,8 @@ export function buildTicketBytes(
     CMD.SIZE_NORMAL
   );
   parts.push(encodeLine(ORDER_TYPE_LABELS[ticket.orderType] ?? ""));
+  if (ticket.tableNumber) parts.push(encodeLine(`Mesa: ${ticket.tableNumber}`));
+  if (ticket.waiterName) parts.push(encodeLine(`Mesero: ${ticket.waiterName}`));
   parts.push(CMD.ALIGN_LEFT, encodeLine(divider(width)));
 
   // Items
@@ -84,6 +86,12 @@ export function buildTicketBytes(
         ? PAYMENT_METHOD_LABELS[ticket.paymentMethod] ?? ticket.paymentMethod
         : "-";
   parts.push(encodeLine(`Pago: ${payment}`));
+
+  if (ticket.notes) {
+    parts.push(encodeLine(divider(width)));
+    parts.push(encodeLine("Nota:"));
+    parts.push(encodeLine(ticket.notes));
+  }
 
   // Footer
   parts.push(

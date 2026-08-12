@@ -82,7 +82,7 @@ export function UserModal({ open, editing, saving, selectedRole, branches, form,
           label={t("branchLabel")}
           name="branch_id"
           rules={[{
-            required: selectedRole === "cajero" || selectedRole === "cocinero",
+            required: selectedRole === "cajero" || selectedRole === "cocinero" || selectedRole === "mesero",
             message: t("branchRequired"),
           }]}
         >

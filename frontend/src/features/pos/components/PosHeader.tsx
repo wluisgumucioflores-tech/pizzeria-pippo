@@ -20,12 +20,22 @@ interface Props {
   activeTab: PosTab;
   pendingCount: number;
   promoCount: number;
+  connected: boolean;
   onTabChange: (tab: PosTab) => void;
   onLogout: () => void;
   printerSlot?: React.ReactNode;
 }
 
-export function PosHeader({ identity, branches, activeTab, pendingCount, promoCount, onTabChange, onLogout, printerSlot }: Props) {
+function ConnectionBadge({ connected }: { connected: boolean }) {
+  if (connected) return null;
+  return (
+    <Tag color="red" style={{ margin: 0, flexShrink: 0 }} className="animate-pulse">
+      🔴 Sin conexión
+    </Tag>
+  );
+}
+
+export function PosHeader({ identity, branches, activeTab, pendingCount, promoCount, connected, onTabChange, onLogout, printerSlot }: Props) {
   const branchName = branches.find((b) => b.id === identity.branch_id)?.name;
   const [currentTime, setCurrentTime] = useState("");
   const [businessName, setBusinessName] = useState(DEFAULT_TICKET_BUSINESS_NAME);
@@ -90,6 +100,7 @@ export function PosHeader({ identity, branches, activeTab, pendingCount, promoCo
           <Tag color="blue" style={{ margin: 0, fontSize: 11, flexShrink: 0 }}>{identity.name.split(" ")[0]}</Tag>
           <div style={{ flex: 1 }} />
           <Text style={{ fontFamily: "monospace", fontSize: 13, fontWeight: 600, color: "#374151", flexShrink: 0 }}>{currentTime}</Text>
+          <ConnectionBadge connected={connected} />
           {printerSlot}
           <LocaleSwitcher />
           <Button
@@ -124,6 +135,7 @@ export function PosHeader({ identity, branches, activeTab, pendingCount, promoCo
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Text style={{ fontFamily: "monospace", fontSize: 16, fontWeight: 600, color: "#374151" }}>{currentTime}</Text>
+          <ConnectionBadge connected={connected} />
           {printerSlot}
           <LocaleSwitcher />
           <Button icon={<LogoutOutlined />} onClick={onLogout}>{t("header.logout")}</Button>
