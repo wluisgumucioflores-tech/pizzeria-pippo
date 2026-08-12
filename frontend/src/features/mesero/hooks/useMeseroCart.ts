@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import type { MeseroCartItem, MeseroExtra } from "../types/mesero.types";
+import type { MeseroCartItem, MeseroExtra, MeseroOrderType } from "../types/mesero.types";
 import type { Product } from "@/features/pos/types/pos.types";
 
 export function useMeseroCart() {
   const [items, setItems] = useState<MeseroCartItem[]>([]);
   const [tableNumber, setTableNumber] = useState("");
+  const [orderType, setOrderType] = useState<MeseroOrderType>("dine_in");
 
   const addToCart = (product: Product, variant: Product["product_variants"][0], price: number) => {
     setItems((prev) => {
@@ -20,6 +21,7 @@ export function useMeseroCart() {
         unit_price: price,
         product_name: product.name,
         variant_name: variant.name,
+        category: product.category,
         extras: [],
       }];
     });
@@ -52,6 +54,7 @@ export function useMeseroCart() {
   const clearCart = () => {
     setItems([]);
     setTableNumber("");
+    setOrderType("dine_in");
   };
 
   const total = items.reduce((sum, i) => {
@@ -60,7 +63,7 @@ export function useMeseroCart() {
   }, 0);
 
   return {
-    items, total, tableNumber, setTableNumber,
+    items, total, tableNumber, setTableNumber, orderType, setOrderType,
     addToCart, updateQty, removeFromCart, addExtra, removeExtra, clearCart,
   };
 }

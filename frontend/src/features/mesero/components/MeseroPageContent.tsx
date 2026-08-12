@@ -51,6 +51,15 @@ export function MeseroPageContent() {
         </div>
       )}
 
+      {p.tab === "nuevo" && p.addingToOrder && (
+        <div className="mx-4 mt-3 px-4 py-2 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-700 flex items-center justify-between">
+          <span>Agregando items al pedido #{String(p.addingToOrder.dailyNumber).padStart(2, "0")}</span>
+          <button type="button" onClick={p.cancelAddItems} className="text-blue-600 hover:text-blue-800 font-medium cursor-pointer">
+            Cancelar
+          </button>
+        </div>
+      )}
+
       {p.tab === "nuevo" ? (
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 overflow-hidden">
           <div className="overflow-y-auto">
@@ -58,6 +67,7 @@ export function MeseroPageContent() {
               products={p.products}
               loading={p.loadingProducts}
               branchId={p.effectiveBranchId}
+              useStock={p.useStock}
               getVariantPrice={p.getVariantPrice}
               getPromoLabel={() => null}
               onProductClick={p.handleProductClick}
@@ -69,13 +79,13 @@ export function MeseroPageContent() {
               <span className="text-gray-400">🛒</span>
             </div>
             <div className="flex-1 overflow-hidden">
-              <MeseroCartPanel cart={p.cart} submitting={p.submitting} onSubmit={p.handleSubmitOrder} />
+              <MeseroCartPanel cart={p.cart} submitting={p.submitting} extraOptions={p.extraOptions} addingToOrder={p.addingToOrder} onSubmit={p.handleSubmitOrder} />
             </div>
           </div>
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto">
-          <MeseroOrdersList orders={p.myOrders} loading={p.loadingOrders} />
+          <MeseroOrdersList orders={p.myOrders} loading={p.loadingOrders} onAddItems={p.startAddItems} />
         </div>
       )}
 
@@ -83,7 +93,7 @@ export function MeseroPageContent() {
         <>
           <MeseroCartFab itemCount={itemCount} onClick={() => setCartOpen(true)} />
           <MeseroCartDrawer open={cartOpen} onClose={() => setCartOpen(false)}>
-            <MeseroCartPanel cart={p.cart} submitting={p.submitting} onSubmit={p.handleSubmitOrder} />
+            <MeseroCartPanel cart={p.cart} submitting={p.submitting} extraOptions={p.extraOptions} addingToOrder={p.addingToOrder} onSubmit={p.handleSubmitOrder} />
           </MeseroCartDrawer>
         </>
       )}

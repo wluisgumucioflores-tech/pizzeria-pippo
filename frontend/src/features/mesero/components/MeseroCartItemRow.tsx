@@ -5,14 +5,15 @@ import type { MeseroCartItem } from "../types/mesero.types";
 
 interface Props {
   item: MeseroCartItem;
+  extraOptions: { name: string; price: number }[];
   onUpdateQty: (delta: number) => void;
   onRemove: () => void;
   onAddExtra: (name: string, price: number) => void;
   onRemoveExtra: (extraIndex: number) => void;
 }
 
-export function MeseroCartItemRow({ item, onUpdateQty, onRemove, onAddExtra, onRemoveExtra }: Props) {
-  const [showExtraForm, setShowExtraForm] = useState(false);
+export function MeseroCartItemRow({ item, extraOptions, onUpdateQty, onRemove, onAddExtra, onRemoveExtra }: Props) {
+  const [showExtraPicker, setShowExtraPicker] = useState(false);
 
   return (
     <div className="border-b py-3">
@@ -40,30 +41,43 @@ export function MeseroCartItemRow({ item, onUpdateQty, onRemove, onAddExtra, onR
         </ul>
       )}
 
-      {showExtraForm ? (
-        <form
-          className="mt-2 flex items-center gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const form = e.currentTarget;
-            const name = (form.elements.namedItem("extraName") as HTMLInputElement).value;
-            const price = Number((form.elements.namedItem("extraPrice") as HTMLInputElement).value || 0);
-            if (!name.trim()) return;
-            onAddExtra(name.trim(), price);
-            form.reset();
-            setShowExtraForm(false);
-          }}
-        >
-          <input name="extraName" type="text" placeholder="Extra" required className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm" />
-          <input name="extraPrice" type="number" min={0} step="0.01" placeholder="Bs" className="w-20 px-2 py-1 border border-gray-300 rounded text-sm" />
-          <button type="submit" className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer">Agregar</button>
-          <button type="button" onClick={() => setShowExtraForm(false)} className="text-sm text-gray-400 cursor-pointer">Cancelar</button>
-        </form>
+      {item.category !== "bebida" && (showExtraPicker ? (
+        <div className="mt-2 border border-gray-200 rounded-md overflow-hidden">
+          {extraOptions.length === 0 ? (
+            <p className="text-xs text-gray-400 px-3 py-2">
+              No hay productos en la categoría &quot;Otros&quot; para agregar como extra.
+            </p>
+          ) : (
+            <div className="flex flex-col divide-y divide-gray-100">
+              {extraOptions.map((opt) => (
+                <button
+                  key={opt.name}
+                  type="button"
+                  onClick={() => onAddExtra(opt.name, opt.price)}
+                  className="flex items-center justify-between px-3 py-2 text-sm text-left hover:bg-gray-50 cursor-pointer"
+                >
+                  <span className="flex items-center gap-2 text-gray-700">
+                    <span className="text-blue-500">➕</span>
+                    {opt.name}
+                  </span>
+                  <span className="text-gray-500">Bs {opt.price}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowExtraPicker(false)}
+            className="w-full py-1.5 text-xs text-gray-400 hover:text-gray-600 border-t border-gray-100 cursor-pointer"
+          >
+            Cerrar
+          </button>
+        </div>
       ) : (
-        <button type="button" onClick={() => setShowExtraForm(true)} className="mt-2 text-sm text-blue-600 hover:text-blue-800 cursor-pointer">
+        <button type="button" onClick={() => setShowExtraPicker(true)} className="mt-2 text-sm text-blue-600 hover:text-blue-800 cursor-pointer">
           + Agregar extra
         </button>
-      )}
+      ))}
     </div>
   );
 }

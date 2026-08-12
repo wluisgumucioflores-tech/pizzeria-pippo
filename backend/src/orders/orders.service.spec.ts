@@ -1,9 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PromotionsService } from '../promotions/promotions.service';
 import { LowStockAlertService } from '../notifications/low-stock-alert.service';
+import { SettingsService } from '../settings/settings.service';
 import { OrdersGateway } from './realtime/orders.gateway';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import type { CreateOrderDto } from './dto/create-order.dto';
@@ -14,7 +20,8 @@ function decimal(value: number) {
 }
 
 interface TxMock {
-  order: { updateMany: jest.Mock };
+  order: { updateMany: jest.Mock; update: jest.Mock };
+  orderItem: { create: jest.Mock };
   branchStock: { updateMany: jest.Mock };
   stockMovement: { create: jest.Mock };
   branchProductStock: { updateMany: jest.Mock };
@@ -33,7 +40,11 @@ describe('OrdersService', () => {
   };
   let promotionsService: { list: jest.Mock };
   let lowStockAlertService: { checkAndNotify: jest.Mock };
-  let ordersGateway: { emitOrderCreated: jest.Mock; emitOrderUpdated: jest.Mock };
+  let settingsService: { isStockTrackingEnabled: jest.Mock };
+  let ordersGateway: {
+    emitOrderCreated: jest.Mock;
+    emitOrderUpdated: jest.Mock;
+  };
 
   const cashier: CurrentUserPayload = {
     id: 'u1',
@@ -50,8 +61,20 @@ describe('OrdersService', () => {
     basePrice: decimal(70),
     isActive: true,
     branchPrices: [{ branchId: 'b1', price: decimal(75) }],
-    recipes: [{ ingredientId: 'i-masa', quantity: decimal(1), applyCondition: 'always', ingredient: { isSharedUse: false } }],
-    product: { name: 'Hawaiana', category: 'pizza', productType: 'made', isActive: true },
+    recipes: [
+      {
+        ingredientId: 'i-masa',
+        quantity: decimal(1),
+        applyCondition: 'always',
+        ingredient: { isSharedUse: false },
+      },
+    ],
+    product: {
+      name: 'Hawaiana',
+      category: 'pizza',
+      productType: 'made',
+      isActive: true,
+    },
   };
 
   const resaleVariant = {
@@ -61,7 +84,12 @@ describe('OrdersService', () => {
     isActive: true,
     branchPrices: [],
     recipes: [],
-    product: { name: 'Coca-Cola', category: 'bebida', productType: 'resale', isActive: true },
+    product: {
+      name: 'Coca-Cola',
+      category: 'bebida',
+      productType: 'resale',
+      isActive: true,
+    },
   };
 
   function baseDto(overrides: Partial<CreateOrderDto> = {}): CreateOrderDto {
@@ -73,12 +101,13 @@ describe('OrdersService', () => {
       idempotency_key: null,
       items: [{ variant_id: 'v-pizza', qty: 1 }],
       ...overrides,
-    } as CreateOrderDto;
+    };
   }
 
   beforeEach(async () => {
     tx = {
-      order: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      order: { updateMany: jest.fn().mockResolvedValue({ count: 1 }), update: jest.fn() },
+      orderItem: { create: jest.fn() },
       branchStock: { updateMany: jest.fn() },
       stockMovement: { create: jest.fn() },
       branchProductStock: { updateMany: jest.fn() },
@@ -89,11 +118,19 @@ describe('OrdersService', () => {
       $queryRaw: jest.fn(),
       $transaction: jest.fn(async (cb: (tx: TxMock) => unknown) => cb(tx)),
       order: { findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
-      branch: { findUnique: jest.fn().mockResolvedValue({ businessId: 'biz1' }) },
+      branch: {
+        findUnique: jest.fn().mockResolvedValue({ businessId: 'biz1' }),
+      },
     };
     promotionsService = { list: jest.fn().mockResolvedValue([]) };
     lowStockAlertService = { checkAndNotify: jest.fn() };
-    ordersGateway = { emitOrderCreated: jest.fn(), emitOrderUpdated: jest.fn() };
+    settingsService = {
+      isStockTrackingEnabled: jest.fn().mockResolvedValue(true),
+    };
+    ordersGateway = {
+      emitOrderCreated: jest.fn(),
+      emitOrderUpdated: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -101,6 +138,7 @@ describe('OrdersService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: PromotionsService, useValue: promotionsService },
         { provide: LowStockAlertService, useValue: lowStockAlertService },
+        { provide: SettingsService, useValue: settingsService },
         { provide: OrdersGateway, useValue: ordersGateway },
       ],
     }).compile();
@@ -110,11 +148,23 @@ describe('OrdersService', () => {
 
   it('resuelve el precio server-side por sucursal y llama a create_order_atomic', async () => {
     prisma.productVariant.findMany.mockResolvedValue([madeVariant]);
-    prisma.$queryRaw.mockResolvedValue([{ create_order_atomic: { order_id: 'o1', daily_number: 3, duplicate: false } }]);
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        create_order_atomic: {
+          order_id: 'o1',
+          daily_number: 3,
+          duplicate: false,
+        },
+      },
+    ]);
 
     const result = await service.create(baseDto({ total: 75 }), cashier);
 
-    expect(result).toEqual({ order_id: 'o1', daily_number: 3, duplicate: false });
+    expect(result).toEqual({
+      order_id: 'o1',
+      daily_number: 3,
+      duplicate: false,
+    });
     expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
   });
 
@@ -122,68 +172,150 @@ describe('OrdersService', () => {
     const variantSinPrecio = { ...madeVariant, branchPrices: [] };
     prisma.productVariant.findMany.mockResolvedValue([variantSinPrecio]);
 
-    await expect(service.create(baseDto(), cashier)).rejects.toThrow(BadRequestException);
+    await expect(service.create(baseDto(), cashier)).rejects.toThrow(
+      BadRequestException,
+    );
     expect(prisma.$queryRaw).not.toHaveBeenCalled();
   });
 
   it('no exige branch_price para productos de reventa', async () => {
     prisma.productVariant.findMany.mockResolvedValue([resaleVariant]);
-    prisma.$queryRaw.mockResolvedValue([{ create_order_atomic: { order_id: 'o2', daily_number: 1, duplicate: false } }]);
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        create_order_atomic: {
+          order_id: 'o2',
+          daily_number: 1,
+          duplicate: false,
+        },
+      },
+    ]);
 
-    const dto = baseDto({ total: 10, items: [{ variant_id: 'v-coca', qty: 1 }] });
+    const dto = baseDto({
+      total: 10,
+      items: [{ variant_id: 'v-coca', qty: 1 }],
+    });
 
-    await expect(service.create(dto, cashier)).resolves.toEqual({ order_id: 'o2', daily_number: 1, duplicate: false });
+    await expect(service.create(dto, cashier)).resolves.toEqual({
+      order_id: 'o2',
+      daily_number: 1,
+      duplicate: false,
+    });
   });
 
   it('rechaza si el producto o la variante están inactivos', async () => {
-    prisma.productVariant.findMany.mockResolvedValue([{ ...madeVariant, isActive: false }]);
+    prisma.productVariant.findMany.mockResolvedValue([
+      { ...madeVariant, isActive: false },
+    ]);
 
-    await expect(service.create(baseDto(), cashier)).rejects.toThrow(BadRequestException);
+    await expect(service.create(baseDto(), cashier)).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it('rechaza con 409 si el total del cliente no coincide con el calculado en el servidor', async () => {
     prisma.productVariant.findMany.mockResolvedValue([madeVariant]);
 
-    await expect(service.create(baseDto({ total: 999 }), cashier)).rejects.toThrow(ConflictException);
+    await expect(
+      service.create(baseDto({ total: 999 }), cashier),
+    ).rejects.toThrow(ConflictException);
     expect(prisma.$queryRaw).not.toHaveBeenCalled();
   });
 
   it('dispara la alerta de stock bajo (fire-and-forget) cuando hay deducciones de ingredientes', async () => {
     prisma.productVariant.findMany.mockResolvedValue([madeVariant]);
-    prisma.$queryRaw.mockResolvedValue([{ create_order_atomic: { order_id: 'o1', daily_number: 1, duplicate: false } }]);
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        create_order_atomic: {
+          order_id: 'o1',
+          daily_number: 1,
+          duplicate: false,
+        },
+      },
+    ]);
 
     await service.create(baseDto({ total: 75 }), cashier);
 
-    expect(lowStockAlertService.checkAndNotify).toHaveBeenCalledWith('biz1', 'b1', ['i-masa'], []);
+    expect(lowStockAlertService.checkAndNotify).toHaveBeenCalledWith(
+      'biz1',
+      'b1',
+      ['i-masa'],
+      [],
+    );
   });
 
   it('rechaza con 404 si el usuario no tiene business_id (no puede ser dueño de ninguna sucursal)', async () => {
     const sinNegocio: CurrentUserPayload = { ...cashier, business_id: null };
 
-    await expect(service.create(baseDto({ total: 75 }), sinNegocio)).rejects.toThrow(NotFoundException);
+    await expect(
+      service.create(baseDto({ total: 75 }), sinNegocio),
+    ).rejects.toThrow(NotFoundException);
     expect(prisma.$queryRaw).not.toHaveBeenCalled();
   });
 
   it('rechaza con 404 si el branch_id del pedido es de otro negocio', async () => {
     prisma.branch.findUnique.mockResolvedValue({ businessId: 'otro-negocio' });
 
-    await expect(service.create(baseDto(), cashier)).rejects.toThrow(NotFoundException);
+    await expect(service.create(baseDto(), cashier)).rejects.toThrow(
+      NotFoundException,
+    );
     expect(prisma.$queryRaw).not.toHaveBeenCalled();
   });
 
   it('dispara la alerta de stock con deducciones de reventa cuando la venta es solo de reventa', async () => {
     prisma.productVariant.findMany.mockResolvedValue([resaleVariant]);
-    prisma.$queryRaw.mockResolvedValue([{ create_order_atomic: { order_id: 'o2', daily_number: 1, duplicate: false } }]);
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        create_order_atomic: {
+          order_id: 'o2',
+          daily_number: 1,
+          duplicate: false,
+        },
+      },
+    ]);
 
-    await service.create(baseDto({ total: 10, items: [{ variant_id: 'v-coca', qty: 1 }] }), cashier);
+    await service.create(
+      baseDto({ total: 10, items: [{ variant_id: 'v-coca', qty: 1 }] }),
+      cashier,
+    );
 
-    expect(lowStockAlertService.checkAndNotify).toHaveBeenCalledWith('biz1', 'b1', [], ['v-coca']);
+    expect(lowStockAlertService.checkAndNotify).toHaveBeenCalledWith(
+      'biz1',
+      'b1',
+      [],
+      ['v-coca'],
+    );
+  });
+
+  it('no descuenta stock ni dispara alertas cuando el negocio tiene el control de stock desactivado', async () => {
+    settingsService.isStockTrackingEnabled.mockResolvedValue(false);
+    prisma.productVariant.findMany.mockResolvedValue([madeVariant]);
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        create_order_atomic: {
+          order_id: 'o4',
+          daily_number: 1,
+          duplicate: false,
+        },
+      },
+    ]);
+
+    await service.create(baseDto({ total: 75 }), cashier);
+
+    expect(lowStockAlertService.checkAndNotify).not.toHaveBeenCalled();
   });
 
   it('no dispara la alerta si no hubo deducciones de ningún tipo', async () => {
     const variantSinReceta = { ...madeVariant, recipes: [] };
     prisma.productVariant.findMany.mockResolvedValue([variantSinReceta]);
-    prisma.$queryRaw.mockResolvedValue([{ create_order_atomic: { order_id: 'o3', daily_number: 1, duplicate: false } }]);
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        create_order_atomic: {
+          order_id: 'o3',
+          daily_number: 1,
+          duplicate: false,
+        },
+      },
+    ]);
 
     await service.create(baseDto({ total: 75 }), cashier);
 
@@ -192,20 +324,139 @@ describe('OrdersService', () => {
 
   it('emite order:created para que cocina/POS se enteren en vivo de la orden nueva', async () => {
     prisma.productVariant.findMany.mockResolvedValue([madeVariant]);
-    prisma.$queryRaw.mockResolvedValue([{ create_order_atomic: { order_id: 'o1', daily_number: 3, duplicate: false } }]);
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        create_order_atomic: {
+          order_id: 'o1',
+          daily_number: 3,
+          duplicate: false,
+        },
+      },
+    ]);
 
     await service.create(baseDto({ total: 75 }), cashier);
 
-    expect(ordersGateway.emitOrderCreated).toHaveBeenCalledWith('b1', { id: 'o1', daily_number: 3 });
+    expect(ordersGateway.emitOrderCreated).toHaveBeenCalledWith('b1', {
+      id: 'o1',
+      daily_number: 3,
+    });
   });
 
   it('no emite order:created cuando la orden ya existía (hit de idempotencia)', async () => {
     prisma.productVariant.findMany.mockResolvedValue([madeVariant]);
-    prisma.$queryRaw.mockResolvedValue([{ create_order_atomic: { order_id: 'o1', daily_number: 3, duplicate: true } }]);
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        create_order_atomic: {
+          order_id: 'o1',
+          daily_number: 3,
+          duplicate: true,
+        },
+      },
+    ]);
 
     await service.create(baseDto({ total: 75 }), cashier);
 
     expect(ordersGateway.emitOrderCreated).not.toHaveBeenCalled();
+  });
+
+  describe('addItemsToOrder', () => {
+    function pendingOrder(overrides: Partial<Record<string, unknown>> = {}) {
+      return {
+        branchId: 'b1',
+        total: decimal(75),
+        orderType: 'dine_in',
+        kitchenStatus: 'pending',
+        cancelledAt: null,
+        branch: { businessId: 'biz1' },
+        ...overrides,
+      };
+    }
+
+    it('agrega items nuevos, descuenta stock y suma el total sobre lo que ya existía', async () => {
+      prisma.order.findUnique.mockResolvedValue(pendingOrder());
+      prisma.productVariant.findMany.mockResolvedValue([madeVariant]);
+
+      const result = await service.addItemsToOrder(
+        'o1',
+        { total: 75, items: [{ variant_id: 'v-pizza', qty: 1 }] },
+        cashier,
+      );
+
+      expect(tx.orderItem.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ orderId: 'o1', variantId: 'v-pizza', qty: 1 }),
+        }),
+      );
+      expect(tx.branchStock.updateMany).toHaveBeenCalledWith({
+        where: { branchId: 'b1', ingredientId: 'i-masa' },
+        data: { quantity: { decrement: 1 } },
+      });
+      expect(tx.stockMovement.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ type: 'venta', quantity: -1 }) }),
+      );
+      expect(tx.order.update).toHaveBeenCalledWith({ where: { id: 'o1' }, data: { total: 150 } });
+      expect(ordersGateway.emitOrderUpdated).toHaveBeenCalledWith(
+        'b1',
+        expect.objectContaining({ id: 'o1', kitchen_status: 'pending', cancelled_at: null }),
+      );
+      expect(result).toEqual({ total: 150 });
+    });
+
+    it('rechaza con 404 si la orden no existe o es de otro negocio', async () => {
+      prisma.order.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.addItemsToOrder('o404', { total: 75, items: [{ variant_id: 'v-pizza', qty: 1 }] }, cashier),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('rechaza con 409 si la orden ya está anulada', async () => {
+      prisma.order.findUnique.mockResolvedValue(pendingOrder({ cancelledAt: new Date() }));
+
+      await expect(
+        service.addItemsToOrder('o1', { total: 75, items: [{ variant_id: 'v-pizza', qty: 1 }] }, cashier),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('rechaza con 409 si el pedido ya está listo (no se puede agregar más)', async () => {
+      prisma.order.findUnique.mockResolvedValue(pendingOrder({ kitchenStatus: 'ready' }));
+
+      await expect(
+        service.addItemsToOrder('o1', { total: 75, items: [{ variant_id: 'v-pizza', qty: 1 }] }, cashier),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('rechaza con 403 si no es admin y no es de la sucursal de la orden', async () => {
+      prisma.order.findUnique.mockResolvedValue(pendingOrder({ branchId: 'otra-sucursal' }));
+
+      await expect(
+        service.addItemsToOrder('o1', { total: 75, items: [{ variant_id: 'v-pizza', qty: 1 }] }, cashier),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('rechaza con 409 si el total no coincide con lo recalculado en el servidor', async () => {
+      prisma.order.findUnique.mockResolvedValue(pendingOrder());
+      prisma.productVariant.findMany.mockResolvedValue([madeVariant]);
+
+      await expect(
+        service.addItemsToOrder('o1', { total: 999, items: [{ variant_id: 'v-pizza', qty: 1 }] }, cashier),
+      ).rejects.toThrow(ConflictException);
+      expect(tx.orderItem.create).not.toHaveBeenCalled();
+    });
+
+    it('no descuenta stock si el negocio tiene el control de stock desactivado', async () => {
+      settingsService.isStockTrackingEnabled.mockResolvedValue(false);
+      prisma.order.findUnique.mockResolvedValue(pendingOrder());
+      prisma.productVariant.findMany.mockResolvedValue([madeVariant]);
+
+      await service.addItemsToOrder(
+        'o1',
+        { total: 75, items: [{ variant_id: 'v-pizza', qty: 1 }] },
+        cashier,
+      );
+
+      expect(tx.branchStock.updateMany).not.toHaveBeenCalled();
+    });
   });
 
   describe('getDayOrders', () => {
@@ -220,14 +471,17 @@ describe('OrdersService', () => {
           paymentMethod: 'efectivo',
           orderType: 'dine_in',
           cancelledAt: null,
-          items: [{
-            qty: 1,
-            qtyPhysical: 1,
-            unitPrice: decimal(75),
-            discountApplied: decimal(0),
-            promoLabel: null,
-            variant: { name: 'Familiar', product: { name: 'Hawaiana' } },
-          }],
+          items: [
+            {
+              qty: 1,
+              qtyPhysical: 1,
+              unitPrice: decimal(75),
+              discountApplied: decimal(0),
+              promoLabel: null,
+              variant: { name: 'Familiar', product: { name: 'Hawaiana' } },
+              extras: [{ name: 'Extra queso', price: decimal(3) }],
+            },
+          ],
           payments: [],
         },
         {
@@ -247,7 +501,9 @@ describe('OrdersService', () => {
       const result = await service.getDayOrders('b1', '2026-07-05', cashier);
 
       expect(prisma.order.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ branchId: 'b1' }) }),
+        expect.objectContaining({
+          where: expect.objectContaining({ branchId: 'b1' }),
+        }),
       );
       expect(result).toHaveLength(2);
       expect(result[0]).toEqual({
@@ -259,14 +515,20 @@ describe('OrdersService', () => {
         payment_method: 'efectivo',
         order_type: 'dine_in',
         cancelled_at: null,
-        order_items: [{
-          qty: 1,
-          qty_physical: 1,
-          unit_price: 75,
-          discount_applied: 0,
-          promo_label: null,
-          product_variants: { name: 'Familiar', products: { name: 'Hawaiana' } },
-        }],
+        order_items: [
+          {
+            qty: 1,
+            qty_physical: 1,
+            unit_price: 75,
+            discount_applied: 0,
+            promo_label: null,
+            product_variants: {
+              name: 'Familiar',
+              products: { name: 'Hawaiana' },
+            },
+            order_item_extras: [{ name: 'Extra queso', price: 3 }],
+          },
+        ],
         payments: [],
       });
       expect(result[1].cancelled_at).toBe('2026-07-05T17:05:00.000Z');
@@ -322,7 +584,10 @@ describe('OrdersService', () => {
               id: 'i1',
               qty: 2,
               qtyPhysical: 2,
-              variant: { name: 'Familiar', product: { name: 'Hawaiana', description: 'Jamón y piña' } },
+              variant: {
+                name: 'Familiar',
+                product: { name: 'Hawaiana', description: 'Jamón y piña' },
+              },
               flavors: [
                 {
                   variantId: 'v2',
@@ -330,6 +595,7 @@ describe('OrdersService', () => {
                   variant: { product: { name: 'Napolitana' } },
                 },
               ],
+              extras: [{ name: 'Extra queso', price: decimal(3) }],
             },
           ],
         },
@@ -339,7 +605,11 @@ describe('OrdersService', () => {
 
       expect(prisma.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { branchId: 'b1', kitchenStatus: 'pending', cancelledAt: null },
+          where: {
+            branchId: 'b1',
+            kitchenStatus: 'pending',
+            cancelledAt: null,
+          },
         }),
       );
       expect(result).toEqual([
@@ -354,10 +624,18 @@ describe('OrdersService', () => {
               id: 'i1',
               qty: 2,
               qty_physical: 2,
-              product_variants: { name: 'Familiar', products: { name: 'Hawaiana', description: 'Jamón y piña' } },
+              product_variants: {
+                name: 'Familiar',
+                products: { name: 'Hawaiana', description: 'Jamón y piña' },
+              },
               order_item_flavors: [
-                { variant_id: 'v2', proportion: 0.5, product_variants: { products: { name: 'Napolitana' } } },
+                {
+                  variant_id: 'v2',
+                  proportion: 0.5,
+                  product_variants: { products: { name: 'Napolitana' } },
+                },
               ],
+              order_item_extras: [{ name: 'Extra queso', price: 3 }],
             },
           ],
         },
@@ -367,7 +645,11 @@ describe('OrdersService', () => {
 
   describe('markReady', () => {
     it('marca la orden como lista cuando el cajero es de la misma sucursal', async () => {
-      prisma.order.findUnique.mockResolvedValue({ branchId: 'b1', cancelledAt: null, branch: { businessId: 'biz1' } });
+      prisma.order.findUnique.mockResolvedValue({
+        branchId: 'b1',
+        cancelledAt: null,
+        branch: { businessId: 'biz1' },
+      });
 
       await service.markReady('o1', cashier);
 
@@ -383,7 +665,11 @@ describe('OrdersService', () => {
     });
 
     it('permite a un admin marcar lista una orden de cualquier sucursal de su propio negocio', async () => {
-      prisma.order.findUnique.mockResolvedValue({ branchId: 'otra-sucursal', cancelledAt: null, branch: { businessId: 'biz1' } });
+      prisma.order.findUnique.mockResolvedValue({
+        branchId: 'otra-sucursal',
+        cancelledAt: null,
+        branch: { businessId: 'biz1' },
+      });
       const admin: CurrentUserPayload = { ...cashier, role: 'admin' };
 
       await expect(service.markReady('o1', admin)).resolves.toBeUndefined();
@@ -392,29 +678,49 @@ describe('OrdersService', () => {
     it('rechaza con 404 si la orden no existe', async () => {
       prisma.order.findUnique.mockResolvedValue(null);
 
-      await expect(service.markReady('o404', cashier)).rejects.toThrow(NotFoundException);
+      await expect(service.markReady('o404', cashier)).rejects.toThrow(
+        NotFoundException,
+      );
       expect(prisma.order.update).not.toHaveBeenCalled();
     });
 
     it('rechaza con 404 si la orden pertenece a otro negocio (ni siquiera un admin la ve)', async () => {
-      prisma.order.findUnique.mockResolvedValue({ branchId: 'b1', cancelledAt: null, branch: { businessId: 'otro-negocio' } });
+      prisma.order.findUnique.mockResolvedValue({
+        branchId: 'b1',
+        cancelledAt: null,
+        branch: { businessId: 'otro-negocio' },
+      });
       const admin: CurrentUserPayload = { ...cashier, role: 'admin' };
 
-      await expect(service.markReady('o1', admin)).rejects.toThrow(NotFoundException);
+      await expect(service.markReady('o1', admin)).rejects.toThrow(
+        NotFoundException,
+      );
       expect(prisma.order.update).not.toHaveBeenCalled();
     });
 
     it('rechaza con 409 si la orden está anulada', async () => {
-      prisma.order.findUnique.mockResolvedValue({ branchId: 'b1', cancelledAt: new Date(), branch: { businessId: 'biz1' } });
+      prisma.order.findUnique.mockResolvedValue({
+        branchId: 'b1',
+        cancelledAt: new Date(),
+        branch: { businessId: 'biz1' },
+      });
 
-      await expect(service.markReady('o1', cashier)).rejects.toThrow(ConflictException);
+      await expect(service.markReady('o1', cashier)).rejects.toThrow(
+        ConflictException,
+      );
       expect(prisma.order.update).not.toHaveBeenCalled();
     });
 
     it('rechaza con 403 si el cajero no es de la sucursal de la orden', async () => {
-      prisma.order.findUnique.mockResolvedValue({ branchId: 'otra-sucursal', cancelledAt: null, branch: { businessId: 'biz1' } });
+      prisma.order.findUnique.mockResolvedValue({
+        branchId: 'otra-sucursal',
+        cancelledAt: null,
+        branch: { businessId: 'biz1' },
+      });
 
-      await expect(service.markReady('o1', cashier)).rejects.toThrow(ForbiddenException);
+      await expect(service.markReady('o1', cashier)).rejects.toThrow(
+        ForbiddenException,
+      );
       expect(prisma.order.update).not.toHaveBeenCalled();
     });
   });
@@ -438,49 +744,74 @@ describe('OrdersService', () => {
     }
 
     it('rechaza con 400 si falta el motivo', async () => {
-      await expect(service.cancelOrder('o1', { reason: '  ' }, cashier)).rejects.toThrow(BadRequestException);
+      await expect(
+        service.cancelOrder('o1', { reason: '  ' }, cashier),
+      ).rejects.toThrow(BadRequestException);
       expect(prisma.order.findUnique).not.toHaveBeenCalled();
     });
 
     it('rechaza con 404 si la orden no existe', async () => {
       prisma.order.findUnique.mockResolvedValue(null);
 
-      await expect(service.cancelOrder('o404', { reason: 'motivo' }, cashier)).rejects.toThrow(NotFoundException);
+      await expect(
+        service.cancelOrder('o404', { reason: 'motivo' }, cashier),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('rechaza con 404 si la orden pertenece a otro negocio (ni siquiera un admin la ve)', async () => {
-      prisma.order.findUnique.mockResolvedValue(orderWithItems({ branch: { businessId: 'otro-negocio' } }));
+      prisma.order.findUnique.mockResolvedValue(
+        orderWithItems({ branch: { businessId: 'otro-negocio' } }),
+      );
       const admin: CurrentUserPayload = { ...cashier, role: 'admin' };
 
-      await expect(service.cancelOrder('o1', { reason: 'motivo' }, admin)).rejects.toThrow(NotFoundException);
+      await expect(
+        service.cancelOrder('o1', { reason: 'motivo' }, admin),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('rechaza con 409 si la orden ya está anulada', async () => {
-      prisma.order.findUnique.mockResolvedValue(orderWithItems({ cancelledAt: new Date() }));
+      prisma.order.findUnique.mockResolvedValue(
+        orderWithItems({ cancelledAt: new Date() }),
+      );
 
-      await expect(service.cancelOrder('o1', { reason: 'motivo' }, cashier)).rejects.toThrow(ConflictException);
+      await expect(
+        service.cancelOrder('o1', { reason: 'motivo' }, cashier),
+      ).rejects.toThrow(ConflictException);
     });
 
     it('rechaza con 403 si el cajero no es de la sucursal de la orden', async () => {
-      prisma.order.findUnique.mockResolvedValue(orderWithItems({ branchId: 'otra-sucursal' }));
+      prisma.order.findUnique.mockResolvedValue(
+        orderWithItems({ branchId: 'otra-sucursal' }),
+      );
 
-      await expect(service.cancelOrder('o1', { reason: 'motivo' }, cashier)).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.cancelOrder('o1', { reason: 'motivo' }, cashier),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('rechaza con 403 si el cajero intenta anular una orden de otro día', async () => {
-      prisma.order.findUnique.mockResolvedValue(orderWithItems({ createdAt: new Date('2020-01-01T12:00:00Z') }));
+      prisma.order.findUnique.mockResolvedValue(
+        orderWithItems({ createdAt: new Date('2020-01-01T12:00:00Z') }),
+      );
 
-      await expect(service.cancelOrder('o1', { reason: 'motivo' }, cashier)).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.cancelOrder('o1', { reason: 'motivo' }, cashier),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('un admin puede anular una orden de otra sucursal y de otro día', async () => {
       prisma.order.findUnique.mockResolvedValue(
-        orderWithItems({ branchId: 'otra-sucursal', createdAt: new Date('2020-01-01T12:00:00Z') }),
+        orderWithItems({
+          branchId: 'otra-sucursal',
+          createdAt: new Date('2020-01-01T12:00:00Z'),
+        }),
       );
       prisma.productVariant.findMany.mockResolvedValue([madeVariant]);
       const admin: CurrentUserPayload = { ...cashier, role: 'admin' };
 
-      await expect(service.cancelOrder('o1', { reason: 'motivo' }, admin)).resolves.toBeUndefined();
+      await expect(
+        service.cancelOrder('o1', { reason: 'motivo' }, admin),
+      ).resolves.toBeUndefined();
     });
 
     it('revierte stock de insumos y de reventa, y registra los movimientos de anulación', async () => {
@@ -492,32 +823,78 @@ describe('OrdersService', () => {
           ],
         }),
       );
-      prisma.productVariant.findMany.mockResolvedValue([madeVariant, resaleVariant]);
+      prisma.productVariant.findMany.mockResolvedValue([
+        madeVariant,
+        resaleVariant,
+      ]);
 
-      await service.cancelOrder('o1', { reason: 'cliente se arrepintió' }, cashier);
+      await service.cancelOrder(
+        'o1',
+        { reason: 'cliente se arrepintió' },
+        cashier,
+      );
 
       expect(tx.order.updateMany).toHaveBeenCalledWith({
         where: { id: 'o1', cancelledAt: null },
-        data: expect.objectContaining({ cancelledBy: 'u1', cancelReason: 'cliente se arrepintió' }),
+        data: expect.objectContaining({
+          cancelledBy: 'u1',
+          cancelReason: 'cliente se arrepintió',
+        }),
       });
       expect(tx.branchStock.updateMany).toHaveBeenCalledWith({
         where: { branchId: 'b1', ingredientId: 'i-masa' },
         data: { quantity: { increment: 1 } },
       });
       expect(tx.stockMovement.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ type: 'anulacion', ingredientId: 'i-masa' }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({
+            type: 'anulacion',
+            ingredientId: 'i-masa',
+          }),
+        }),
       );
       expect(tx.branchProductStock.updateMany).toHaveBeenCalledWith({
         where: { branchId: 'b1', variantId: 'v-coca' },
         data: { quantity: { increment: 2 } },
       });
       expect(tx.productStockMovement.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ type: 'anulacion', variantId: 'v-coca' }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({
+            type: 'anulacion',
+            variantId: 'v-coca',
+          }),
+        }),
       );
       expect(ordersGateway.emitOrderUpdated).toHaveBeenCalledWith(
         'b1',
-        expect.objectContaining({ id: 'o1', kitchen_status: 'pending', cancelled_at: expect.any(String) }),
+        expect.objectContaining({
+          id: 'o1',
+          kitchen_status: 'pending',
+          cancelled_at: expect.any(String),
+        }),
       );
+    });
+
+    it('no revierte stock al anular si el negocio tiene el control de stock desactivado', async () => {
+      settingsService.isStockTrackingEnabled.mockResolvedValue(false);
+      prisma.order.findUnique.mockResolvedValue(
+        orderWithItems({
+          items: [
+            { variantId: 'v-pizza', qtyPhysical: 1, flavors: [] },
+            { variantId: 'v-coca', qtyPhysical: 2, flavors: [] },
+          ],
+        }),
+      );
+
+      await service.cancelOrder(
+        'o1',
+        { reason: 'cliente se arrepintió' },
+        cashier,
+      );
+
+      expect(prisma.productVariant.findMany).not.toHaveBeenCalled();
+      expect(tx.branchStock.updateMany).not.toHaveBeenCalled();
+      expect(tx.branchProductStock.updateMany).not.toHaveBeenCalled();
     });
 
     it('rechaza con 409 si la orden fue anulada por otro proceso justo antes (carrera)', async () => {
@@ -525,7 +902,9 @@ describe('OrdersService', () => {
       prisma.productVariant.findMany.mockResolvedValue([madeVariant]);
       tx.order.updateMany.mockResolvedValue({ count: 0 });
 
-      await expect(service.cancelOrder('o1', { reason: 'motivo' }, cashier)).rejects.toThrow(ConflictException);
+      await expect(
+        service.cancelOrder('o1', { reason: 'motivo' }, cashier),
+      ).rejects.toThrow(ConflictException);
       expect(tx.branchStock.updateMany).not.toHaveBeenCalled();
     });
   });

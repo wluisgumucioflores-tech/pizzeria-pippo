@@ -74,6 +74,7 @@ export const API_ENDPOINTS = {
     ready: (id: string) => `/orders/${id}/ready`,
     cancel: (id: string) => `/orders/${id}/cancel`,
     pay: (id: string) => `/orders/${id}/pay`,
+    addItems: (id: string) => `/orders/${id}/items`,
   },
   reports: {
     sales: (qs: string) => `/reports/sales?${qs}`,

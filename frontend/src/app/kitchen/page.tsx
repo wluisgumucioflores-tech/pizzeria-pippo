@@ -90,6 +90,7 @@ function OrderCard({ order, onReady, lateThreshold }: { order: KitchenOrder; onR
           const description = item.product_variants?.products?.description ?? "";
           const flavors = item.order_item_flavors ?? [];
           const isMixed = flavors.length >= 2;
+          const extras = item.order_item_extras ?? [];
 
           const totalParts = flavors.reduce((sum, f) => sum + Math.round(f.proportion * 100), 0) || 100;
 
@@ -118,6 +119,15 @@ function OrderCard({ order, onReady, lateThreshold }: { order: KitchenOrder; onR
               )}
               {!isMixed && description && (
                 <p className="text-gray-400 text-sm ml-10 leading-snug">{description}</p>
+              )}
+              {extras.length > 0 && (
+                <div className="ml-10 flex flex-col gap-0.5 mt-0.5">
+                  {extras.map((extra, ei) => (
+                    <p key={ei} className="text-emerald-400 text-sm leading-snug font-semibold m-0">
+                      ➕ {extra.name}
+                    </p>
+                  ))}
+                </div>
               )}
             </div>
           );
@@ -201,6 +211,11 @@ export default function KitchenPage() {
       (payload) => {
         if (payload.new.kitchen_status === "ready" || payload.new.cancelled_at) {
           setOrders((prev) => prev.filter((o) => o.id !== payload.new.id));
+        } else {
+          // Sigue pendiente pero algo cambió (ej. el mesero agregó items al
+          // pedido) — no hay un evento dedicado a "cambiaron los items", así
+          // que se refresca la orden completa para traer los items nuevos.
+          fetchOrders();
         }
       },
       setConnected

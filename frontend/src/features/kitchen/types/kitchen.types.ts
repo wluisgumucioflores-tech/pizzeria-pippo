@@ -4,6 +4,11 @@ export interface FlavorRow {
   product_variants: { products: { name: string } | null } | null;
 }
 
+export interface ExtraRow {
+  name: string;
+  price: number;
+}
+
 export interface OrderItem {
   id: string;
   qty_physical: number;
@@ -16,6 +21,7 @@ export interface OrderItem {
     } | null;
   } | null;
   order_item_flavors: FlavorRow[];
+  order_item_extras: ExtraRow[];
 }
 
 export interface KitchenOrder {

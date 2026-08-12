@@ -17,7 +17,11 @@ export interface DayOrderResult {
     unit_price: number;
     discount_applied: number;
     promo_label: string | null;
-    product_variants: { name: string; products: { name: string } | null } | null;
+    product_variants: {
+      name: string;
+      products: { name: string } | null;
+    } | null;
+    order_item_extras: { name: string; price: number }[];
   }[];
   payments: { method: string; amount: number }[];
 }

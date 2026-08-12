@@ -1,3 +1,5 @@
+export type MeseroOrderType = "dine_in" | "takeaway";
+
 export interface MeseroExtra {
   name: string;
   price: number;
@@ -9,5 +11,6 @@ export interface MeseroCartItem {
   unit_price: number;
   product_name: string;
   variant_name: string;
+  category: string;
   extras: MeseroExtra[];
 }
