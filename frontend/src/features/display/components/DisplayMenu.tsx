@@ -61,6 +61,7 @@ export function DisplayMenu({ products, menuPage }: Props) {
                   alt={product.name}
                   width={400}
                   height={160}
+                  unoptimized
                   style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }}
                 />
               ) : (

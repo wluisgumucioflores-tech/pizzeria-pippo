@@ -120,7 +120,7 @@ export function ProductCatalog({ products, loading, branchId, getVariantPrice, g
                   {/* Image */}
                   <div style={{ position: "relative" }}>
                     {product.image_url ? (
-                      <NextImage src={product.image_url} alt={product.name} width={300} height={130} style={{ width: "100%", height: 130, objectFit: "cover", display: "block" }} />
+                      <NextImage src={product.image_url} alt={product.name} width={300} height={130} unoptimized style={{ width: "100%", height: 130, objectFit: "cover", display: "block" }} />
                     ) : (
                       <div style={{ width: "100%", height: 130, background: "linear-gradient(135deg, #fff7ed, #fed7aa)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44 }}>
                         {product.category === "pizza" ? "🍕" : product.category === "bebida" ? "🥤" : "🍽️"}

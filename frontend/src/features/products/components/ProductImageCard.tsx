@@ -34,7 +34,7 @@ export function ProductImageCard({ name, category, imageUrl, description, isActi
     <Card>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
         {imageUrl ? (
-          <Image src={imageUrl} alt={name} width={imgSize} height={imgSize} style={{ borderRadius: 12, objectFit: "cover" }} />
+          <Image src={imageUrl} alt={name} width={imgSize} height={imgSize} unoptimized style={{ borderRadius: 12, objectFit: "cover" }} />
         ) : (
           <CategoryPlaceholder category={category} size={imgSize} />
         )}
