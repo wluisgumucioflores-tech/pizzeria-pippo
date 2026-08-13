@@ -472,6 +472,7 @@
     },
     "catalog": {
       "noProducts": "No hay productos en esta categoría",
+      "searchPlaceholder": "Buscar por nombre...",
       "soldOut": "Sin stock",
       "fromPrice": "Desde Bs {price}",
       "various": "varios",

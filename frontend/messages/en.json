@@ -472,6 +472,7 @@
     },
     "catalog": {
       "noProducts": "No products in this category",
+      "searchPlaceholder": "Search by name...",
       "soldOut": "Out of stock",
       "fromPrice": "From Bs {price}",
       "various": "various",

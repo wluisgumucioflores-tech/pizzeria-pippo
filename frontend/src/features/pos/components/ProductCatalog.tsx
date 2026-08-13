@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Tag, Typography, Empty, Spin, Button } from "antd";
+import { Tag, Typography, Empty, Spin, Button, Input } from "antd";
 import NextImage from "next/image";
 import { useTranslations } from "next-intl";
 import type { Product } from "../types/pos.types";
@@ -29,6 +29,7 @@ interface Props {
 
 export function ProductCatalog({ products, loading, branchId, useStock, getVariantPrice, getPromoLabel, onProductClick, large = false }: Props) {
   const [filterCategory, setFilterCategory] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
   const t = useTranslations("pos");
   const CATEGORY_OPTIONS = [
     { value: "all", label: t("allCategories") },
@@ -57,14 +58,25 @@ export function ProductCatalog({ products, loading, branchId, useStock, getVaria
     ? products
     : products.filter((p) => p.category === filterCategory);
 
-  const filteredProducts = baseFiltered
+  const searched = searchTerm.trim()
+    ? baseFiltered.filter((p) => p.name.toLowerCase().includes(searchTerm.trim().toLowerCase()))
+    : baseFiltered;
+
+  const filteredProducts = searched
     .map((p) => ({ ...p, product_variants: filterActiveVariants(p) }))
     .filter((p) => p.product_variants.length > 0);
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "#f5f5f5" }}>
       {/* Filters */}
-      <div style={{ display: "flex", gap: 8, padding: "12px 16px", background: "#fff", borderBottom: "1px solid #f0f0f0" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "12px 16px", background: "#fff", borderBottom: "1px solid #f0f0f0" }}>
+        <Input.Search
+          allowClear
+          placeholder={t("catalog.searchPlaceholder")}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ maxWidth: 240 }}
+        />
         {CATEGORY_OPTIONS.map((c) => (
           <Button
             key={c.value}
