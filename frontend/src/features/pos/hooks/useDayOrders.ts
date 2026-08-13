@@ -14,6 +14,7 @@ export function useDayOrders(branchId: string | undefined, showOrders: boolean) 
   const [cancelling, setCancelling] = useState(false);
   const [payModal, setPayModal] = useState<DayOrder | null>(null);
   const [paying, setPaying] = useState(false);
+  const [addItemsModal, setAddItemsModal] = useState<DayOrder | null>(null);
   const [connected, setConnected] = useState(true);
 
   const fetchDayOrders = useCallback(async (bid: string) => {
@@ -102,10 +103,26 @@ export function useDayOrders(branchId: string | undefined, showOrders: boolean) 
     }
   };
 
+  const openAddItemsModal = (order: DayOrder) => setAddItemsModal(order);
+  const closeAddItemsModal = () => setAddItemsModal(null);
+
+  // El modal ya llamó a PosService.addItemsToOrder — acá solo se refleja el
+  // resultado localmente (reabre en cocina si estaba "listo") y se refresca
+  // del servidor para traer el total actualizado y los items nuevos.
+  const handleItemsAdded = (orderId: string, reopened: boolean) => {
+    setDayOrders((prev) =>
+      prev.map((o) => o.id === orderId && reopened ? { ...o, kitchen_status: "pending" } : o)
+    );
+    setAddItemsModal(null);
+    message.success("Items agregados al pedido.");
+    if (branchId) fetchDayOrders(branchId);
+  };
+
   return {
     dayOrders, markingReady, fetchDayOrders, handleMarkReady,
     cancelModal, cancelling, openCancelModal, closeCancelModal, handleCancelOrder,
     payModal, paying, openPayModal, closePayModal, handlePayOrder,
+    addItemsModal, openAddItemsModal, closeAddItemsModal, handleItemsAdded,
     connected,
   };
 }

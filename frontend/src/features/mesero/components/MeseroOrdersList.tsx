@@ -21,7 +21,7 @@ export function MeseroOrdersList({ orders, loading, onAddItems }: Props) {
     <div className="space-y-3 p-4">
       {orders.map((order) => {
         const badge = STATUS_BADGES[order.kitchen_status] ?? { label: order.kitchen_status, className: "bg-gray-100 text-gray-700" };
-        const canAddItems = order.kitchen_status === "pending" && !order.cancelled_at;
+        const canAddItems = (order.kitchen_status === "pending" || order.kitchen_status === "ready") && !order.cancelled_at && !order.payment_method;
         return (
           <div key={order.id} className="bg-white rounded-lg shadow p-4">
             <div className="flex items-center justify-between mb-2">

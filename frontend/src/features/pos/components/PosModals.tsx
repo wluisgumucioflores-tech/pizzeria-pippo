@@ -7,16 +7,21 @@ import { PaymentValidationModal } from "./PaymentValidationModal";
 import { TicketModal } from "./TicketModal";
 import { CancelOrderModal } from "./CancelOrderModal";
 import { CollectPaymentModal } from "./CollectPaymentModal";
+import { AddItemsModal } from "./AddItemsModal";
 import type { usePosCart } from "../hooks/usePosCart";
 import type { usePaymentValidation } from "../hooks/usePaymentValidation";
 import type { usePosPageActions } from "../hooks/usePosPageActions";
 import type { Product, Branch, Variant, DayOrder, PaymentMethod, SplitPayment } from "../types/pos.types";
 import type { usePrinter } from "@/features/printing/hooks/usePrinter";
+import type { Promotion } from "@/lib/promotions";
 
 interface Props {
   branchId: string;
   branches: Branch[];
   products: Product[];
+  promotions: Promotion[];
+  useStock: boolean;
+  getStockQty: (variantId: string) => number | null;
   cart: ReturnType<typeof usePosCart>;
   paymentValidation: ReturnType<typeof usePaymentValidation>;
   actions: ReturnType<typeof usePosPageActions>;
@@ -31,12 +36,15 @@ interface Props {
   paying: boolean;
   onPayOrder: (paymentMethod: PaymentMethod, payments: SplitPayment[] | null) => void;
   onClosePayModal: () => void;
+  addItemsModal: DayOrder | null;
+  onCloseAddItemsModal: () => void;
+  onItemsAdded: (orderId: string, reopened: boolean) => void;
 }
 
 export function PosModals({
-  branchId, branches, products, cart, paymentValidation, actions,
+  branchId, branches, products, promotions, useStock, getStockQty, cart, paymentValidation, actions,
   getVariantPrice, getPromoLabel, printer, cancelModal, cancelling, onCancelOrder, onCloseCancelModal,
-  payModal, paying, onPayOrder, onClosePayModal,
+  payModal, paying, onPayOrder, onClosePayModal, addItemsModal, onCloseAddItemsModal, onItemsAdded,
 }: Props) {
   return (
     <>
@@ -85,6 +93,19 @@ export function PosModals({
       />
       <CancelOrderModal order={cancelModal} loading={cancelling} onConfirm={onCancelOrder} onClose={onCloseCancelModal} />
       <CollectPaymentModal key={payModal?.id ?? "closed"} order={payModal} submitting={paying} onConfirm={onPayOrder} onClose={onClosePayModal} />
+      <AddItemsModal
+        key={addItemsModal?.id ?? "closed"}
+        order={addItemsModal}
+        branchId={branchId}
+        products={products}
+        promotions={promotions}
+        useStock={useStock}
+        getVariantPrice={getVariantPrice}
+        getPromoLabel={getPromoLabel}
+        getStockQty={getStockQty}
+        onClose={onCloseAddItemsModal}
+        onSubmitted={onItemsAdded}
+      />
     </>
   );
 }

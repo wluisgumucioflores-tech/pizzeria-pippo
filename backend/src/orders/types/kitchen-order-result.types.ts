@@ -6,10 +6,12 @@ export interface KitchenOrderResult {
   order_type: string;
   table_number: string | null;
   waiter_name: string | null;
+  last_ready_at: string | null;
   order_items: {
     id: string;
     qty: number;
     qty_physical: number;
+    created_at: string;
     product_variants: {
       name: string;
       products: { name: string; description: string | null } | null;

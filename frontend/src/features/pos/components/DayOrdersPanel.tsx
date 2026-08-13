@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Empty, Tag, Tooltip, Typography } from "antd";
-import { CheckCircleOutlined, FileTextOutlined, PrinterOutlined, StopOutlined } from "@ant-design/icons";
+import { CheckCircleOutlined, FileTextOutlined, PlusOutlined, PrinterOutlined, StopOutlined } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
 import { formatTimeBolivia } from "@/lib/timezone";
 import { useIsMobile } from "@/lib/useIsMobile";
@@ -30,9 +30,10 @@ interface Props {
   onCancel: (order: DayOrder) => void;
   onPay: (order: DayOrder) => void;
   onPrint: (order: DayOrder) => void;
+  onAddItems: (order: DayOrder) => void;
 }
 
-export function DayOrdersPanel({ dayOrders, markingReady, onMarkReady, onCancel, onPay, onPrint }: Props) {
+export function DayOrdersPanel({ dayOrders, markingReady, onMarkReady, onCancel, onPay, onPrint, onAddItems }: Props) {
   const isMobile = useIsMobile();
   const t = useTranslations("pos");
   const td = useTranslations("pos.dayOrders");
@@ -55,6 +56,7 @@ export function DayOrdersPanel({ dayOrders, markingReady, onMarkReady, onCancel,
               .join(", ");
             const isPending = order.kitchen_status === "pending";
             const isCancelled = order.cancelled_at !== null;
+            const isPaid = !!order.payment_method;
 
             if (isMobile) {
               return (
@@ -101,6 +103,13 @@ export function DayOrdersPanel({ dayOrders, markingReady, onMarkReady, onCancel,
                     )}
                     <div style={{ flex: 1 }} />
                     <Button size="small" icon={<PrinterOutlined />} onClick={() => onPrint(order)} />
+                    {!isCancelled && (
+                      <Tooltip title={isPaid ? td("addItemsDisabled") : undefined}>
+                        <Button size="small" icon={<PlusOutlined />} disabled={isPaid} onClick={() => onAddItems(order)}>
+                          {td("addItems")}
+                        </Button>
+                      </Tooltip>
+                    )}
                     {isCancelled ? (
                       <Tag color="red" icon={<StopOutlined />} style={{ margin: 0 }}>{td("cancelled")}</Tag>
                     ) : isPending ? (
@@ -173,6 +182,13 @@ export function DayOrdersPanel({ dayOrders, markingReady, onMarkReady, onCancel,
                 </div>
                 <div style={{ marginLeft: 12, flexShrink: 0, display: "flex", gap: 8, alignItems: "center" }}>
                   <Button size="small" icon={<PrinterOutlined />} onClick={() => onPrint(order)} />
+                  {!isCancelled && (
+                    <Tooltip title={isPaid ? td("addItemsDisabled") : undefined}>
+                      <Button size="small" icon={<PlusOutlined />} disabled={isPaid} onClick={() => onAddItems(order)}>
+                        {td("addItems")}
+                      </Button>
+                    </Tooltip>
+                  )}
                   {isCancelled ? (
                     <Tag color="red" icon={<StopOutlined />}>{td("cancelled")}</Tag>
                   ) : isPending ? (

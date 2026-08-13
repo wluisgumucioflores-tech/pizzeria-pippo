@@ -514,7 +514,16 @@
       "cancelled": "Cancelled",
       "readyShort": "Ready",
       "markReady": "Mark ready",
-      "cancelAction": "Cancel"
+      "cancelAction": "Cancel",
+      "addItems": "Add",
+      "addItemsDisabled": "Already paid — can't add items"
+    },
+    "addItemsModal": {
+      "title": "Add items — Order #{number}",
+      "reopenHint": "This order was already \"Ready\" — adding items reopens it in the kitchen as pending, with the new items flagged.",
+      "total": "Total to add",
+      "confirm": "Add to order",
+      "error": "Couldn't add the items"
     },
     "daySummary": {
       "title": "Day summary",

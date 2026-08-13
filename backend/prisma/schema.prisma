@@ -465,6 +465,7 @@ model Order {
   cancelReason    String?   @map("cancel_reason")
   notes           String?   @map("notes")
   idempotencyKey  String?   @unique @map("idempotency_key")
+  lastReadyAt     DateTime? @map("last_ready_at")
 
   branch   Branch         @relation(fields: [branchId], references: [id])
   cashier  Profile        @relation("OrderCashier", fields: [cashierId], references: [id])
@@ -495,8 +496,9 @@ model OrderItem {
   unitPrice       Decimal @map("unit_price")
   discountApplied Decimal @default(0) @map("discount_applied")
   qtyPhysical     Int     @default(1) @map("qty_physical")
-  promoLabel      String? @map("promo_label")
-  priceEdited     Boolean @default(false) @map("price_edited")
+  promoLabel      String?  @map("promo_label")
+  priceEdited     Boolean  @default(false) @map("price_edited")
+  createdAt       DateTime @default(now()) @map("created_at")
 
   order   Order             @relation(fields: [orderId], references: [id])
   variant ProductVariant    @relation(fields: [variantId], references: [id])

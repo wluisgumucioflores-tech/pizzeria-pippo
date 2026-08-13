@@ -13,6 +13,7 @@ export interface OrderItem {
   id: string;
   qty_physical: number;
   qty: number;
+  created_at: string;
   product_variants: {
     name: string;
     products: {
@@ -32,5 +33,6 @@ export interface KitchenOrder {
   order_type: "dine_in" | "takeaway" | "delivery" | "pedidos_ya";
   table_number: string | null;
   waiter_name: string | null;
+  last_ready_at: string | null;
   order_items: OrderItem[];
 }

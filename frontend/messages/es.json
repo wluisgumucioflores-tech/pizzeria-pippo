@@ -514,7 +514,16 @@
       "cancelled": "Anulada",
       "readyShort": "Listo",
       "markReady": "Marcar listo",
-      "cancelAction": "Anular"
+      "cancelAction": "Anular",
+      "addItems": "Agregar",
+      "addItemsDisabled": "Ya se cobró — no se pueden agregar items"
+    },
+    "addItemsModal": {
+      "title": "Agregar items — Pedido #{number}",
+      "reopenHint": "Este pedido ya estaba \"Listo\" — al agregar, vuelve a aparecer en cocina como pendiente con lo nuevo marcado.",
+      "total": "Total a agregar",
+      "confirm": "Agregar al pedido",
+      "error": "No se pudieron agregar los items"
     },
     "daySummary": {
       "title": "Resumen del día",

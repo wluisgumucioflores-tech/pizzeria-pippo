@@ -351,6 +351,7 @@ export class OrdersService {
         orderType: true,
         kitchenStatus: true,
         cancelledAt: true,
+        paymentMethod: true,
         branch: { select: { businessId: true } },
       },
     });
@@ -358,9 +359,11 @@ export class OrdersService {
       throw new NotFoundException('Orden no encontrada');
     }
     if (order.cancelledAt) throw new ConflictException('La orden está anulada');
-    if (order.kitchenStatus !== 'pending') {
+    // Ya se cobró — agregar items ahora subiría el total sin cobrar la
+    // diferencia. Para eso hay que anular y rehacer, no agregar en caliente.
+    if (order.paymentMethod) {
       throw new ConflictException(
-        'Ya no se pueden agregar items — el pedido ya está listo',
+        'La orden ya fue cobrada — no se pueden agregar items',
       );
     }
     if (user.role !== 'admin' && user.branch_id !== order.branchId) {
@@ -411,6 +414,12 @@ export class OrdersService {
     }
 
     const newTotal = round2(order.total.toNumber() + serverTotal);
+    // El pedido ya se había marcado "listo" y el cliente pidió algo más —
+    // se reabre en cocina en vez de forzar un pedido nuevo (misma cuenta,
+    // mismo número). order_items.created_at queda después de
+    // orders.last_ready_at, así cocina distingue lo nuevo de lo ya entregado.
+    const reopening = order.kitchenStatus === 'ready';
+    const newKitchenStatus = reopening ? 'pending' : order.kitchenStatus;
 
     await this.prisma.$transaction(async (tx) => {
       for (const d of discounted) {
@@ -455,7 +464,10 @@ export class OrdersService {
       );
       await tx.order.update({
         where: { id: orderId },
-        data: { total: newTotal },
+        data: {
+          total: newTotal,
+          ...(reopening ? { kitchenStatus: newKitchenStatus } : {}),
+        },
       });
     });
 
@@ -473,11 +485,11 @@ export class OrdersService {
     }
 
     // No hay un evento dedicado a "cambiaron los items" — se reusa
-    // order:updated (kitchen_status/cancelled_at sin cambios) y del lado de
-    // Cocina/POS se refresca la orden completa al recibirlo.
+    // order:updated (kitchen_status refleja la reapertura si aplica) y del
+    // lado de Cocina/POS se refresca la orden completa al recibirlo.
     this.ordersGateway.emitOrderUpdated(order.branchId, {
       id: orderId,
-      kitchen_status: order.kitchenStatus,
+      kitchen_status: newKitchenStatus,
       cancelled_at: null,
     });
 
@@ -575,10 +587,12 @@ export class OrdersService {
       order_type: order.orderType,
       table_number: order.tableNumber,
       waiter_name: order.waiterName,
+      last_ready_at: order.lastReadyAt?.toISOString() ?? null,
       order_items: order.items.map((item) => ({
         id: item.id,
         qty: item.qty,
         qty_physical: item.qtyPhysical,
+        created_at: item.createdAt.toISOString(),
         product_variants: item.variant
           ? {
               name: item.variant.name,
@@ -628,7 +642,7 @@ export class OrdersService {
 
     await this.prisma.order.update({
       where: { id: orderId },
-      data: { kitchenStatus: 'ready' },
+      data: { kitchenStatus: 'ready', lastReadyAt: new Date() },
     });
     this.ordersGateway.emitOrderUpdated(order.branchId, {
       id: orderId,

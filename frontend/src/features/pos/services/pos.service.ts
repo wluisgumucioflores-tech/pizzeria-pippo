@@ -113,6 +113,31 @@ export const PosService = {
     }
   },
 
+  // Agregar items a un pedido existente — funciona tanto si sigue pendiente
+  // como si cocina ya lo marcó "listo" (se reabre, ver orders.service.ts).
+  async addItemsToOrder(
+    orderId: string,
+    discountedCart: DiscountedItem[],
+    total: number
+  ): Promise<{ ok: boolean; error?: string }> {
+    const res = await nestFetch(API_ENDPOINTS.orders.addItems(orderId), {
+      method: "POST",
+      body: JSON.stringify({
+        total,
+        items: discountedCart.map((i) => ({
+          variant_id: i.variant_id,
+          qty: i.qty,
+          flavors: (i.flavors as FlavorItem[] | undefined) ?? null,
+          promo_id: i.promo_id ?? null,
+          unit_price: i.price_edited ? i.unit_price : undefined,
+        })),
+      }),
+    });
+    if (res.ok) return { ok: true };
+    const data = await res.json().catch(() => ({}));
+    return { ok: false, error: data.error ?? "Error al agregar items al pedido" };
+  },
+
   async markOrderReady(orderId: string): Promise<void> {
     await nestFetch(API_ENDPOINTS.orders.ready(orderId), { method: "POST" });
   },

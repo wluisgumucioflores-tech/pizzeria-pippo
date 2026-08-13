@@ -33,6 +33,7 @@ export default function PosPage() {
     dayOrders, markingReady, fetchDayOrders, handleMarkReady,
     cancelModal, cancelling, openCancelModal, closeCancelModal, handleCancelOrder,
     payModal, paying, openPayModal, closePayModal, handlePayOrder,
+    addItemsModal, openAddItemsModal, closeAddItemsModal, handleItemsAdded,
     connected,
   } = useDayOrders(effectiveBranchId ?? undefined, activeTab !== "sale");
   const printer = usePrinter();
@@ -111,7 +112,7 @@ export default function PosPage() {
       )}
 
       {activeTab === "orders" && (
-        <DayOrdersPanel dayOrders={dayOrders} markingReady={markingReady} onMarkReady={handleMarkReady} onCancel={openCancelModal} onPay={openPayModal} onPrint={actions.handlePrintDayOrder} />
+        <DayOrdersPanel dayOrders={dayOrders} markingReady={markingReady} onMarkReady={handleMarkReady} onCancel={openCancelModal} onPay={openPayModal} onPrint={actions.handlePrintDayOrder} onAddItems={openAddItemsModal} />
       )}
 
       {activeTab === "summary" && (
@@ -122,6 +123,9 @@ export default function PosPage() {
         branchId={branchId}
         branches={branches}
         products={products}
+        promotions={promotions}
+        useStock={useStock}
+        getStockQty={getStockQty}
         cart={cart}
         paymentValidation={paymentValidation}
         actions={actions}
@@ -136,6 +140,9 @@ export default function PosPage() {
         paying={paying}
         onPayOrder={handlePayOrder}
         onClosePayModal={closePayModal}
+        addItemsModal={addItemsModal}
+        onCloseAddItemsModal={closeAddItemsModal}
+        onItemsAdded={handleItemsAdded}
       />
     </div>
   );
