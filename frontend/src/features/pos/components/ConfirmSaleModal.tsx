@@ -87,7 +87,7 @@ export function ConfirmSaleModal({ open, discountedCart, total, totalDiscount, p
               onClick={onConfirm}
               style={{ flex: 2, height: 48, background: "#ea580c", borderColor: "#ea580c" }}
             >
-              {t("confirmAndCharge")}
+              {paymentMethod ? t("confirmAndCharge") : t("confirmOnly")}
             </Button>
           </div>
           {ENABLE_QR_AUTO_VALIDATION && paymentMethod === "qr" && onValidatePayment && (

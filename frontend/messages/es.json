@@ -412,6 +412,7 @@
     "optional": "(opcional)",
     "continueAction": "Continuar",
     "confirmAndCharge": "Confirmar y cobrar",
+    "confirmOnly": "Confirmar",
     "halfAndHalf": "Mit. {first} / Mit. {second}",
     "error": {
       "title": "Ocurrió un error",
@@ -457,7 +458,8 @@
     "paymentMethod": {
       "cash": "Efectivo",
       "qr": "QR",
-      "mixed": "Mixto"
+      "mixed": "Mixto",
+      "deferred": "Por cobrar"
     },
     "paymentLabel": {
       "cash": "💵 Efectivo",

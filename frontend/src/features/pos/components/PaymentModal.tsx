@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Modal, Button, Checkbox, InputNumber, Input, Typography } from "antd";
-import { CheckCircleFilled, ArrowRightOutlined } from "@ant-design/icons";
+import { Modal, Button, Checkbox, Input, Typography } from "antd";
+import { ArrowRightOutlined } from "@ant-design/icons";
 import { PAYMENT_PROVIDERS } from "@pippo/shared";
 import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/lib/useIsMobile";
+import { OptionCard } from "./OptionCard";
+import { PaymentMethodSelector } from "./PaymentMethodSelector";
 import type { PaymentMethod, SplitPayment } from "../types/pos.types";
 
 const { Text } = Typography;
@@ -29,56 +31,13 @@ interface Props {
   ) => void;
 }
 
-export interface OptionCardProps {
-  selected: boolean;
-  emoji: string;
-  label: string;
-  accent: "orange" | "blue";
-  onClick: () => void;
-}
-
-export function OptionCard({ selected, emoji, label, accent, onClick }: OptionCardProps) {
-  const colors =
-    accent === "orange"
-      ? { border: "#f97316", bg: "#fff7ed", text: "#ea580c", badge: "#ffedd5" }
-      : { border: "#3b82f6", bg: "#eff6ff", text: "#2563eb", badge: "#dbeafe" };
-  return (
-    <button
-      onClick={onClick}
-      className="flex-1 rounded-xl py-4 px-3 text-center cursor-pointer relative"
-      style={{
-        border: selected ? `2px solid ${colors.border}` : "1px solid #e5e7eb",
-        background: selected ? colors.bg : "#fff",
-        transition: "background 0.15s, border-color 0.15s",
-      }}
-    >
-      {selected && (
-        <CheckCircleFilled
-          style={{ position: "absolute", top: 8, right: 10, color: colors.text, fontSize: 18 }}
-        />
-      )}
-      <div
-        className="mx-auto flex items-center justify-center rounded-lg"
-        style={{ width: 44, height: 44, background: colors.badge, fontSize: 22 }}
-      >
-        {emoji}
-      </div>
-      <div
-        className="text-sm mt-2"
-        style={{ color: selected ? colors.text : "#374151", fontWeight: selected ? 600 : 500 }}
-      >
-        {label}
-      </div>
-    </button>
-  );
-}
-
 export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
   const isMobile = useIsMobile();
   const t = useTranslations("pos");
   const tm = useTranslations("pos.paymentModal");
   const [orderType, setOrderType] = useState<OrderType | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
+  const [deferred, setDeferred] = useState(false);
   const [onlinePayment, setOnlinePayment] = useState(false);
   const [cashAmount, setCashAmount] = useState(0);
   const [notes, setNotes] = useState("");
@@ -88,6 +47,7 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
   const reset = () => {
     setOrderType(null);
     setPaymentMethod(null);
+    setDeferred(false);
     setOnlinePayment(false);
     setCashAmount(0);
     setNotes("");
@@ -107,15 +67,26 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
     // order_type y payment_provider nunca quedan desincronizados.
     setOrderType(checked ? "pedidos_ya" : null);
     setPaymentMethod(null);
+    setDeferred(false);
   };
 
   const handleSelectMixto = () => {
+    setDeferred(false);
     if (paymentMethod === "mixto") {
       setPaymentMethod(null);
       return;
     }
     setPaymentMethod("mixto");
     setCashAmount(Math.round((total / 2) * 100) / 100);
+  };
+
+  const handleSelectPorCobrar = () => {
+    if (deferred) {
+      setDeferred(false);
+      return;
+    }
+    setDeferred(true);
+    setPaymentMethod(null);
   };
 
   const mixtoValid = paymentMethod !== "mixto" || (cashAmount > 0 && qrAmount > 0);
@@ -190,65 +161,20 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
   );
 
   const paymentMethodSection = (
-    <div style={onlinePayment ? { opacity: 0.4, pointerEvents: "none" } : undefined}>
-      <div className="flex justify-between items-center mb-2">
-        <div className="flex items-center gap-2">
-          <div style={{ width: 4, height: 16, background: "#2563eb", borderRadius: 2 }} />
-          <Text strong>{tm("howDidPay")}</Text>
-        </div>
-        <Text type="secondary" className="text-xs">{t("optional")}</Text>
-      </div>
-      <div className="flex gap-3">
-        <OptionCard
-          selected={paymentMethod === "efectivo"}
-          emoji="💵"
-          label={t("paymentMethod.cash")}
-          accent="blue"
-          onClick={() => setPaymentMethod(paymentMethod === "efectivo" ? null : "efectivo")}
-        />
-        <OptionCard
-          selected={paymentMethod === "qr"}
-          emoji="📱"
-          label={t("paymentMethod.qr")}
-          accent="blue"
-          onClick={() => setPaymentMethod(paymentMethod === "qr" ? null : "qr")}
-        />
-        <OptionCard
-          selected={paymentMethod === "mixto"}
-          emoji="🔀"
-          label={t("paymentMethod.mixed")}
-          accent="blue"
-          onClick={handleSelectMixto}
-        />
-      </div>
-      <Text type="secondary" className="text-xs mt-1 block">{tm("toggleHint")}</Text>
-
-      {paymentMethod === "mixto" && (
-        <div className="mt-3 bg-gray-50 rounded-lg p-3">
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <Text type="secondary" className="text-xs block mb-1" style={{ letterSpacing: 0.5 }}>{tm("cashReceived")}</Text>
-              <InputNumber
-                value={cashAmount}
-                min={0}
-                max={total}
-                style={{ width: "100%" }}
-                onChange={(value) => setCashAmount(Math.min(total, Math.max(0, value ?? 0)))}
-              />
-            </div>
-            <div className="flex-1">
-              <Text type="secondary" className="text-xs block mb-1" style={{ letterSpacing: 0.5 }}>{tm("remainingQr")}</Text>
-              <div style={{ height: 32, display: "flex", alignItems: "center" }}>
-                <Text strong className="text-base">Bs {qrAmount.toFixed(2)}</Text>
-              </div>
-            </div>
-          </div>
-          {!mixtoValid && (
-            <Text type="danger" className="text-xs mt-2 block">{tm("bothMustBeGreater")}</Text>
-          )}
-        </div>
-      )}
-    </div>
+    <PaymentMethodSelector
+      disabled={onlinePayment}
+      paymentMethod={paymentMethod}
+      deferred={deferred}
+      cashAmount={cashAmount}
+      qrAmount={qrAmount}
+      total={total}
+      mixtoValid={mixtoValid}
+      onSelectCash={() => { setDeferred(false); setPaymentMethod(paymentMethod === "efectivo" ? null : "efectivo"); }}
+      onSelectQr={() => { setDeferred(false); setPaymentMethod(paymentMethod === "qr" ? null : "qr"); }}
+      onSelectMixto={handleSelectMixto}
+      onSelectDeferred={handleSelectPorCobrar}
+      onCashAmountChange={setCashAmount}
+    />
   );
 
   const notesSection = (

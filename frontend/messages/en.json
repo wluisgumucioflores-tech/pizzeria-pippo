@@ -412,6 +412,7 @@
     "optional": "(optional)",
     "continueAction": "Continue",
     "confirmAndCharge": "Confirm and charge",
+    "confirmOnly": "Confirm",
     "halfAndHalf": "Half {first} / Half {second}",
     "error": {
       "title": "Something went wrong",
@@ -457,7 +458,8 @@
     "paymentMethod": {
       "cash": "Cash",
       "qr": "QR",
-      "mixed": "Mixed"
+      "mixed": "Mixed",
+      "deferred": "Pay later"
     },
     "paymentLabel": {
       "cash": "💵 Cash",

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Modal, Button, InputNumber, Typography } from "antd";
 import { ArrowRightOutlined } from "@ant-design/icons";
-import { OptionCard } from "./PaymentModal";
+import { OptionCard } from "./OptionCard";
 import type { DayOrder, PaymentMethod, SplitPayment } from "../types/pos.types";
 
 const { Text } = Typography;
