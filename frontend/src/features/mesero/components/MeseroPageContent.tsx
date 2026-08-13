@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ProductCatalog } from "@/features/pos/components/ProductCatalog";
+import { VariantSelectorModal } from "@/features/pos/components/VariantSelectorModal";
 import { MeseroCartPanel } from "./MeseroCartPanel";
 import { MeseroCartDrawer } from "./MeseroCartDrawer";
 import { MeseroCartFab } from "./MeseroCartFab";
@@ -36,6 +37,15 @@ export function MeseroPageContent() {
           className={`flex-1 py-3 text-base font-semibold cursor-pointer ${p.tab === "mis-pedidos" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-500"}`}
         >
           Mis pedidos
+        </button>
+        <button
+          type="button"
+          onClick={p.handleRefresh}
+          disabled={p.refreshing}
+          className="px-4 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          title="Actualizar"
+        >
+          <span className={p.refreshing ? "inline-block animate-spin" : "inline-block"}>🔄</span>
         </button>
       </div>
 
@@ -98,6 +108,16 @@ export function MeseroPageContent() {
           </MeseroCartDrawer>
         </>
       )}
+
+      <VariantSelectorModal
+        product={p.variantModal}
+        branchId={p.effectiveBranchId}
+        allProducts={p.products}
+        getVariantPrice={p.getVariantPrice}
+        getPromoLabel={() => null}
+        onSelect={p.handleVariantSelect}
+        onClose={() => p.setVariantModal(null)}
+      />
     </div>
   );
 }

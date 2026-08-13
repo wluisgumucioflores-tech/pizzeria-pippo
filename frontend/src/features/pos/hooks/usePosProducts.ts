@@ -68,7 +68,7 @@ export function usePosProducts(branchId: string | undefined) {
   }, []);
 
   const refresh = useCallback(() => {
-    if (branchId) fetchData(branchId, true);
+    return branchId ? fetchData(branchId, true) : Promise.resolve();
   }, [branchId, fetchData]);
 
   useEffect(() => {

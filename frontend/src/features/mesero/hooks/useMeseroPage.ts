@@ -8,22 +8,32 @@ import { useMeseroCart } from "./useMeseroCart";
 import { useMeseroOrders } from "./useMeseroOrders";
 import { useMeseroName } from "./useMeseroName";
 import { MeseroService } from "../services/mesero.service";
+import type { Product, Variant } from "@/features/pos/types/pos.types";
+import type { FlavorItem } from "@/lib/promotions";
 
 export type MeseroTab = "nuevo" | "mis-pedidos";
 
 export function useMeseroPage() {
   const { identity, effectiveBranchId } = usePosIdentity();
   const { name: waiterName } = useMeseroName();
-  const { products, loading: loadingProducts, useStock, getVariantPrice, getStockQty } = usePosProducts(effectiveBranchId ?? undefined);
+  const { products, loading: loadingProducts, useStock, getVariantPrice, getStockQty, refresh: refreshProducts } = usePosProducts(effectiveBranchId ?? undefined);
   const cart = useMeseroCart();
   const { myOrders, loading: loadingOrders, refresh: refreshOrders, connected } = useMeseroOrders(effectiveBranchId ?? undefined, waiterName);
   const [tab, setTab] = useState<MeseroTab>("nuevo");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [variantModal, setVariantModal] = useState<Product | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   // Fase 2 (docs/features/mesero-y-mejoras-pos/) — agregar items a un pedido
   // propio mientras siga "Pendiente" en cocina. Reusa el mismo carrito/catálogo
   // que "Nuevo pedido"; solo cambia adónde va el submit.
   const [addingToOrder, setAddingToOrder] = useState<{ id: string; dailyNumber: number } | null>(null);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([refreshProducts(), refreshOrders()]);
+    setRefreshing(false);
+  };
 
   const startAddItems = (orderId: string, dailyNumber: number) => {
     cart.clearCart();
@@ -37,10 +47,20 @@ export function useMeseroPage() {
     setTab("mis-pedidos");
   };
 
-  const handleProductClick = (product: (typeof products)[number]) => {
-    const variant = product.product_variants[0];
-    if (!variant || !effectiveBranchId) return;
-    cart.addToCart(product, variant, getVariantPrice(variant, effectiveBranchId));
+  const handleProductClick = (product: Product) => {
+    const variants = product.product_variants ?? [];
+    if (!effectiveBranchId) return;
+    if (variants.length === 1) {
+      cart.addToCart(product, variants[0], getVariantPrice(variants[0], effectiveBranchId));
+    } else {
+      setVariantModal(product);
+    }
+  };
+
+  const handleVariantSelect = (product: Product, variant: Variant, flavors?: FlavorItem[]) => {
+    if (!effectiveBranchId) return;
+    cart.addToCart(product, variant, getVariantPrice(variant, effectiveBranchId), flavors);
+    setVariantModal(null);
   };
 
   // Extras (Fase 2, docs/features/mesero-y-mejoras-pos/) se eligen de los
@@ -91,5 +111,7 @@ export function useMeseroPage() {
     cart, myOrders, loadingOrders, connected,
     tab, setTab, submitting, submitError, handleProductClick, handleSubmitOrder,
     addingToOrder, startAddItems, cancelAddItems,
+    variantModal, setVariantModal, handleVariantSelect,
+    refreshing, handleRefresh,
   };
 }

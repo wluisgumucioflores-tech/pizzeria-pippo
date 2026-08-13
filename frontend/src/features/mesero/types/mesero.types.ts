@@ -1,3 +1,5 @@
+import type { FlavorItem } from "@/lib/promotions";
+
 export type MeseroOrderType = "dine_in" | "takeaway";
 
 export interface MeseroExtra {
@@ -13,4 +15,5 @@ export interface MeseroCartItem {
   variant_name: string;
   category: string;
   extras: MeseroExtra[];
+  flavors?: FlavorItem[];
 }

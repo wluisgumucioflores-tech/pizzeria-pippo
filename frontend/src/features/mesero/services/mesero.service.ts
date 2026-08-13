@@ -26,6 +26,7 @@ export const MeseroService = {
             variant_id: i.variant_id,
             qty: i.qty,
             extras: i.extras.length ? i.extras : undefined,
+            flavors: i.flavors ?? undefined,
           })),
         }),
       });
@@ -57,6 +58,7 @@ export const MeseroService = {
             variant_id: i.variant_id,
             qty: i.qty,
             extras: i.extras.length ? i.extras : undefined,
+            flavors: i.flavors ?? undefined,
           })),
         }),
       });

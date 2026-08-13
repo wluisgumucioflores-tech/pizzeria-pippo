@@ -19,8 +19,14 @@ export function MeseroCartItemRow({ item, extraOptions, onUpdateQty, onRemove, o
     <div className="border-b py-3">
       <div className="flex items-center justify-between">
         <div>
-          <div className="font-semibold text-gray-800 text-lg">{item.product_name}</div>
-          <div className="text-sm text-gray-500">{item.variant_name}</div>
+          <div className="font-semibold text-gray-800 text-lg">
+            {item.flavors?.length ? "Pizza mixta" : item.product_name}
+          </div>
+          <div className="text-sm text-gray-500">
+            {item.flavors?.length
+              ? `${item.variant_name} — ${item.flavors.map((f) => f.product_name).join(" / ")}`
+              : item.variant_name}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => onUpdateQty(-1)} className="w-9 h-9 text-lg rounded bg-gray-100 hover:bg-gray-200 cursor-pointer">−</button>

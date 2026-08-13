@@ -3,17 +3,32 @@
 import { useState } from "react";
 import type { MeseroCartItem, MeseroExtra, MeseroOrderType } from "../types/mesero.types";
 import type { Product } from "@/features/pos/types/pos.types";
+import type { FlavorItem } from "@/lib/promotions";
 
 export function useMeseroCart() {
   const [items, setItems] = useState<MeseroCartItem[]>([]);
   const [tableNumber, setTableNumber] = useState("");
   const [orderType, setOrderType] = useState<MeseroOrderType>("dine_in");
 
-  const addToCart = (product: Product, variant: Product["product_variants"][0], price: number) => {
+  const addToCart = (product: Product, variant: Product["product_variants"][0], price: number, flavors?: FlavorItem[]) => {
     setItems((prev) => {
-      const existing = prev.find((i) => i.variant_id === variant.id);
+      // Pizza mixta: nunca se mergea con líneas existentes, cada combinación
+      // de sabores queda como su propia línea (mismo criterio que usePosCart).
+      if (flavors && flavors.length > 0) {
+        return [...prev, {
+          variant_id: variant.id,
+          qty: 1,
+          unit_price: price,
+          product_name: product.name,
+          variant_name: variant.name,
+          category: product.category,
+          extras: [],
+          flavors,
+        }];
+      }
+      const existing = prev.find((i) => i.variant_id === variant.id && !i.flavors);
       if (existing) {
-        return prev.map((i) => (i.variant_id === variant.id ? { ...i, qty: i.qty + 1 } : i));
+        return prev.map((i) => (i.variant_id === variant.id && !i.flavors ? { ...i, qty: i.qty + 1 } : i));
       }
       return [...prev, {
         variant_id: variant.id,

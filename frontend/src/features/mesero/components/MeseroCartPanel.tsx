@@ -57,9 +57,9 @@ export function MeseroCartPanel({ cart, submitting, extraOptions, addingToOrder,
         {cart.items.length === 0 ? (
           <p className="text-gray-400 text-base text-center py-8">El carrito está vacío</p>
         ) : (
-          cart.items.map((item) => (
+          cart.items.map((item, idx) => (
             <MeseroCartItemRow
-              key={item.variant_id}
+              key={`${idx}-${item.variant_id}`}
               item={item}
               extraOptions={extraOptions}
               onUpdateQty={(delta) => cart.updateQty(item.variant_id, delta)}
