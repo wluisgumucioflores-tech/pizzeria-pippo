@@ -50,7 +50,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        <form onSubmit={handleLogin} autoComplete="off" noValidate>
+        <form method="post" onSubmit={handleLogin} autoComplete="off" noValidate>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="email">
               Correo electrónico
