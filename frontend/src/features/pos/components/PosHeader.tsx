@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Button, Tag, Typography } from "antd";
-import { LogoutOutlined, ShoppingCartOutlined, UnorderedListOutlined, BarChartOutlined, GiftOutlined } from "@ant-design/icons";
+import { LogoutOutlined, ReloadOutlined, ShoppingCartOutlined, UnorderedListOutlined, BarChartOutlined, GiftOutlined } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
 import { formatTimeBolivia } from "@/lib/timezone";
 import { useIsMobile } from "@/lib/useIsMobile";
@@ -21,6 +21,8 @@ interface Props {
   pendingCount: number;
   promoCount: number;
   connected: boolean;
+  refreshing: boolean;
+  onRefresh: () => void;
   onTabChange: (tab: PosTab) => void;
   onLogout: () => void;
   printerSlot?: React.ReactNode;
@@ -35,7 +37,7 @@ function ConnectionBadge({ connected }: { connected: boolean }) {
   );
 }
 
-export function PosHeader({ identity, branches, activeTab, pendingCount, promoCount, connected, onTabChange, onLogout, printerSlot }: Props) {
+export function PosHeader({ identity, branches, activeTab, pendingCount, promoCount, connected, refreshing, onRefresh, onTabChange, onLogout, printerSlot }: Props) {
   const branchName = branches.find((b) => b.id === identity.branch_id)?.name;
   const [currentTime, setCurrentTime] = useState("");
   const [businessName, setBusinessName] = useState(DEFAULT_TICKET_BUSINESS_NAME);
@@ -102,6 +104,13 @@ export function PosHeader({ identity, branches, activeTab, pendingCount, promoCo
           <Text style={{ fontFamily: "monospace", fontSize: 13, fontWeight: 600, color: "#374151", flexShrink: 0 }}>{currentTime}</Text>
           <ConnectionBadge connected={connected} />
           {printerSlot}
+          <Button
+            size="small"
+            icon={<ReloadOutlined spin={refreshing} />}
+            onClick={onRefresh}
+            disabled={refreshing}
+            style={{ flexShrink: 0, padding: "0 8px" }}
+          />
           <LocaleSwitcher />
           <Button
             size="small"
@@ -137,6 +146,7 @@ export function PosHeader({ identity, branches, activeTab, pendingCount, promoCo
           <Text style={{ fontFamily: "monospace", fontSize: 16, fontWeight: 600, color: "#374151" }}>{currentTime}</Text>
           <ConnectionBadge connected={connected} />
           {printerSlot}
+          <Button icon={<ReloadOutlined spin={refreshing} />} onClick={onRefresh} disabled={refreshing} />
           <LocaleSwitcher />
           <Button icon={<LogoutOutlined />} onClick={onLogout}>{t("header.logout")}</Button>
         </div>

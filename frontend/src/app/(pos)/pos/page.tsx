@@ -28,6 +28,7 @@ export default function PosPage() {
   const { products, promotions, useStock, loading, getVariantPrice, getPromoLabel, getStockQty, refresh: refreshProducts } = usePosProducts(effectiveBranchId ?? undefined);
   const cart = usePosCart(promotions, effectiveBranchId ?? undefined, broadcast, getStockQty);
   const [activeTab, setActiveTab] = useState<PosTab>("sale");
+  const [refreshing, setRefreshing] = useState(false);
   const isMobile = useIsMobile();
   const {
     dayOrders, markingReady, fetchDayOrders, handleMarkReady,
@@ -38,6 +39,13 @@ export default function PosPage() {
   } = useDayOrders(effectiveBranchId ?? undefined, activeTab !== "sale");
   const printer = usePrinter();
   const paymentValidation = usePaymentValidation(effectiveBranchId ?? undefined);
+
+  const handleRefresh = async () => {
+    if (!effectiveBranchId) return;
+    setRefreshing(true);
+    await Promise.all([refreshProducts(), fetchDayOrders(effectiveBranchId)]);
+    setRefreshing(false);
+  };
 
   const actions = usePosPageActions({
     branchId: effectiveBranchId ?? "",
@@ -78,6 +86,8 @@ export default function PosPage() {
         pendingCount={dayOrders.filter((o) => o.kitchen_status === "pending" && !o.cancelled_at).length}
         promoCount={activePromotions.length}
         connected={connected}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
         onTabChange={setActiveTab}
         onLogout={handleLogout}
         printerSlot={
