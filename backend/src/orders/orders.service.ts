@@ -600,6 +600,7 @@ export class OrdersService {
                 ? {
                     name: item.variant.product.name,
                     description: item.variant.product.description,
+                    category: item.variant.product.category,
                   }
                 : null,
             }

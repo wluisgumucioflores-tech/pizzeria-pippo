@@ -10,6 +10,7 @@ const SETTINGS_KEYS = [
   'telegram_chat_id',
   'telegram_enabled',
   'kitchen_late_threshold_minutes',
+  'kitchen_display_mode',
   'printer_paper_width',
   'printer_business_name',
   'use_stock',
@@ -36,6 +37,10 @@ export class SettingsService {
         config.get('kitchen_late_threshold_minutes') ?? '10',
         10,
       ),
+      kitchen_display_mode:
+        config.get('kitchen_display_mode') === 'pizzas_only'
+          ? 'pizzas_only'
+          : 'full',
       printer_paper_width: parseInt(
         config.get('printer_paper_width') ?? '58',
         10,
@@ -62,6 +67,10 @@ export class SettingsService {
       [
         'kitchen_late_threshold_minutes',
         String(dto.kitchen_late_threshold_minutes ?? 10),
+      ],
+      [
+        'kitchen_display_mode',
+        dto.kitchen_display_mode === 'pizzas_only' ? 'pizzas_only' : 'full',
       ],
       ['printer_paper_width', String(paperWidth)],
       [
@@ -118,6 +127,18 @@ export class SettingsService {
       },
     });
     return parseInt(row?.value ?? '10', 10);
+  }
+
+  // Mismo criterio que el umbral: cualquier rol autenticado puede leerlo,
+  // cocina lo necesita para saber si debe filtrar los items del pedido.
+  async getKitchenDisplayMode(
+    user: CurrentUserPayload,
+  ): Promise<'full' | 'pizzas_only'> {
+    const businessId = this.resolveBusinessId(user);
+    const row = await this.prisma.appSetting.findUnique({
+      where: { businessId_key: { businessId, key: 'kitchen_display_mode' } },
+    });
+    return row?.value === 'pizzas_only' ? 'pizzas_only' : 'full';
   }
 
   // Usado tanto por el POS/Mesero (catálogo — ver si bloquear productos sin

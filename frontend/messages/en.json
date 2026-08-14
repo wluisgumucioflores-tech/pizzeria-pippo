@@ -822,7 +822,11 @@
       "title": "Kitchen",
       "description": "Set the time threshold after which an order is marked as delayed.",
       "thresholdLabel": "Minutes to mark as delayed",
-      "thresholdExtra": "Orders that exceed this time are highlighted in red on the kitchen screen."
+      "thresholdExtra": "Orders that exceed this time are highlighted in red on the kitchen screen.",
+      "displayModeLabel": "What to show on the kitchen screen",
+      "displayModeExtra": "\"Pizzas only\" hides drinks and other products, showing only the pizzas in the order and their extras.",
+      "displayModeFull": "Full order",
+      "displayModePizzasOnly": "Pizzas only"
     },
     "stock": {
       "title": "Inventory control",

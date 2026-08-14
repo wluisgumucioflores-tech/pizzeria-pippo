@@ -13,6 +13,7 @@ export function useSettings() {
     telegram_chat_id: "",
     telegram_enabled: false,
     kitchen_late_threshold_minutes: 10,
+    kitchen_display_mode: "full",
     printer_paper_width: 58,
     printer_business_name: "GU PIZZA",
     use_stock: true,

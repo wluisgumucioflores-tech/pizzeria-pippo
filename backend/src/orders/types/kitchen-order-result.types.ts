@@ -14,7 +14,11 @@ export interface KitchenOrderResult {
     created_at: string;
     product_variants: {
       name: string;
-      products: { name: string; description: string | null } | null;
+      products: {
+        name: string;
+        description: string | null;
+        category: string;
+      } | null;
     } | null;
     order_item_flavors: {
       variant_id: string;

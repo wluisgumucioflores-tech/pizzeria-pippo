@@ -2,7 +2,7 @@
 
 import { formatTimeBolivia } from "@/lib/timezone";
 import { useKitchenTimer } from "../hooks/useKitchenTimer";
-import type { KitchenOrder } from "../types/kitchen.types";
+import type { KitchenDisplayMode, KitchenOrder } from "../types/kitchen.types";
 
 const ORDER_TYPE_BADGES: Record<KitchenOrder["order_type"], { emoji: string; label: string; className: string }> = {
   dine_in: { emoji: "🍽️", label: "Local", className: "bg-gray-600 text-gray-200" },
@@ -15,13 +15,18 @@ interface Props {
   order: KitchenOrder;
   onReady: (id: string) => void;
   lateThreshold: number;
+  displayMode?: KitchenDisplayMode;
 }
 
-export function OrderCard({ order, onReady, lateThreshold }: Props) {
+export function OrderCard({ order, onReady, lateThreshold, displayMode = "full" }: Props) {
   const minutes = useKitchenTimer(order.created_at);
   const isLate = minutes >= lateThreshold;
   const localTime = formatTimeBolivia(order.created_at);
   const orderLabel = `#${String(order.daily_number).padStart(2, "0")}`;
+  const visibleItems =
+    displayMode === "pizzas_only"
+      ? order.order_items.filter((item) => item.product_variants?.products?.category === "pizza")
+      : order.order_items;
 
   return (
     <div
@@ -71,7 +76,10 @@ export function OrderCard({ order, onReady, lateThreshold }: Props) {
 
       {/* Items */}
       <div className="flex flex-col gap-3 flex-1">
-        {order.order_items.map((item, i) => {
+        {visibleItems.length === 0 && (
+          <p className="text-gray-500 text-base italic">Sin pizzas en este pedido</p>
+        )}
+        {visibleItems.map((item, i) => {
           const qty = item.qty_physical ?? item.qty;
           const productName = item.product_variants?.products?.name ?? "—";
           const variantName = item.product_variants?.name ?? "";
@@ -86,11 +94,11 @@ export function OrderCard({ order, onReady, lateThreshold }: Props) {
           return (
             <div key={i} className={`flex flex-col gap-0.5 ${isNew ? "bg-yellow-950 border border-yellow-600 rounded-lg p-2 -mx-2" : ""}`}>
               <div className="flex items-baseline gap-2">
-                <span className="text-orange-400 font-black text-xl w-8 shrink-0">{qty}x</span>
-                <span className="text-white font-semibold text-base leading-tight">
+                <span className="text-orange-400 font-black text-2xl w-9 shrink-0">{qty}x</span>
+                <span className="text-white font-semibold text-lg leading-tight">
                   {isMixed ? "Pizza mixta" : productName}
                   {variantName && (
-                    <span className="text-gray-400 font-normal text-sm ml-1">— {variantName}</span>
+                    <span className="text-gray-400 font-normal text-base ml-1">— {variantName}</span>
                   )}
                   {isNew && (
                     <span className="ml-2 text-xs font-bold px-1.5 py-0.5 rounded bg-yellow-500 text-gray-900 align-middle">🆕 Nuevo</span>
@@ -98,11 +106,11 @@ export function OrderCard({ order, onReady, lateThreshold }: Props) {
                 </span>
               </div>
               {isMixed && (
-                <div className="ml-10 flex flex-col gap-0.5 mt-0.5">
+                <div className="ml-11 flex flex-col gap-0.5 mt-0.5">
                   {flavors.map((f, fi) => {
                     const parts = Math.round(f.proportion * totalParts);
                     return (
-                      <p key={fi} className="text-yellow-400 text-sm leading-snug font-medium m-0">
+                      <p key={fi} className="text-yellow-400 text-base leading-snug font-medium m-0">
                         {parts}/{totalParts} {f.product_variants?.products?.name}
                       </p>
                     );
@@ -110,12 +118,12 @@ export function OrderCard({ order, onReady, lateThreshold }: Props) {
                 </div>
               )}
               {!isMixed && description && (
-                <p className="text-gray-400 text-sm ml-10 leading-snug">{description}</p>
+                <p className="text-gray-400 text-base ml-11 leading-snug">{description}</p>
               )}
               {extras.length > 0 && (
-                <div className="ml-10 flex flex-col gap-0.5 mt-0.5">
+                <div className="ml-11 flex flex-col gap-0.5 mt-0.5">
                   {extras.map((extra, ei) => (
-                    <p key={ei} className="text-emerald-400 text-sm leading-snug font-semibold m-0">
+                    <p key={ei} className="text-emerald-400 text-base leading-snug font-semibold m-0">
                       ➕ {extra.name}
                     </p>
                   ))}

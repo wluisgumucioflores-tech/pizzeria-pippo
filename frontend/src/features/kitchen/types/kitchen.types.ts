@@ -19,11 +19,14 @@ export interface OrderItem {
     products: {
       name: string;
       description: string;
+      category: string;
     } | null;
   } | null;
   order_item_flavors: FlavorRow[];
   order_item_extras: ExtraRow[];
 }
+
+export type KitchenDisplayMode = "full" | "pizzas_only";
 
 export interface KitchenOrder {
   id: string;

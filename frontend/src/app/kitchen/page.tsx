@@ -9,7 +9,7 @@ import { useNewIdAlert } from "@/lib/useNewIdAlert";
 import { KitchenService } from "@/features/kitchen/services/kitchen.service";
 import { OrderCard } from "@/features/kitchen/components/OrderCard";
 import { LocaleSwitcher } from "@/features/i18n/components/LocaleSwitcher";
-import type { KitchenOrder } from "@/features/kitchen/types/kitchen.types";
+import type { KitchenDisplayMode, KitchenOrder } from "@/features/kitchen/types/kitchen.types";
 
 export default function KitchenPage() {
   const [orders, setOrders] = useState<KitchenOrder[]>([]);
@@ -17,6 +17,7 @@ export default function KitchenPage() {
   const [branchName, setBranchName] = useState("");
   const [currentTime, setCurrentTime] = useState("");
   const [lateThreshold, setLateThreshold] = useState(10);
+  const [displayMode, setDisplayMode] = useState<KitchenDisplayMode>("full");
   const [connected, setConnected] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -26,10 +27,11 @@ export default function KitchenPage() {
 
   useNewIdAlert(orders.map((o) => o.id), notifyNewOrder);
 
-  // Load kitchen late threshold from settings
+  // Load kitchen display settings (late threshold + full/pizzas_only mode)
   useEffect(() => {
-    KitchenService.getLateThresholdMinutes().then((minutes) => {
-      if (minutes !== null) setLateThreshold(minutes);
+    KitchenService.getDisplaySettings().then(({ lateThreshold, displayMode }) => {
+      if (lateThreshold !== null) setLateThreshold(lateThreshold);
+      setDisplayMode(displayMode);
     });
   }, []);
 
@@ -196,6 +198,7 @@ export default function KitchenPage() {
                 order={order}
                 onReady={handleReady}
                 lateThreshold={lateThreshold}
+                displayMode={displayMode}
               />
             ))}
           </div>

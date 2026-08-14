@@ -7,6 +7,8 @@ import {
   Min,
 } from 'class-validator';
 
+export type KitchenDisplayMode = 'full' | 'pizzas_only';
+
 export class UpdateSettingsDto {
   @IsOptional()
   @IsString()
@@ -24,6 +26,10 @@ export class UpdateSettingsDto {
   @IsInt()
   @Min(1)
   kitchen_late_threshold_minutes?: number;
+
+  @IsOptional()
+  @IsIn(['full', 'pizzas_only'])
+  kitchen_display_mode?: KitchenDisplayMode;
 
   @IsOptional()
   @IsIn([58, 80])

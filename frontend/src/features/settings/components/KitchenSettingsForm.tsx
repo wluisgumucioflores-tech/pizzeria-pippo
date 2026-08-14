@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, Form, InputNumber, Button, Typography, Skeleton } from "antd";
+import { Card, Form, InputNumber, Radio, Button, Typography, Skeleton } from "antd";
 import { SaveOutlined } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
 import { useSettings } from "@/features/settings/hooks/useSettings";
@@ -15,7 +15,7 @@ export function KitchenSettingsForm() {
   if (loading) return <Skeleton active paragraph={{ rows: 3 }} />;
 
   return (
-    <Card style={{ maxWidth: 400 }}>
+    <Card style={{ maxWidth: 480 }}>
       <Title level={4} style={{ marginBottom: 4 }}>{t("title")}</Title>
       <Text type="secondary" style={{ display: "block", marginBottom: 24 }}>
         {t("description")}
@@ -34,6 +34,19 @@ export function KitchenSettingsForm() {
             addonAfter="min"
             style={{ width: 140 }}
           />
+        </Form.Item>
+
+        <Form.Item
+          label={t("displayModeLabel")}
+          extra={t("displayModeExtra")}
+        >
+          <Radio.Group
+            value={settings.kitchen_display_mode}
+            onChange={(e) => handleChange("kitchen_display_mode", e.target.value)}
+          >
+            <Radio.Button value="full">{t("displayModeFull")}</Radio.Button>
+            <Radio.Button value="pizzas_only">{t("displayModePizzasOnly")}</Radio.Button>
+          </Radio.Group>
         </Form.Item>
 
         <Button
