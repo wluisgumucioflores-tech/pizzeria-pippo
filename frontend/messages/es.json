@@ -820,13 +820,23 @@
     "testSuccess": "Mensaje enviado correctamente",
     "kitchen": {
       "title": "Cocina",
-      "description": "Configura el umbral de tiempo tras el cual un pedido se marca como demorado.",
-      "thresholdLabel": "Minutos para marcar como demorado",
+      "description": "Configura los tiempos y colores de las 3 etapas de un pedido en la pantalla de cocina, y qué mostrar de cada pedido.",
+      "warningLabel": "Minutos para pasar a ámbar (aviso)",
+      "warningExtra": "Antes de este tiempo, el pedido se muestra en verde.",
+      "thresholdLabel": "Minutos para pasar a rojo (demorado)",
       "thresholdExtra": "Los pedidos que superen este tiempo se resaltan en rojo en la pantalla de cocina.",
+      "stagesOrderError": "El umbral ámbar debe ser menor que el umbral rojo.",
       "displayModeLabel": "Qué mostrar en la pantalla de cocina",
       "displayModeExtra": "\"Solo pizzas\" oculta bebidas y otros productos, mostrando únicamente las pizzas del pedido y sus extras.",
       "displayModeFull": "Pedido completo",
-      "displayModePizzasOnly": "Solo pizzas"
+      "displayModePizzasOnly": "Solo pizzas",
+      "colorFreshLabel": "Color verde",
+      "colorWarningLabel": "Color ámbar",
+      "colorLateLabel": "Color rojo",
+      "previewLabel": "Vista previa",
+      "previewFresh": "Fresco",
+      "previewWarning": "Aviso",
+      "previewLate": "Demorado"
     },
     "stock": {
       "title": "Control de inventario",

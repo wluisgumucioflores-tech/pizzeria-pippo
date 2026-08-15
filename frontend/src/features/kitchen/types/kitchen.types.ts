@@ -39,3 +39,12 @@ export interface KitchenOrder {
   last_ready_at: string | null;
   order_items: OrderItem[];
 }
+
+export interface KitchenStageSettings {
+  kitchen_stage_warning_minutes: number;
+  kitchen_late_threshold_minutes: number;
+  kitchen_color_fresh: string;
+  kitchen_color_warning: string;
+  kitchen_color_late: string;
+  kitchen_display_mode: KitchenDisplayMode;
+}

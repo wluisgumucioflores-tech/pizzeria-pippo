@@ -3,7 +3,7 @@ import { getToken } from "@/lib/auth";
 import { nestFetch } from "@/lib/nestFetch";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { BranchesService } from "@/features/branches/services/branches.service";
-import type { KitchenDisplayMode, KitchenOrder } from "../types/kitchen.types";
+import type { KitchenOrder, KitchenStageSettings } from "../types/kitchen.types";
 
 const NEST_API_URL = process.env.NEXT_PUBLIC_NEST_API_URL;
 
@@ -12,14 +12,10 @@ type OrderUpdatePayload = { new: { id: string; kitchen_status: string; cancelled
 type OrdersSubscription = { socket: Socket };
 
 export const KitchenService = {
-  async getDisplaySettings(): Promise<{ lateThreshold: number | null; displayMode: KitchenDisplayMode }> {
+  async getStageSettings(): Promise<KitchenStageSettings | null> {
     const res = await nestFetch(API_ENDPOINTS.settings.kitchenThreshold);
-    if (!res.ok) return { lateThreshold: null, displayMode: "full" };
-    const data = await res.json();
-    return {
-      lateThreshold: data.kitchen_late_threshold_minutes ?? null,
-      displayMode: data.kitchen_display_mode === "pizzas_only" ? "pizzas_only" : "full",
-    };
+    if (!res.ok) return null;
+    return res.json();
   },
 
   async getBranchName(branchId: string): Promise<string | null> {

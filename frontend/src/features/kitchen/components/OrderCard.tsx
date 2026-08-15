@@ -1,8 +1,9 @@
 "use client";
 
+import { useOrderStage } from "../hooks/useOrderStage";
+import { getStageColor, getReadableTextColor } from "../constants/kitchen-stage.constants";
 import { formatTimeBolivia } from "@/lib/timezone";
-import { useKitchenTimer } from "../hooks/useKitchenTimer";
-import type { KitchenDisplayMode, KitchenOrder } from "../types/kitchen.types";
+import type { KitchenOrder, KitchenStageSettings } from "../types/kitchen.types";
 
 const ORDER_TYPE_BADGES: Record<KitchenOrder["order_type"], { emoji: string; label: string; className: string }> = {
   dine_in: { emoji: "🍽️", label: "Local", className: "bg-gray-600 text-gray-200" },
@@ -11,39 +12,44 @@ const ORDER_TYPE_BADGES: Record<KitchenOrder["order_type"], { emoji: string; lab
   pedidos_ya: { emoji: "📱", label: "Pedidos Ya", className: "bg-orange-500 text-white" },
 };
 
-interface Props {
+export function OrderCard({
+  order,
+  onReady,
+  stageSettings,
+}: {
   order: KitchenOrder;
   onReady: (id: string) => void;
-  lateThreshold: number;
-  displayMode?: KitchenDisplayMode;
-}
-
-export function OrderCard({ order, onReady, lateThreshold, displayMode = "full" }: Props) {
-  const minutes = useKitchenTimer(order.created_at);
-  const isLate = minutes >= lateThreshold;
+  stageSettings: KitchenStageSettings;
+}) {
+  const { minutes, stage } = useOrderStage(order.created_at, stageSettings);
+  const color = getStageColor(stage, stageSettings);
+  const badgeTextColor = getReadableTextColor(color);
+  const isLate = stage === "late";
   const localTime = formatTimeBolivia(order.created_at);
   const orderLabel = `#${String(order.daily_number).padStart(2, "0")}`;
   const visibleItems =
-    displayMode === "pizzas_only"
+    stageSettings.kitchen_display_mode === "pizzas_only"
       ? order.order_items.filter((item) => item.product_variants?.products?.category === "pizza")
       : order.order_items;
 
   return (
     <div
-      className={`rounded-2xl p-5 flex flex-col gap-3 border-2 transition-all ${
-        isLate
-          ? "bg-red-950 border-red-500 shadow-red-900 shadow-lg"
-          : "bg-gray-800 border-gray-700"
-      }`}
+      className={`rounded-2xl p-5 flex flex-col gap-3 border-2 transition-colors ${isLate ? "shadow-lg" : ""}`}
+      style={{
+        borderColor: color,
+        background: `color-mix(in srgb, ${color} 14%, #111827)`,
+        boxShadow: isLate ? `0 10px 25px -8px color-mix(in srgb, ${color} 55%, transparent)` : undefined,
+      }}
     >
       {/* Header */}
       <div className="flex flex-col gap-2">
         <div className="flex justify-between items-center">
           <span className="text-2xl font-black text-white tracking-wider">{orderLabel}</span>
           <div className="flex items-center gap-3">
-            <span className={`text-sm font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
-              isLate ? "bg-red-500 text-white" : "bg-gray-600 text-gray-200"
-            }`}>
+            <span
+              className="text-sm font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
+              style={{ backgroundColor: color, color: badgeTextColor }}
+            >
               🕐 {minutes} min
             </span>
             <span className="text-gray-400 text-sm whitespace-nowrap">{localTime}</span>
@@ -72,7 +78,7 @@ export function OrderCard({ order, onReady, lateThreshold, displayMode = "full" 
       </div>
 
       {/* Divider */}
-      <div className={`h-px ${isLate ? "bg-red-700" : "bg-gray-700"}`} />
+      <div className="h-px" style={{ backgroundColor: color, opacity: 0.35 }} />
 
       {/* Items */}
       <div className="flex flex-col gap-3 flex-1">

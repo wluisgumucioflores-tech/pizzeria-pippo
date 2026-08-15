@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import type { SettingsResult } from './types/settings-result.types';
@@ -9,12 +13,36 @@ const SETTINGS_KEYS = [
   'telegram_bot_token',
   'telegram_chat_id',
   'telegram_enabled',
+  'kitchen_stage_warning_minutes',
   'kitchen_late_threshold_minutes',
   'kitchen_display_mode',
+  'kitchen_color_fresh',
+  'kitchen_color_warning',
+  'kitchen_color_late',
   'printer_paper_width',
   'printer_business_name',
   'use_stock',
 ];
+
+const KITCHEN_STAGE_KEYS = [
+  'kitchen_stage_warning_minutes',
+  'kitchen_late_threshold_minutes',
+  'kitchen_color_fresh',
+  'kitchen_color_warning',
+  'kitchen_color_late',
+  'kitchen_display_mode',
+];
+
+const KITCHEN_STAGE_DEFAULTS = {
+  kitchen_stage_warning_minutes: 7,
+  // Mismo default que ya tenía kitchen_late_threshold_minutes antes de esta
+  // feature (migración 027) — se mantiene para no cambiar el comportamiento
+  // de negocios existentes que nunca configuraron nada.
+  kitchen_late_threshold_minutes: 10,
+  kitchen_color_fresh: '#16a34a',
+  kitchen_color_warning: '#d97706',
+  kitchen_color_late: '#dc2626',
+};
 
 @Injectable()
 export class SettingsService {
@@ -33,14 +61,29 @@ export class SettingsService {
       ),
       telegram_chat_id: config.get('telegram_chat_id') ?? '',
       telegram_enabled: config.get('telegram_enabled') === 'true',
+      kitchen_stage_warning_minutes: parseInt(
+        config.get('kitchen_stage_warning_minutes') ??
+          String(KITCHEN_STAGE_DEFAULTS.kitchen_stage_warning_minutes),
+        10,
+      ),
       kitchen_late_threshold_minutes: parseInt(
-        config.get('kitchen_late_threshold_minutes') ?? '10',
+        config.get('kitchen_late_threshold_minutes') ??
+          String(KITCHEN_STAGE_DEFAULTS.kitchen_late_threshold_minutes),
         10,
       ),
       kitchen_display_mode:
         config.get('kitchen_display_mode') === 'pizzas_only'
           ? 'pizzas_only'
           : 'full',
+      kitchen_color_fresh:
+        config.get('kitchen_color_fresh') ??
+        KITCHEN_STAGE_DEFAULTS.kitchen_color_fresh,
+      kitchen_color_warning:
+        config.get('kitchen_color_warning') ??
+        KITCHEN_STAGE_DEFAULTS.kitchen_color_warning,
+      kitchen_color_late:
+        config.get('kitchen_color_late') ??
+        KITCHEN_STAGE_DEFAULTS.kitchen_color_late,
       printer_paper_width: parseInt(
         config.get('printer_paper_width') ?? '58',
         10,
@@ -61,12 +104,35 @@ export class SettingsService {
     const businessId = this.resolveBusinessId(user);
     const paperWidth = dto.printer_paper_width === 80 ? 80 : 58;
 
+    const warningMinutes =
+      dto.kitchen_stage_warning_minutes ??
+      KITCHEN_STAGE_DEFAULTS.kitchen_stage_warning_minutes;
+    const lateMinutes =
+      dto.kitchen_late_threshold_minutes ??
+      KITCHEN_STAGE_DEFAULTS.kitchen_late_threshold_minutes;
+    if (warningMinutes >= lateMinutes) {
+      throw new BadRequestException(
+        'kitchen_stage_warning_minutes debe ser menor que kitchen_late_threshold_minutes',
+      );
+    }
+
     const entries: Array<[string, string]> = [
       ['telegram_chat_id', dto.telegram_chat_id ?? ''],
       ['telegram_enabled', String(dto.telegram_enabled ?? false)],
+      ['kitchen_stage_warning_minutes', String(warningMinutes)],
+      ['kitchen_late_threshold_minutes', String(lateMinutes)],
       [
-        'kitchen_late_threshold_minutes',
-        String(dto.kitchen_late_threshold_minutes ?? 10),
+        'kitchen_color_fresh',
+        dto.kitchen_color_fresh ?? KITCHEN_STAGE_DEFAULTS.kitchen_color_fresh,
+      ],
+      [
+        'kitchen_color_warning',
+        dto.kitchen_color_warning ??
+          KITCHEN_STAGE_DEFAULTS.kitchen_color_warning,
+      ],
+      [
+        'kitchen_color_late',
+        dto.kitchen_color_late ?? KITCHEN_STAGE_DEFAULTS.kitchen_color_late,
       ],
       [
         'kitchen_display_mode',
@@ -117,28 +183,45 @@ export class SettingsService {
   // No RolesGuard in the controller — any authenticated user can read this.
   // Fix for the documented bug: previously app_settings' RLS was admin-only and
   // the cocinero role could never read the configured threshold.
-  async getKitchenLateThresholdMinutes(
-    user: CurrentUserPayload,
-  ): Promise<number> {
+  async getKitchenStageSettings(user: CurrentUserPayload): Promise<{
+    kitchen_stage_warning_minutes: number;
+    kitchen_late_threshold_minutes: number;
+    kitchen_color_fresh: string;
+    kitchen_color_warning: string;
+    kitchen_color_late: string;
+    kitchen_display_mode: 'full' | 'pizzas_only';
+  }> {
     const businessId = this.resolveBusinessId(user);
-    const row = await this.prisma.appSetting.findUnique({
-      where: {
-        businessId_key: { businessId, key: 'kitchen_late_threshold_minutes' },
-      },
+    const rows = await this.prisma.appSetting.findMany({
+      where: { businessId, key: { in: KITCHEN_STAGE_KEYS } },
     });
-    return parseInt(row?.value ?? '10', 10);
-  }
+    const config = new Map(rows.map((r) => [r.key, r.value]));
 
-  // Mismo criterio que el umbral: cualquier rol autenticado puede leerlo,
-  // cocina lo necesita para saber si debe filtrar los items del pedido.
-  async getKitchenDisplayMode(
-    user: CurrentUserPayload,
-  ): Promise<'full' | 'pizzas_only'> {
-    const businessId = this.resolveBusinessId(user);
-    const row = await this.prisma.appSetting.findUnique({
-      where: { businessId_key: { businessId, key: 'kitchen_display_mode' } },
-    });
-    return row?.value === 'pizzas_only' ? 'pizzas_only' : 'full';
+    return {
+      kitchen_stage_warning_minutes: parseInt(
+        config.get('kitchen_stage_warning_minutes') ??
+          String(KITCHEN_STAGE_DEFAULTS.kitchen_stage_warning_minutes),
+        10,
+      ),
+      kitchen_late_threshold_minutes: parseInt(
+        config.get('kitchen_late_threshold_minutes') ??
+          String(KITCHEN_STAGE_DEFAULTS.kitchen_late_threshold_minutes),
+        10,
+      ),
+      kitchen_color_fresh:
+        config.get('kitchen_color_fresh') ??
+        KITCHEN_STAGE_DEFAULTS.kitchen_color_fresh,
+      kitchen_color_warning:
+        config.get('kitchen_color_warning') ??
+        KITCHEN_STAGE_DEFAULTS.kitchen_color_warning,
+      kitchen_color_late:
+        config.get('kitchen_color_late') ??
+        KITCHEN_STAGE_DEFAULTS.kitchen_color_late,
+      kitchen_display_mode:
+        config.get('kitchen_display_mode') === 'pizzas_only'
+          ? 'pizzas_only'
+          : 'full',
+    };
   }
 
   // Usado tanto por el POS/Mesero (catálogo — ver si bloquear productos sin

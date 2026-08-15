@@ -49,13 +49,8 @@ export class SettingsController {
   // No RolesGuard: fix for the RLS bug — cocinero needs to read this (see Fase 3 plan).
   // También devuelve kitchen_display_mode para no sumar otra llamada desde Cocina.
   @Get('kitchen-threshold')
-  async getKitchenThreshold(@CurrentUser() user: CurrentUserPayload) {
-    const [kitchen_late_threshold_minutes, kitchen_display_mode] =
-      await Promise.all([
-        this.settingsService.getKitchenLateThresholdMinutes(user),
-        this.settingsService.getKitchenDisplayMode(user),
-      ]);
-    return { kitchen_late_threshold_minutes, kitchen_display_mode };
+  getKitchenThreshold(@CurrentUser() user: CurrentUserPayload) {
+    return this.settingsService.getKitchenStageSettings(user);
   }
 
   // No RolesGuard: cajero/mesero necesitan saber esto para el catálogo del POS.

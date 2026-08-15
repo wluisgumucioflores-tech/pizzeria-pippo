@@ -1,5 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { SettingsService } from './settings.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
@@ -70,8 +73,12 @@ describe('SettingsService', () => {
         telegram_bot_token: '123456***def',
         telegram_chat_id: '',
         telegram_enabled: false,
+        kitchen_stage_warning_minutes: 7,
         kitchen_late_threshold_minutes: 10,
         kitchen_display_mode: 'full',
+        kitchen_color_fresh: '#16a34a',
+        kitchen_color_warning: '#d97706',
+        kitchen_color_late: '#dc2626',
         printer_paper_width: 58,
         printer_business_name: 'GU PIZZA',
         use_stock: true,
@@ -231,7 +238,7 @@ describe('SettingsService', () => {
     });
   });
 
-  describe('getKitchenLateThresholdMinutes', () => {
+  describe('getKitchenStageSettings', () => {
     it('cualquier usuario autenticado con business_id puede leerlo (fix del bug de RLS)', async () => {
       const cocinero: CurrentUserPayload = {
         id: 'u3',
@@ -241,19 +248,62 @@ describe('SettingsService', () => {
         full_name: 'Cocinero',
         business_id: 'biz1',
       };
-      prisma.appSetting.findUnique.mockResolvedValue({ value: '20' });
+      prisma.appSetting.findMany.mockResolvedValue([
+        { key: 'kitchen_late_threshold_minutes', value: '20' },
+      ]);
 
-      const result = await service.getKitchenLateThresholdMinutes(cocinero);
+      const result = await service.getKitchenStageSettings(cocinero);
 
-      expect(result).toBe(20);
+      expect(result.kitchen_late_threshold_minutes).toBe(20);
     });
 
-    it('devuelve el default 10 si no hay fila', async () => {
-      prisma.appSetting.findUnique.mockResolvedValue(null);
+    it('devuelve los defaults si no hay filas', async () => {
+      prisma.appSetting.findMany.mockResolvedValue([]);
 
-      const result = await service.getKitchenLateThresholdMinutes(admin);
+      const result = await service.getKitchenStageSettings(admin);
 
-      expect(result).toBe(10);
+      expect(result).toEqual({
+        kitchen_stage_warning_minutes: 7,
+        kitchen_late_threshold_minutes: 10,
+        kitchen_color_fresh: '#16a34a',
+        kitchen_color_warning: '#d97706',
+        kitchen_color_late: '#dc2626',
+        kitchen_display_mode: 'full',
+      });
+    });
+  });
+
+  describe('updateSettings — validación de etapas de cocina', () => {
+    it('rechaza si el umbral ámbar no es menor que el rojo', async () => {
+      await expect(
+        service.updateSettings(admin, {
+          telegram_chat_id: '',
+          telegram_enabled: false,
+          kitchen_stage_warning_minutes: 15,
+          kitchen_late_threshold_minutes: 10,
+          printer_paper_width: 58,
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(prisma.appSetting.upsert).not.toHaveBeenCalled();
+    });
+
+    it('guarda los colores y el umbral ámbar cuando son válidos', async () => {
+      await service.updateSettings(admin, {
+        telegram_chat_id: '',
+        telegram_enabled: false,
+        kitchen_stage_warning_minutes: 7,
+        kitchen_late_threshold_minutes: 15,
+        kitchen_color_fresh: '#00ff00',
+        kitchen_color_warning: '#ffaa00',
+        kitchen_color_late: '#ff0000',
+        printer_paper_width: 58,
+      });
+
+      const colorCall = prisma.appSetting.upsert.mock.calls.find(
+        (call) => call[0].where.businessId_key.key === 'kitchen_color_fresh',
+      );
+      expect(colorCall[0].create.value).toBe('#00ff00');
     });
   });
 });

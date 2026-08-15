@@ -820,13 +820,23 @@
     "testSuccess": "Message sent successfully",
     "kitchen": {
       "title": "Kitchen",
-      "description": "Set the time threshold after which an order is marked as delayed.",
-      "thresholdLabel": "Minutes to mark as delayed",
+      "description": "Set the timing and colors for an order's 3 stages on the kitchen screen, and what to show for each order.",
+      "warningLabel": "Minutes to turn amber (warning)",
+      "warningExtra": "Before this time, the order shows in green.",
+      "thresholdLabel": "Minutes to turn red (delayed)",
       "thresholdExtra": "Orders that exceed this time are highlighted in red on the kitchen screen.",
+      "stagesOrderError": "The amber threshold must be less than the red threshold.",
       "displayModeLabel": "What to show on the kitchen screen",
       "displayModeExtra": "\"Pizzas only\" hides drinks and other products, showing only the pizzas in the order and their extras.",
       "displayModeFull": "Full order",
-      "displayModePizzasOnly": "Pizzas only"
+      "displayModePizzasOnly": "Pizzas only",
+      "colorFreshLabel": "Green color",
+      "colorWarningLabel": "Amber color",
+      "colorLateLabel": "Red color",
+      "previewLabel": "Preview",
+      "previewFresh": "Fresh",
+      "previewWarning": "Warning",
+      "previewLate": "Delayed"
     },
     "stock": {
       "title": "Inventory control",
