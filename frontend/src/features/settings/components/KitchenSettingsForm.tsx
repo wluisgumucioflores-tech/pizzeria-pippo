@@ -1,132 +1,220 @@
 "use client";
 
-import { Card, Form, InputNumber, Radio, Button, Typography, Skeleton, ColorPicker, Alert } from "antd";
-import { SaveOutlined } from "@ant-design/icons";
+import { Card, Form, InputNumber, Segmented, Button, Typography, Skeleton, ColorPicker, Alert, Row, Col, Divider, Space } from "antd";
+import { SaveOutlined, EyeOutlined, ClockCircleOutlined, MinusOutlined, PlusOutlined } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
 import { useSettings } from "@/features/settings/hooks/useSettings";
 import { getReadableTextColor } from "@/features/kitchen/constants/kitchen-stage.constants";
 
 const { Title, Text } = Typography;
 
+const PREVIEW_ORDERS = [104, 102, 98];
+
 export function KitchenSettingsForm() {
   const t = useTranslations("settings.kitchen");
-  const tc = useTranslations("common");
   const { settings, loading, saving, handleChange, handleSave } = useSettings();
 
-  if (loading) return <Skeleton active paragraph={{ rows: 3 }} />;
+  if (loading) return <Skeleton active paragraph={{ rows: 6 }} />;
 
   const stagesOrderInvalid =
     settings.kitchen_stage_warning_minutes >= settings.kitchen_late_threshold_minutes;
 
   const previewStages = [
-    { label: t("previewFresh"), color: settings.kitchen_color_fresh, minutes: 3 },
-    { label: t("previewWarning"), color: settings.kitchen_color_warning, minutes: settings.kitchen_stage_warning_minutes },
-    { label: t("previewLate"), color: settings.kitchen_color_late, minutes: settings.kitchen_late_threshold_minutes },
+    { label: t("previewFresh"), color: settings.kitchen_color_fresh, minutesLabel: "0 min" },
+    {
+      label: t("previewWarning"),
+      color: settings.kitchen_color_warning,
+      minutesLabel: `${settings.kitchen_stage_warning_minutes} min`,
+    },
+    {
+      label: t("previewLate"),
+      color: settings.kitchen_color_late,
+      minutesLabel: `${settings.kitchen_late_threshold_minutes}+ min`,
+    },
+  ];
+
+  const colorSwatches = [
+    { key: "kitchen_color_fresh" as const, label: t("colorFreshLabel") },
+    { key: "kitchen_color_warning" as const, label: t("colorWarningLabel") },
+    { key: "kitchen_color_late" as const, label: t("colorLateLabel") },
   ];
 
   return (
-    <Card style={{ maxWidth: 480 }}>
+    <Card>
       <Title level={4} style={{ marginBottom: 4 }}>{t("title")}</Title>
       <Text type="secondary" style={{ display: "block", marginBottom: 24 }}>
         {t("description")}
       </Text>
 
       <Form layout="vertical" onFinish={handleSave}>
-        <Form.Item label={t("warningLabel")} extra={t("warningExtra")}>
-          <InputNumber
-            min={1}
-            max={119}
-            value={settings.kitchen_stage_warning_minutes}
-            onChange={(val) => handleChange("kitchen_stage_warning_minutes", val ?? 7)}
-            addonAfter="min"
-            style={{ width: 140 }}
-          />
-        </Form.Item>
+        <Row gutter={32}>
+          <Col xs={24} md={12}>
+            <Title level={5} style={{ marginBottom: 4 }}>{t("alertTimesTitle")}</Title>
+            <Divider style={{ margin: "0 0 16px" }} />
 
-        <Form.Item label={t("thresholdLabel")} extra={t("thresholdExtra")}>
-          <InputNumber
-            min={2}
-            max={120}
-            value={settings.kitchen_late_threshold_minutes}
-            onChange={(val) => handleChange("kitchen_late_threshold_minutes", val ?? 10)}
-            addonAfter="min"
-            style={{ width: 140 }}
-          />
-        </Form.Item>
+            <Form.Item label={t("warningLabel")} extra={t("warningExtra")}>
+              <MinuteStepper
+                value={settings.kitchen_stage_warning_minutes}
+                min={1}
+                max={119}
+                onChange={(val) => handleChange("kitchen_stage_warning_minutes", val)}
+              />
+            </Form.Item>
 
-        <Form.Item
-          label={t("displayModeLabel")}
-          extra={t("displayModeExtra")}
-        >
-          <Radio.Group
-            value={settings.kitchen_display_mode}
-            onChange={(e) => handleChange("kitchen_display_mode", e.target.value)}
+            <Form.Item label={t("thresholdLabel")} extra={t("thresholdExtra")}>
+              <MinuteStepper
+                value={settings.kitchen_late_threshold_minutes}
+                min={2}
+                max={120}
+                onChange={(val) => handleChange("kitchen_late_threshold_minutes", val)}
+              />
+            </Form.Item>
+
+            {stagesOrderInvalid && (
+              <Alert type="error" showIcon style={{ marginBottom: 16 }} message={t("stagesOrderError")} />
+            )}
+
+            <Title level={5} style={{ marginBottom: 4 }}>{t("displayTitle")}</Title>
+            <Divider style={{ margin: "0 0 16px" }} />
+
+            <Form.Item label={t("displayModeLabel")} extra={t("displayModeExtra")}>
+              <Segmented
+                value={settings.kitchen_display_mode}
+                onChange={(val) => handleChange("kitchen_display_mode", val as string)}
+                options={[
+                  { label: t("displayModeFull"), value: "full" },
+                  { label: t("displayModePizzasOnly"), value: "pizzas_only" },
+                ]}
+              />
+            </Form.Item>
+          </Col>
+
+          <Col xs={24} md={12}>
+            <Card size="small" style={{ background: "#fafafa" }}>
+              <Space align="center" style={{ marginBottom: 16 }}>
+                <EyeOutlined />
+                <Text strong>{t("previewLabel")}</Text>
+              </Space>
+
+              <Space direction="vertical" style={{ width: "100%" }} size={12}>
+                {previewStages.map((stage, i) => (
+                  <div
+                    key={stage.label}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      borderRadius: 10,
+                      padding: "10px 14px",
+                      backgroundColor: stage.color,
+                      color: getReadableTextColor(stage.color),
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 11, opacity: 0.85, fontWeight: 600 }}>
+                        {t("previewOrderNumber", { number: PREVIEW_ORDERS[i] })}
+                      </div>
+                      <div style={{ fontSize: 16, fontWeight: 700 }}>{stage.label}</div>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                        background: "rgba(0,0,0,0.15)",
+                        borderRadius: 999,
+                        padding: "4px 10px",
+                        fontSize: 12,
+                        fontWeight: 600,
+                      }}
+                    >
+                      <ClockCircleOutlined />
+                      {stage.minutesLabel}
+                    </div>
+                  </div>
+                ))}
+              </Space>
+
+              <Divider style={{ margin: "16px 0" }} />
+
+              <Text strong style={{ display: "block", marginBottom: 12 }}>
+                {t("colorsLabel")}
+              </Text>
+              <div style={{ display: "flex", gap: 24 }}>
+                {colorSwatches.map((swatch) => (
+                  <Form.Item key={swatch.key} label={swatch.label} style={{ marginBottom: 0 }}>
+                    <ColorPicker
+                      disabledAlpha
+                      value={settings[swatch.key]}
+                      onChangeComplete={(color) => handleChange(swatch.key, color.toHexString())}
+                    >
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 6,
+                          backgroundColor: settings[swatch.key],
+                          cursor: "pointer",
+                          border: "1px solid rgba(0,0,0,0.1)",
+                        }}
+                      />
+                    </ColorPicker>
+                  </Form.Item>
+                ))}
+              </div>
+            </Card>
+          </Col>
+        </Row>
+
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 24 }}>
+          <Button
+            type="primary"
+            icon={<SaveOutlined />}
+            loading={saving}
+            disabled={stagesOrderInvalid}
+            onClick={handleSave}
           >
-            <Radio.Button value="full">{t("displayModeFull")}</Radio.Button>
-            <Radio.Button value="pizzas_only">{t("displayModePizzasOnly")}</Radio.Button>
-          </Radio.Group>
-        </Form.Item>
-
-        {stagesOrderInvalid && (
-          <Alert type="error" showIcon style={{ marginBottom: 16 }} message={t("stagesOrderError")} />
-        )}
-
-        <div style={{ display: "flex", gap: 24, marginBottom: 16 }}>
-          <Form.Item label={t("colorFreshLabel")} style={{ marginBottom: 0 }}>
-            <ColorPicker
-              value={settings.kitchen_color_fresh}
-              onChangeComplete={(color) => handleChange("kitchen_color_fresh", color.toHexString())}
-            />
-          </Form.Item>
-          <Form.Item label={t("colorWarningLabel")} style={{ marginBottom: 0 }}>
-            <ColorPicker
-              value={settings.kitchen_color_warning}
-              onChangeComplete={(color) => handleChange("kitchen_color_warning", color.toHexString())}
-            />
-          </Form.Item>
-          <Form.Item label={t("colorLateLabel")} style={{ marginBottom: 0 }}>
-            <ColorPicker
-              value={settings.kitchen_color_late}
-              onChangeComplete={(color) => handleChange("kitchen_color_late", color.toHexString())}
-            />
-          </Form.Item>
+            {t("saveButton")}
+          </Button>
         </div>
-
-        <Text type="secondary" style={{ display: "block", marginBottom: 8, fontSize: 12 }}>
-          {t("previewLabel")}
-        </Text>
-        <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
-          {previewStages.map((stage) => (
-            <div
-              key={stage.label}
-              style={{
-                flex: 1,
-                borderRadius: 8,
-                padding: "8px 12px",
-                backgroundColor: stage.color,
-                color: getReadableTextColor(stage.color),
-                fontSize: 12,
-                fontWeight: 600,
-                textAlign: "center",
-              }}
-            >
-              {stage.label}
-              <br />
-              🕐 {stage.minutes} min
-            </div>
-          ))}
-        </div>
-
-        <Button
-          type="primary"
-          icon={<SaveOutlined />}
-          loading={saving}
-          disabled={stagesOrderInvalid}
-          onClick={handleSave}
-        >
-          {tc("save")}
-        </Button>
       </Form>
     </Card>
+  );
+}
+
+function MinuteStepper({
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <Space align="center">
+      <Space.Compact>
+        <Button
+          icon={<MinusOutlined />}
+          disabled={value <= min}
+          onClick={() => onChange(Math.max(min, value - 1))}
+        />
+        <InputNumber
+          min={min}
+          max={max}
+          value={value}
+          onChange={(val) => onChange(val ?? min)}
+          style={{ width: 90 }}
+        />
+        <Button
+          icon={<PlusOutlined />}
+          disabled={value >= max}
+          onClick={() => onChange(Math.min(max, value + 1))}
+        />
+      </Space.Compact>
+      <Text type="secondary">min</Text>
+    </Space>
   );
 }
