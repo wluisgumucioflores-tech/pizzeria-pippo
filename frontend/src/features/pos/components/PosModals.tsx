@@ -21,6 +21,7 @@ interface Props {
   products: Product[];
   promotions: Promotion[];
   useStock: boolean;
+  enableTableNumber: boolean;
   getStockQty: (variantId: string) => number | null;
   cart: ReturnType<typeof usePosCart>;
   paymentValidation: ReturnType<typeof usePaymentValidation>;
@@ -42,7 +43,7 @@ interface Props {
 }
 
 export function PosModals({
-  branchId, branches, products, promotions, useStock, getStockQty, cart, paymentValidation, actions,
+  branchId, branches, products, promotions, useStock, enableTableNumber, getStockQty, cart, paymentValidation, actions,
   getVariantPrice, getPromoLabel, printer, cancelModal, cancelling, onCancelOrder, onCloseCancelModal,
   payModal, paying, onPayOrder, onClosePayModal, addItemsModal, onCloseAddItemsModal, onItemsAdded,
 }: Props) {
@@ -60,6 +61,7 @@ export function PosModals({
       <PaymentModal
         open={actions.paymentModal}
         total={cart.total}
+        enableTableNumber={enableTableNumber}
         onClose={() => { actions.setPaymentModal(false); actions.setPaymentMethod(null); actions.setPaymentProvider(null); }}
         onConfirm={actions.handlePaymentConfirm}
       />

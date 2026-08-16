@@ -25,7 +25,7 @@ export default function PosPage() {
   const t = useTranslations("pos");
   const { identity, branches, effectiveBranchId, isAdminChoosingBranch, selectBranch, handleLogout } = usePosIdentity();
   const { broadcast } = usePosBroadcast();
-  const { products, promotions, useStock, loading, getVariantPrice, getPromoLabel, getStockQty, refresh: refreshProducts } = usePosProducts(effectiveBranchId ?? undefined);
+  const { products, promotions, useStock, enableTableNumber, loading, getVariantPrice, getPromoLabel, getStockQty, refresh: refreshProducts } = usePosProducts(effectiveBranchId ?? undefined);
   const cart = usePosCart(promotions, effectiveBranchId ?? undefined, broadcast, getStockQty);
   const [activeTab, setActiveTab] = useState<PosTab>("sale");
   const [refreshing, setRefreshing] = useState(false);
@@ -135,6 +135,7 @@ export default function PosPage() {
         products={products}
         promotions={promotions}
         useStock={useStock}
+        enableTableNumber={enableTableNumber}
         getStockQty={getStockQty}
         cart={cart}
         paymentValidation={paymentValidation}

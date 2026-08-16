@@ -1,12 +1,13 @@
 "use client";
 
 import { Tabs } from "antd";
-import { BellOutlined, RobotOutlined, FireOutlined, PrinterOutlined, MobileOutlined, DatabaseOutlined } from "@ant-design/icons";
+import { BellOutlined, RobotOutlined, FireOutlined, PrinterOutlined, MobileOutlined, DatabaseOutlined, ShopOutlined } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
 import { TelegramSettingsForm } from "@/features/settings/components/TelegramSettingsForm";
 import { KitchenSettingsForm } from "@/features/settings/components/KitchenSettingsForm";
 import { PrinterSettingsForm } from "@/features/settings/components/PrinterSettingsForm";
 import { StockSettingsForm } from "@/features/settings/components/StockSettingsForm";
+import { PosSettingsForm } from "@/features/settings/components/PosSettingsForm";
 import { BotSettingsForm } from "@/features/telegram-bot/components/BotSettingsForm";
 import { AuthorizedChatsTable } from "@/features/telegram-bot/components/AuthorizedChatsTable";
 import { ChatModal } from "@/features/telegram-bot/components/ChatModal";
@@ -98,6 +99,11 @@ export default function SettingsPage() {
             key: "stock",
             label: <span><DatabaseOutlined /> {t("stock")}</span>,
             children: <StockSettingsForm />,
+          },
+          {
+            key: "pos",
+            label: <span><ShopOutlined /> {t("pos")}</span>,
+            children: <PosSettingsForm />,
           },
         ]}
       />

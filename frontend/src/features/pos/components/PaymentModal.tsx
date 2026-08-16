@@ -21,6 +21,7 @@ type OrderType = "dine_in" | "takeaway" | "delivery" | "pedidos_ya";
 interface Props {
   open: boolean;
   total: number;
+  enableTableNumber: boolean;
   onClose: () => void;
   onConfirm: (
     orderType: OrderType,
@@ -28,10 +29,11 @@ interface Props {
     paymentProvider: string | null,
     payments: SplitPayment[] | null,
     notes: string | null,
+    tableNumber: string | null,
   ) => void;
 }
 
-export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
+export function PaymentModal({ open, total, enableTableNumber, onClose, onConfirm }: Props) {
   const isMobile = useIsMobile();
   const t = useTranslations("pos");
   const tm = useTranslations("pos.paymentModal");
@@ -41,6 +43,7 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
   const [onlinePayment, setOnlinePayment] = useState(false);
   const [cashAmount, setCashAmount] = useState(0);
   const [notes, setNotes] = useState("");
+  const [tableNumber, setTableNumber] = useState("");
 
   const qrAmount = Math.round((total - cashAmount) * 100) / 100;
 
@@ -51,6 +54,7 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
     setOnlinePayment(false);
     setCashAmount(0);
     setNotes("");
+    setTableNumber("");
   };
 
   const handleClose = () => {
@@ -100,7 +104,7 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
             { method: "qr", amount: qrAmount },
           ]
         : null;
-    onConfirm(orderType, onlinePayment ? "online" : paymentMethod, onlinePayment ? ONLINE_PROVIDER : null, payments, notes.trim() || null);
+    onConfirm(orderType, onlinePayment ? "online" : paymentMethod, onlinePayment ? ONLINE_PROVIDER : null, payments, notes.trim() || null, tableNumber.trim() || null);
     reset();
   };
 
@@ -156,6 +160,14 @@ export function PaymentModal({ open, total, onClose, onConfirm }: Props) {
       </div>
       {!orderType && (
         <Text type="secondary" className="text-xs mt-1 block">{tm("selectToContinue")}</Text>
+      )}
+      {enableTableNumber && orderType === "dine_in" && (
+        <Input
+          value={tableNumber}
+          onChange={(e) => setTableNumber(e.target.value)}
+          placeholder={tm("tableNumberPlaceholder")}
+          className="mt-2"
+        />
       )}
     </div>
   );

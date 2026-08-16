@@ -497,6 +497,7 @@
       "cashReceived": "CASH RECEIVED",
       "remainingQr": "REMAINING QR",
       "bothMustBeGreater": "Both amounts must be greater than 0",
+      "tableNumberPlaceholder": "E.g: Table 5",
       "note": "Order note",
       "notePlaceholder": "E.g: no onion, table 5, for John..."
     },
@@ -814,7 +815,8 @@
       "bot": "AI Bot",
       "printer": "Printer",
       "devices": "Devices",
-      "stock": "Inventory"
+      "stock": "Inventory",
+      "pos": "Cashier"
     },
     "testConnection": "Test connection",
     "testSuccess": "Message sent successfully",
@@ -849,6 +851,12 @@
       "enabledLabel": "Track stock and ingredients",
       "enabledExtra": "On: the POS blocks resale products with no stock loaded and sales automatically deduct ingredients/stock. Off: everything sells freely, with no validation or deduction.",
       "disabledWarning": "With stock tracking off, the POS won't block any product for lack of stock and sales won't deduct ingredients or stock."
+    },
+    "pos": {
+      "title": "Cashier",
+      "description": "Point of sale (cashier) options.",
+      "enableTableNumberLabel": "Ask for table number when checking out",
+      "enableTableNumberExtra": "On: when confirming a \"Dine in\" order, the cashier can enter the table, same as in the waiter app. Off (recommended if your venue has no tables): the field doesn't show."
     },
     "printer": {
       "title": "Receipt printer",

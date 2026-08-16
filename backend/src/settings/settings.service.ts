@@ -22,6 +22,7 @@ const SETTINGS_KEYS = [
   'printer_paper_width',
   'printer_business_name',
   'use_stock',
+  'pos_enable_table_number',
 ];
 
 const KITCHEN_STAGE_KEYS = [
@@ -94,6 +95,9 @@ export class SettingsService {
       // feature — mantiene el comportamiento actual (stock activado) en vez
       // de desactivarlo silenciosamente.
       use_stock: config.get('use_stock') !== 'false',
+      // Opt-in: negocios sin mesas (delivery/takeaway puro) no quieren este
+      // campo en el cajero, así que arranca desactivado salvo que se active.
+      pos_enable_table_number: config.get('pos_enable_table_number') === 'true',
     };
   }
 
@@ -144,6 +148,10 @@ export class SettingsService {
         dto.printer_business_name?.trim() || 'GU PIZZA',
       ],
       ['use_stock', String(dto.use_stock ?? true)],
+      [
+        'pos_enable_table_number',
+        String(dto.pos_enable_table_number ?? false),
+      ],
     ];
 
     if (dto.telegram_bot_token && !dto.telegram_bot_token.includes('***')) {
@@ -234,6 +242,18 @@ export class SettingsService {
       where: { businessId_key: { businessId, key: 'use_stock' } },
     });
     return row?.value !== 'false';
+  }
+
+  // Usado por el POS/Mesero para saber si mostrar el campo "mesa" al cobrar.
+  // No RolesGuard en el controller, mismo criterio que isStockTrackingEnabled.
+  async isPosTableNumberEnabled(user: CurrentUserPayload): Promise<boolean> {
+    const businessId = this.resolveBusinessId(user);
+    const row = await this.prisma.appSetting.findUnique({
+      where: {
+        businessId_key: { businessId, key: 'pos_enable_table_number' },
+      },
+    });
+    return row?.value === 'true';
   }
 
   // Generic key-value store for config that doesn't fit SettingsResult's

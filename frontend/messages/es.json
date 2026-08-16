@@ -497,6 +497,7 @@
       "cashReceived": "EFECTIVO RECIBIDO",
       "remainingQr": "RESTANTE QR",
       "bothMustBeGreater": "Ambos montos deben ser mayores a 0",
+      "tableNumberPlaceholder": "Ej: Mesa 5",
       "note": "Nota de venta",
       "notePlaceholder": "Ej: sin cebolla, mesa 5, para Juan..."
     },
@@ -814,7 +815,8 @@
       "bot": "Bot de IA",
       "printer": "Impresora",
       "devices": "Dispositivos",
-      "stock": "Inventario"
+      "stock": "Inventario",
+      "pos": "Cajero"
     },
     "testConnection": "Probar conexión",
     "testSuccess": "Mensaje enviado correctamente",
@@ -849,6 +851,12 @@
       "enabledLabel": "Controlar stock e insumos",
       "enabledExtra": "Activado: el POS bloquea productos de reventa sin stock cargado y las ventas descuentan insumos/stock automáticamente. Desactivado: se vende libremente, sin validar ni descontar nada.",
       "disabledWarning": "Con el control de stock desactivado, el POS no va a bloquear ningún producto por falta de stock y las ventas no van a descontar insumos ni stock."
+    },
+    "pos": {
+      "title": "Cajero",
+      "description": "Opciones del punto de venta (cajero).",
+      "enableTableNumberLabel": "Pedir número de mesa al cobrar",
+      "enableTableNumberExtra": "Activado: al confirmar un pedido \"Para comer aquí\" el cajero puede indicar la mesa, igual que en Mesero. Desactivado (recomendado si tu local no usa mesas): el campo no aparece."
     },
     "printer": {
       "title": "Impresora de tickets",

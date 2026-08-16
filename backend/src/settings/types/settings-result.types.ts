@@ -13,4 +13,5 @@ export interface SettingsResult {
   printer_paper_width: number;
   printer_business_name: string;
   use_stock: boolean;
+  pos_enable_table_number: boolean;
 }

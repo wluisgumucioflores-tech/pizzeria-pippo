@@ -33,6 +33,7 @@ export function usePosPageActions({
   const [paymentProvider, setPaymentProvider] = useState<string | null>(null);
   const [payments, setPayments] = useState<SplitPayment[] | null>(null);
   const [saleNotes, setSaleNotes] = useState<string | null>(null);
+  const [saleTableNumber, setSaleTableNumber] = useState<string | null>(null);
   const [ticket, setTicket] = useState<TicketData | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
@@ -77,11 +78,13 @@ export function usePosPageActions({
     provider: string | null,
     splitPayments: SplitPayment[] | null,
     notes: string | null,
+    tableNumber: string | null,
   ) => {
     setPaymentMethod(method);
     setPaymentProvider(provider);
     setPayments(splitPayments);
     setSaleNotes(notes);
+    setSaleTableNumber(tableNumber);
     cart.setOrderType(orderType);
     setIdempotencyKey(generateUUID());
     setPaymentModal(false);
@@ -101,7 +104,7 @@ export function usePosPageActions({
     const timeout = setTimeout(() => controller.abort(), 15000);
     setConfirmLoading(true);
     try {
-      const result = await PosService.confirmSale(branchId, cart.discountedCart, cart.total, paymentMethod, paymentProvider, cart.orderType, controller.signal, idempotencyKey ?? undefined, payments ?? undefined, saleNotes);
+      const result = await PosService.confirmSale(branchId, cart.discountedCart, cart.total, paymentMethod, paymentProvider, cart.orderType, controller.signal, idempotencyKey ?? undefined, payments ?? undefined, saleNotes, saleTableNumber);
 
       if (result.ok) {
         broadcast("ORDER_COMPLETE");
@@ -112,8 +115,9 @@ export function usePosPageActions({
         setPayments(null);
         setIdempotencyKey(null);
         setActiveTab("sale");
-        setTicket({ orderId: result.order_id!, dailyNumber: result.daily_number!, items: cart.discountedCart, total: cart.total, paymentMethod, paymentProvider, payments, orderType: cart.orderType, notes: saleNotes });
+        setTicket({ orderId: result.order_id!, dailyNumber: result.daily_number!, items: cart.discountedCart, total: cart.total, paymentMethod, paymentProvider, payments, orderType: cart.orderType, notes: saleNotes, tableNumber: saleTableNumber });
         setSaleNotes(null);
+        setSaleTableNumber(null);
         cart.clearCart();
         fetchDayOrders(branchId);
         refreshProducts();

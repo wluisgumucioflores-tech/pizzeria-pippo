@@ -38,18 +38,20 @@ export const PosService = {
     };
   },
 
-  async getProductsAndPromotions(branchId: string): Promise<{ products: Product[]; promotions: Promotion[]; useStock: boolean }> {
+  async getProductsAndPromotions(branchId: string): Promise<{ products: Product[]; promotions: Promotion[]; useStock: boolean; enableTableNumber: boolean }> {
     const today = todayInBolivia();
-    const [productsRes, promoRes, stockRes] = await Promise.all([
+    const [productsRes, promoRes, stockRes, tableNumberRes] = await Promise.all([
       nestFetch(API_ENDPOINTS.products.posCatalog(branchId)),
       nestFetch(API_ENDPOINTS.promotions.forPos(branchId, today)),
       nestFetch(API_ENDPOINTS.settings.stock),
+      nestFetch(API_ENDPOINTS.settings.posTableNumber),
     ]);
-    const [productsData, promoData, stockData] = await Promise.all([productsRes.json(), promoRes.json(), stockRes.json()]);
+    const [productsData, promoData, stockData, tableNumberData] = await Promise.all([productsRes.json(), promoRes.json(), stockRes.json(), tableNumberRes.json()]);
     return {
       products: Array.isArray(productsData) ? productsData : [],
       promotions: Array.isArray(promoData) ? promoData : [],
       useStock: stockRes.ok ? stockData.use_stock !== false : true,
+      enableTableNumber: tableNumberRes.ok ? tableNumberData.pos_enable_table_number === true : false,
     };
   },
 

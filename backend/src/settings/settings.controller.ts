@@ -61,6 +61,15 @@ export class SettingsController {
       .then((use_stock) => ({ use_stock }));
   }
 
+  // No RolesGuard: el cajero necesita saber esto para mostrar/ocultar el
+  // campo de mesa en el cobro.
+  @Get('pos-table-number')
+  getPosTableNumberEnabled(@CurrentUser() user: CurrentUserPayload) {
+    return this.settingsService
+      .isPosTableNumberEnabled(user)
+      .then((pos_enable_table_number) => ({ pos_enable_table_number }));
+  }
+
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Post('test')

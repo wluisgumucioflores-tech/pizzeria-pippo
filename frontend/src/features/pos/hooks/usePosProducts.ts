@@ -20,6 +20,7 @@ interface PosCache {
   products: Product[];
   promotions: Promotion[];
   useStock: boolean;
+  enableTableNumber: boolean;
 }
 
 function getCached(branchId: string): PosCache | null {
@@ -35,9 +36,9 @@ function getCached(branchId: string): PosCache | null {
   }
 }
 
-function setCache(branchId: string, products: Product[], promotions: Promotion[], useStock: boolean) {
+function setCache(branchId: string, products: Product[], promotions: Promotion[], useStock: boolean, enableTableNumber: boolean) {
   try {
-    const payload: PosCache = { date: todayInBolivia(), branchId, cachedAt: Date.now(), products, promotions, useStock };
+    const payload: PosCache = { date: todayInBolivia(), branchId, cachedAt: Date.now(), products, promotions, useStock, enableTableNumber };
     sessionStorage.setItem("pos_cache", JSON.stringify(payload));
   } catch {
     // sessionStorage full or unavailable — continue without cache
@@ -48,6 +49,7 @@ export function usePosProducts(branchId: string | undefined) {
   const [products, setProducts] = useState<Product[]>([]);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [useStock, setUseStock] = useState(true);
+  const [enableTableNumber, setEnableTableNumber] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const fetchData = useCallback(async (id: string, skipCache = false) => {
@@ -56,6 +58,7 @@ export function usePosProducts(branchId: string | undefined) {
       setProducts(cached.products);
       setPromotions(cached.promotions);
       setUseStock(cached.useStock);
+      setEnableTableNumber(cached.enableTableNumber);
     } else {
       setLoading(true);
     }
@@ -63,7 +66,8 @@ export function usePosProducts(branchId: string | undefined) {
     setProducts(result.products);
     setPromotions(result.promotions);
     setUseStock(result.useStock);
-    setCache(id, result.products, result.promotions, result.useStock);
+    setEnableTableNumber(result.enableTableNumber);
+    setCache(id, result.products, result.promotions, result.useStock, result.enableTableNumber);
     setLoading(false);
   }, []);
 
@@ -128,5 +132,5 @@ export function usePosProducts(branchId: string | undefined) {
     return null;
   }, [products, useStock]);
 
-  return { products, promotions, useStock, loading, getVariantPrice, getPromoLabel, getStockQty, refresh };
+  return { products, promotions, useStock, enableTableNumber, loading, getVariantPrice, getPromoLabel, getStockQty, refresh };
 }

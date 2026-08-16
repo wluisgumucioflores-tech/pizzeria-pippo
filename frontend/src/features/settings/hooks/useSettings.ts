@@ -21,6 +21,7 @@ export function useSettings() {
     printer_paper_width: 58,
     printer_business_name: "GU PIZZA",
     use_stock: true,
+    pos_enable_table_number: false,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

@@ -64,4 +64,8 @@ export class UpdateSettingsDto {
   @IsOptional()
   @IsBoolean()
   use_stock?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  pos_enable_table_number?: boolean;
 }
