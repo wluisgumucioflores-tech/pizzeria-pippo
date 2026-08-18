@@ -23,7 +23,8 @@ export interface TopProduct {
   variant_id: string;
   product_name: string;
   variant_name: string;
-  category: string;
+  category: string | null;
+  category_id: string | null;
   qty: number;
   revenue: number;
 }
@@ -50,7 +51,7 @@ export interface OrderItem {
   price_edited: boolean;
   product_variants: {
     name: string;
-    products: { name: string; category: string } | null;
+    products: { name: string; category: string | null; category_id: string | null } | null;
   } | null;
 }
 export interface OrderPayment {

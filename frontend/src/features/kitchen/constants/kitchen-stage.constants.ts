@@ -6,7 +6,7 @@ export const DEFAULT_STAGE_SETTINGS: KitchenStageSettings = {
   kitchen_color_fresh: "#16a34a",
   kitchen_color_warning: "#d97706",
   kitchen_color_late: "#dc2626",
-  kitchen_display_mode: "full",
+  kitchen_visible_category_ids: [],
 };
 
 export type KitchenStage = "fresh" | "warning" | "late";

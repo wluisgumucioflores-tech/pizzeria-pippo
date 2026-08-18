@@ -15,7 +15,7 @@ interface ListProductsParams {
   page?: number;
   pageSize?: number;
   search?: string;
-  category?: string | null;
+  category_id?: string | null;
 }
 
 interface ListProductsResult {
@@ -25,12 +25,12 @@ interface ListProductsResult {
 
 export const ProductsService = {
   async getProducts(params: ListProductsParams = {}): Promise<ListProductsResult> {
-    const { showInactive = false, page = 1, pageSize = 10, search, category } = params;
+    const { showInactive = false, page = 1, pageSize = 10, search, category_id } = params;
 
     const qs = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
     if (showInactive) qs.set("showInactive", "true");
     if (search) qs.set("search", search);
-    if (category) qs.set("category", category);
+    if (category_id) qs.set("category_id", category_id);
     const res = await nestFetch(API_ENDPOINTS.products.list(qs.toString()));
     if (!res.ok) return { data: [], total: 0 };
     return res.json();
@@ -147,7 +147,7 @@ export const ProductsService = {
       }));
     return {
       name: step1Data.name,
-      category: step1Data.category,
+      category_id: step1Data.category_id,
       description: step1Data.description,
       image_url: imageUrl,
       product_type: step1Data.product_type,

@@ -8,6 +8,6 @@ export const DisplayService = {
     // needs to group by category, same as the old Supabase query.
     return (data as unknown as DisplayProduct[])
       .slice()
-      .sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
+      .sort((a, b) => (a.category_id ?? "").localeCompare(b.category_id ?? "") || a.name.localeCompare(b.name));
   },
 };

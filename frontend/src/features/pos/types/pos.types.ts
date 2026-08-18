@@ -13,7 +13,8 @@ export interface Variant {
 export interface Product {
   id: string;
   name: string;
-  category: string;
+  category: string | null;
+  category_id: string | null;
   description: string;
   image_url: string;
   is_active: boolean;

@@ -32,8 +32,8 @@ export function useProducts() {
 
   const { data, isLoading: loading, mutate } = useSWR(
     swrKey,
-    ([, showInactive, page, search, category]) =>
-      ProductsService.getProducts({ showInactive, page, pageSize: PAGE_SIZE, search: search || undefined, category }),
+    ([, showInactive, page, search, category_id]) =>
+      ProductsService.getProducts({ showInactive, page, pageSize: PAGE_SIZE, search: search || undefined, category_id }),
     {
       revalidateOnFocus: false,
       dedupingInterval: DEDUP_INTERVAL,

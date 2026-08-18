@@ -14,7 +14,7 @@ export function useProductForm(onSuccess: () => void) {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [imageUrl, setImageUrl] = useState<string>("");
-  const [step1Data, setStep1Data] = useState<Step1Data>({ name: "", category: "", description: "", product_type: "made" });
+  const [step1Data, setStep1Data] = useState<Step1Data>({ name: "", category_id: null, description: "", product_type: "made" });
   const [variantTypeOptions, setVariantTypeOptions] = useState<VariantTypeOption[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [formStep1] = Form.useForm();
@@ -35,7 +35,7 @@ export function useProductForm(onSuccess: () => void) {
   const resetForm = () => {
     setCurrentStep(0);
     setImageUrl("");
-    setStep1Data({ name: "", category: "", description: "", product_type: "made" });
+    setStep1Data({ name: "", category_id: null, description: "", product_type: "made" });
     formStep1.resetFields();
     productVariants.resetVariants();
   };
@@ -65,14 +65,14 @@ export function useProductForm(onSuccess: () => void) {
 
     formStep1.setFieldsValue({
       name: record.name,
-      category: record.category,
+      category_id: record.category_id,
       description: record.description,
       product_type: productType,
     });
 
     setStep1Data({
       name: record.name,
-      category: record.category,
+      category_id: record.category_id,
       description: record.description ?? "",
       product_type: productType,
     });

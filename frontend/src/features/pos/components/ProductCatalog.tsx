@@ -4,15 +4,10 @@ import { useState } from "react";
 import { Tag, Typography, Empty, Spin, Button, Input } from "antd";
 import NextImage from "next/image";
 import { useTranslations } from "next-intl";
+import { useCategoryOptions } from "@/features/categories/hooks/useCategoryOptions";
 import type { Product } from "../types/pos.types";
 
 const { Text } = Typography;
-
-const CATEGORY_COLORS: Record<string, string> = {
-  pizza: "red",
-  bebida: "blue",
-  otro: "green",
-};
 
 interface Props {
   products: Product[];
@@ -31,12 +26,10 @@ export function ProductCatalog({ products, loading, branchId, useStock, getVaria
   const [filterCategory, setFilterCategory] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const t = useTranslations("pos");
-  const CATEGORY_OPTIONS = [
-    { value: "all", label: t("allCategories") },
-    { value: "pizza", label: t("catalog.categories.pizza") },
-    { value: "bebida", label: t("catalog.categories.bebida") },
-    { value: "otro", label: t("catalog.categories.otro") },
-  ];
+  const { options: categoryOptions } = useCategoryOptions();
+  const CATEGORY_OPTIONS = [{ value: "all", label: t("allCategories") }, ...categoryOptions];
+  const categoryLabel = (categoryId: string | null) =>
+    categoryOptions.find((c) => c.value === categoryId)?.label ?? "—";
 
   const isResaleVariant = (v: Product["product_variants"][0]) =>
     !v.recipes?.length && v.stock_quantity !== undefined;
@@ -56,7 +49,7 @@ export function ProductCatalog({ products, loading, branchId, useStock, getVaria
 
   const baseFiltered = filterCategory === "all"
     ? products
-    : products.filter((p) => p.category === filterCategory);
+    : products.filter((p) => p.category_id === filterCategory);
 
   const searched = searchTerm.trim()
     ? baseFiltered.filter((p) => p.name.toLowerCase().includes(searchTerm.trim().toLowerCase()))
@@ -140,11 +133,11 @@ export function ProductCatalog({ products, loading, branchId, useStock, getVaria
                       <NextImage src={product.image_url} alt={product.name} width={300} height={130} unoptimized style={{ width: "100%", height: 130, objectFit: "cover", display: "block" }} />
                     ) : (
                       <div style={{ width: "100%", height: 130, background: "linear-gradient(135deg, #fff7ed, #fed7aa)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44 }}>
-                        {product.category === "pizza" ? "🍕" : product.category === "bebida" ? "🥤" : "🍽️"}
+                        🍽️
                       </div>
                     )}
                     <div style={{ position: "absolute", top: 8, left: 8 }}>
-                      <Tag color={CATEGORY_COLORS[product.category]} style={{ margin: 0, fontSize: 11 }}>{product.category}</Tag>
+                      <Tag style={{ margin: 0, fontSize: 11 }}>{categoryLabel(product.category_id)}</Tag>
                     </div>
                     {promoLabel && (
                       <div style={{ position: "absolute", top: 8, right: 8 }}>

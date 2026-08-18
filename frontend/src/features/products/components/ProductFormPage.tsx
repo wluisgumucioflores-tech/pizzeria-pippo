@@ -62,7 +62,6 @@ export function ProductFormPage({ editing }: Props) {
           form={form.formStep1}
           uploading={form.uploading}
           imageUrl={form.imageUrl}
-          step1Data={form.step1Data}
           onImageUpload={form.handleImageUpload}
           onNext={() =>
             form.formStep1.validateFields().then((values) => {

@@ -10,17 +10,17 @@ const CATEGORY_COLORS: Record<string, string> = { pizza: "red", bebida: "blue", 
 const CATEGORY_BG: Record<string, string> = { pizza: "#fef2f2", bebida: "#eff6ff", otro: "#f0fdf4" };
 const CATEGORY_EMOJI: Record<string, string> = { pizza: "🍕", bebida: "🥤", otro: "🍽️" };
 
-function CategoryPlaceholder({ category, size = 220 }: { category: string; size?: number }) {
+function CategoryPlaceholder({ category, size = 220 }: { category: string | null; size?: number }) {
   return (
-    <div style={{ width: size, height: size, borderRadius: 12, background: CATEGORY_BG[category] ?? "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <span style={{ fontSize: size * 0.35, lineHeight: 1 }}>{CATEGORY_EMOJI[category] ?? "🍽️"}</span>
+    <div style={{ width: size, height: size, borderRadius: 12, background: (category && CATEGORY_BG[category]) ?? "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <span style={{ fontSize: size * 0.35, lineHeight: 1 }}>{(category && CATEGORY_EMOJI[category]) ?? "🍽️"}</span>
     </div>
   );
 }
 
 interface Props {
   name: string;
-  category: string;
+  category: string | null;
   imageUrl: string;
   description: string;
   isActive: boolean;
@@ -41,7 +41,7 @@ export function ProductImageCard({ name, category, imageUrl, description, isActi
         <div style={{ textAlign: "center" }}>
           <Title level={3} style={{ margin: 0 }}>{name}</Title>
           <Space style={{ marginTop: 8 }}>
-            <Tag color={CATEGORY_COLORS[category] ?? "default"} style={{ fontSize: 13 }}>{category}</Tag>
+            <Tag color={(category && CATEGORY_COLORS[category]) ?? "default"} style={{ fontSize: 13 }}>{category ?? "—"}</Tag>
             {isActive ? <Badge status="success" text={t("activeBadge")} /> : <Badge status="default" text={t("inactiveTag")} />}
           </Space>
         </div>

@@ -3,7 +3,7 @@
 import { Button, Typography } from "antd";
 import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/lib/useIsMobile";
-import { getCategoryOptions } from "../constants/product.constants";
+import { useCategoryOptions } from "@/features/categories/hooks/useCategoryOptions";
 
 const { Text } = Typography;
 
@@ -15,7 +15,7 @@ interface Props {
 export function ProductsCategoryFilters({ filterCategory, onFilterCategory }: Props) {
   const isMobile = useIsMobile();
   const t = useTranslations("products");
-  const CATEGORY_OPTIONS = getCategoryOptions(t);
+  const { options: CATEGORY_OPTIONS } = useCategoryOptions();
 
   return (
     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>

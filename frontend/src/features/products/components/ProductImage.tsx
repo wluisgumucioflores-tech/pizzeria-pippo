@@ -3,7 +3,7 @@ import { CategoryIcon } from "./CategoryIcon";
 
 interface Props {
   url: string | null;
-  category: string;
+  category: string | null;
   width?: number;
   height?: number;
 }
@@ -23,7 +23,7 @@ export function ProductImage({ url, category, width = 48, height = 48 }: Props) 
   return (
     <div style={{
       width, height, borderRadius: 8,
-      background: CATEGORY_BG[category] ?? "#f3f4f6",
+      background: (category && CATEGORY_BG[category]) ?? "#f3f4f6",
       display: "flex", alignItems: "center", justifyContent: "center",
     }}>
       <CategoryIcon category={category} size={width * 0.45} />

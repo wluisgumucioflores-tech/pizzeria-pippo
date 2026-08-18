@@ -13,7 +13,7 @@ export interface MeseroCartItem {
   unit_price: number;
   product_name: string;
   variant_name: string;
-  category: string;
+  category: string | null;
   extras: MeseroExtra[];
   flavors?: FlavorItem[];
 }

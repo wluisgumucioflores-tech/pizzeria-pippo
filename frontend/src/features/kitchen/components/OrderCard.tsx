@@ -27,10 +27,10 @@ export function OrderCard({
   const isLate = stage === "late";
   const localTime = formatTimeBolivia(order.created_at);
   const orderLabel = `#${String(order.daily_number).padStart(2, "0")}`;
-  const visibleItems =
-    stageSettings.kitchen_display_mode === "pizzas_only"
-      ? order.order_items.filter((item) => item.product_variants?.products?.category === "pizza")
-      : order.order_items;
+  const visibleItems = stageSettings.kitchen_visible_category_ids.length > 0
+    ? order.order_items.filter((item) =>
+        stageSettings.kitchen_visible_category_ids.includes(item.product_variants?.products?.category_id ?? ""))
+    : order.order_items;
 
   return (
     <div
@@ -83,7 +83,7 @@ export function OrderCard({
       {/* Items */}
       <div className="flex flex-col gap-3 flex-1">
         {visibleItems.length === 0 && (
-          <p className="text-gray-500 text-base italic">Sin pizzas en este pedido</p>
+          <p className="text-gray-500 text-base italic">Sin productos visibles en este pedido</p>
         )}
         {visibleItems.map((item, i) => {
           const qty = item.qty_physical ?? item.qty;

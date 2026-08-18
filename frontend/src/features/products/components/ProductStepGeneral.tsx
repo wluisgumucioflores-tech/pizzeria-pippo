@@ -4,9 +4,9 @@ import { Form, Input, Select, Button, Upload, Typography, Row, Col } from "antd"
 import { UploadOutlined } from "@ant-design/icons";
 import type { FormInstance } from "antd";
 import { useTranslations } from "next-intl";
-import { getCategoryOptions } from "../constants/product.constants";
+import { useCategoryOptions } from "@/features/categories/hooks/useCategoryOptions";
 import { ProductImage } from "./ProductImage";
-import type { Step1Data, ProductType } from "../types/product.types";
+import type { ProductType } from "../types/product.types";
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -16,16 +16,15 @@ interface Props {
   form: FormInstance;
   uploading: boolean;
   imageUrl: string;
-  step1Data: Step1Data;
   onImageUpload: (file: File) => Promise<boolean>;
   onNext: () => void;
 }
 
-export function ProductStepGeneral({ form, uploading, imageUrl, step1Data, onImageUpload, onNext }: Props) {
+export function ProductStepGeneral({ form, uploading, imageUrl, onImageUpload, onNext }: Props) {
   const selectedProductType = useWatch("product_type", form);
   const t = useTranslations("products");
   const tf = useTranslations("products.form");
-  const CATEGORY_OPTIONS = getCategoryOptions(t);
+  const { options: CATEGORY_OPTIONS } = useCategoryOptions();
   const PRODUCT_TYPE_OPTIONS: { value: ProductType; icon: string; label: string; description: string }[] = [
     { value: "made", icon: "🍳", label: tf("madeLabel"), description: tf("madeDesc") },
     { value: "resale", icon: "📦", label: tf("resaleLabel"), description: tf("resaleDesc") },
@@ -43,7 +42,7 @@ export function ProductStepGeneral({ form, uploading, imageUrl, step1Data, onIma
               </Form.Item>
             </Col>
             <Col span={10}>
-              <Form.Item label={t("category")} name="category" rules={[{ required: true, message: tf("required") }]}>
+              <Form.Item label={t("category")} name="category_id" rules={[{ required: true, message: tf("required") }]}>
                 <Select options={CATEGORY_OPTIONS} placeholder={tf("categoryPlaceholder")} />
               </Form.Item>
             </Col>
@@ -89,7 +88,7 @@ export function ProductStepGeneral({ form, uploading, imageUrl, step1Data, onIma
         <Col span={10}>
           <Form.Item label={t("image")}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "16px", background: "#f9fafb", borderRadius: 10, border: "1px solid #e5e7eb", minHeight: 200 }}>
-              <ProductImage url={imageUrl} category={step1Data.category} width={140} height={140} />
+              <ProductImage url={imageUrl} category={null} width={140} height={140} />
               <Upload beforeUpload={onImageUpload} showUploadList={false} accept="image/*">
                 <Button icon={<UploadOutlined />} loading={uploading}>
                   {uploading ? tf("uploading") : tf("uploadImage")}

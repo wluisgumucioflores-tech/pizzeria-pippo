@@ -34,7 +34,7 @@ export interface Variant {
 
 export interface Step1Data {
   name: string;
-  category: string;
+  category_id: string | null;
   description: string;
   product_type: ProductType;
 }
@@ -78,7 +78,7 @@ export interface VariantWithPrices {
 export interface ProductDetail {
   id: string;
   name: string;
-  category: string;
+  category: string | null;
   description: string;
   image_url: string;
   is_active: boolean;

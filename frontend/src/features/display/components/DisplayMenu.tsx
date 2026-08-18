@@ -2,13 +2,8 @@
 
 import NextImage from "next/image";
 import { useTranslations } from "next-intl";
+import { useCategoryOptions } from "@/features/categories/hooks/useCategoryOptions";
 import type { DisplayProduct } from "../types/display.types";
-
-const CATEGORY_EMOJI: Record<string, string> = {
-  pizza: "🍕",
-  bebida: "🥤",
-  otro: "🍽️",
-};
 
 interface Props {
   products: DisplayProduct[];
@@ -17,12 +12,10 @@ interface Props {
 
 export function DisplayMenu({ products, menuPage }: Props) {
   const t = useTranslations("display");
-  const categoryLabel: Record<string, string> = {
-    pizza: t("categories.pizza"),
-    bebida: t("categories.bebida"),
-    otro: t("categories.otro"),
-  };
-  const categories = Array.from(new Set(products.map((p) => p.category)));
+  const { options: categoryOptions } = useCategoryOptions();
+  const categoryLabel = (categoryId: string | null) =>
+    categoryOptions.find((c) => c.value === categoryId)?.label ?? t("categories.otro");
+  const categories = Array.from(new Set(products.map((p) => p.category_id)));
   const visibleProducts = products.slice(menuPage * 6, menuPage * 6 + 6);
   const totalPages = Math.ceil(products.length / 6);
 
@@ -33,11 +26,11 @@ export function DisplayMenu({ products, menuPage }: Props) {
       <div style={{ display: "flex", gap: 12, marginBottom: 20, flexShrink: 0 }}>
         {categories.map((cat) => (
           <div
-            key={cat}
+            key={cat ?? "sin-categoria"}
             style={{ display: "flex", alignItems: "center", gap: 8, background: "#1f2937", padding: "8px 18px", borderRadius: 999, fontSize: 15, fontWeight: 500 }}
           >
-            <span>{CATEGORY_EMOJI[cat] ?? "🍽️"}</span>
-            <span>{categoryLabel[cat] ?? cat}</span>
+            <span>🍽️</span>
+            <span>{categoryLabel(cat)}</span>
           </div>
         ))}
       </div>
@@ -66,7 +59,7 @@ export function DisplayMenu({ products, menuPage }: Props) {
                 />
               ) : (
                 <div style={{ width: "100%", height: 160, background: "#374151", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 56 }}>
-                  {CATEGORY_EMOJI[product.category] ?? "🍽️"}
+                  🍽️
                 </div>
               )}
               <div style={{ padding: "14px 16px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>

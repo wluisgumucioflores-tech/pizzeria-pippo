@@ -11,6 +11,7 @@ import {
   BarChartOutlined,
   HomeOutlined,
   TagsOutlined,
+  AppstoreOutlined,
   SettingOutlined,
   IdcardOutlined,
   ScheduleOutlined,
@@ -51,6 +52,7 @@ export function buildAdminResources(t: (key: string) => string, enabledModules: 
       edit: "/ingredients/edit/:id",
       meta: { label: t("ingredients"), icon: <InboxOutlined /> },
     },
+    { name: "categories", list: "/categories", meta: { label: t("categories"), icon: <AppstoreOutlined /> } },
     ...(enabledModules.stock
       ? [
           { name: "stock", list: "/stock", meta: { label: t("stock"), icon: <DatabaseOutlined /> } },

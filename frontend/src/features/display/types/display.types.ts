@@ -9,7 +9,8 @@ export type DisplayCartItem = DiscountedItem;
 export interface DisplayProduct {
   id: string;
   name: string;
-  category: string;
+  category: string | null;
+  category_id: string | null;
   description: string;
   image_url: string;
   product_variants: { id: string; name: string; base_price: number }[];

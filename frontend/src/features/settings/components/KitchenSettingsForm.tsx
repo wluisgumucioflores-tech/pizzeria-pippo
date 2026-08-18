@@ -1,9 +1,10 @@
 "use client";
 
-import { Card, Form, InputNumber, Segmented, Button, Typography, Skeleton, ColorPicker, Alert, Row, Col, Divider, Space } from "antd";
+import { Card, Form, InputNumber, Select, Button, Typography, Skeleton, ColorPicker, Alert, Row, Col, Divider, Space } from "antd";
 import { SaveOutlined, EyeOutlined, ClockCircleOutlined, MinusOutlined, PlusOutlined } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
 import { useSettings } from "@/features/settings/hooks/useSettings";
+import { useCategoryOptions } from "@/features/categories/hooks/useCategoryOptions";
 import { getReadableTextColor } from "@/features/kitchen/constants/kitchen-stage.constants";
 
 const { Title, Text } = Typography;
@@ -13,6 +14,7 @@ const PREVIEW_ORDERS = [104, 102, 98];
 export function KitchenSettingsForm() {
   const t = useTranslations("settings.kitchen");
   const { settings, loading, saving, handleChange, handleSave } = useSettings();
+  const { options: categoryOptions } = useCategoryOptions();
 
   if (loading) return <Skeleton active paragraph={{ rows: 6 }} />;
 
@@ -78,13 +80,14 @@ export function KitchenSettingsForm() {
             <Divider style={{ margin: "0 0 16px" }} />
 
             <Form.Item label={t("displayModeLabel")} extra={t("displayModeExtra")}>
-              <Segmented
-                value={settings.kitchen_display_mode}
-                onChange={(val) => handleChange("kitchen_display_mode", val as string)}
-                options={[
-                  { label: t("displayModeFull"), value: "full" },
-                  { label: t("displayModePizzasOnly"), value: "pizzas_only" },
-                ]}
+              <Select
+                mode="multiple"
+                allowClear
+                placeholder={t("displayModeAllCategories")}
+                value={settings.kitchen_visible_category_ids}
+                onChange={(val) => handleChange("kitchen_visible_category_ids", val)}
+                options={categoryOptions}
+                style={{ width: "100%" }}
               />
             </Form.Item>
           </Col>

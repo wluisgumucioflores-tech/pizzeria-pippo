@@ -19,14 +19,13 @@ export interface OrderItem {
     products: {
       name: string;
       description: string;
-      category: string;
+      category: string | null;
+      category_id: string | null;
     } | null;
   } | null;
   order_item_flavors: FlavorRow[];
   order_item_extras: ExtraRow[];
 }
-
-export type KitchenDisplayMode = "full" | "pizzas_only";
 
 export interface KitchenOrder {
   id: string;
@@ -46,5 +45,5 @@ export interface KitchenStageSettings {
   kitchen_color_fresh: string;
   kitchen_color_warning: string;
   kitchen_color_late: string;
-  kitchen_display_mode: KitchenDisplayMode;
+  kitchen_visible_category_ids: string[];
 }

@@ -14,7 +14,7 @@ export function useSettings() {
     telegram_enabled: false,
     kitchen_stage_warning_minutes: 7,
     kitchen_late_threshold_minutes: 10,
-    kitchen_display_mode: "full",
+    kitchen_visible_category_ids: [],
     kitchen_color_fresh: "#16a34a",
     kitchen_color_warning: "#d97706",
     kitchen_color_late: "#dc2626",
@@ -43,7 +43,7 @@ export function useSettings() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleChange = useCallback((field: keyof AppSettings, value: string | boolean | number) => {
+  const handleChange = useCallback((field: keyof AppSettings, value: string | boolean | number | string[]) => {
     setSettings((prev) => ({ ...prev, [field]: value }));
     setTestResult("idle");
   }, []);

@@ -7,7 +7,7 @@ import type { Promotion } from "@/lib/promotions";
 import { todayInBolivia } from "@/lib/timezone";
 
 interface VariantMeta {
-  category: string;
+  category: string | null;
   variantName: string;
 }
 

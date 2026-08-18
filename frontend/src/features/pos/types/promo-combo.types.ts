@@ -5,7 +5,7 @@ export interface SlotSelection {
   productName: string;
   variantName: string;
   price: number;
-  category: string;
+  category: string | null;
   flavors?: FlavorItem[];
 }
 

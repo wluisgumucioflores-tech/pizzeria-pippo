@@ -71,8 +71,8 @@ export function ProductsMobileList({ products, loading, total, page, pageSize, o
                   {!product.is_active && <Tag color="default" style={{ margin: 0 }}>{tp("inactiveTag")}</Tag>}
                 </div>
                 <div style={{ marginTop: 4, display: "flex", gap: 4, flexWrap: "wrap" }}>
-                  <Tag color={CATEGORY_COLORS[product.category]} style={{ margin: 0 }}>
-                    {CATEGORY_OPTIONS.find((c) => c.value === product.category)?.label ?? product.category}
+                  <Tag color={product.category ? CATEGORY_COLORS[product.category] : "default"} style={{ margin: 0 }}>
+                    {product.category ? (CATEGORY_OPTIONS.find((c) => c.value === product.category)?.label ?? product.category) : "—"}
                   </Tag>
                   <Tag color={product.product_type === "resale" ? "purple" : "orange"} style={{ margin: 0 }}>
                     {product.product_type === "resale" ? tp("typeResale") : tp("typeMade")}

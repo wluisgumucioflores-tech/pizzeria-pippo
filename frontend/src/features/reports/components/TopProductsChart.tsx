@@ -5,13 +5,10 @@ import { useTranslations } from "next-intl";
 import {
   PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer,
 } from "recharts";
+import { useCategoryOptions } from "@/features/categories/hooks/useCategoryOptions";
 import type { TopProduct } from "../types/reports.types";
 
-const CATEGORY_COLORS: Record<string, string> = {
-  pizza: "#f97316",
-  bebida: "#3b82f6",
-  otro: "#22c55e",
-};
+const PALETTE = ["#f97316", "#3b82f6", "#22c55e", "#a855f7", "#ec4899", "#14b8a6"];
 
 interface Props {
   topProducts: TopProduct[];
@@ -19,10 +16,14 @@ interface Props {
 
 export function TopProductsChart({ topProducts }: Props) {
   const t = useTranslations("reports");
+  const { options: categoryOptions } = useCategoryOptions();
+  const categoryLabel = (categoryId: string | null) =>
+    categoryOptions.find((c) => c.value === categoryId)?.label ?? "—";
   const categoryData = topProducts.reduce((acc, p) => {
-    const existing = acc.find((a) => a.name === p.category);
+    const name = categoryLabel(p.category_id);
+    const existing = acc.find((a) => a.name === name);
     if (existing) { existing.value += p.revenue; }
-    else { acc.push({ name: p.category, value: p.revenue }); }
+    else { acc.push({ name, value: p.revenue }); }
     return acc;
   }, [] as { name: string; value: number }[]);
 
@@ -42,8 +43,8 @@ export function TopProductsChart({ topProducts }: Props) {
               labelLine={false}
               isAnimationActive={false}
             >
-              {categoryData.map((entry) => (
-                <Cell key={entry.name} fill={CATEGORY_COLORS[entry.name] ?? "#94a3b8"} />
+              {categoryData.map((entry, i) => (
+                <Cell key={entry.name} fill={PALETTE[i % PALETTE.length]} />
               ))}
             </Pie>
             <Tooltip formatter={(v) => `Bs ${Number(v).toFixed(2)}`} />

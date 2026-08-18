@@ -3,6 +3,7 @@
 import { Card, Table, Tag, Typography, Space } from "antd";
 import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/lib/useIsMobile";
+import { useCategoryOptions } from "@/features/categories/hooks/useCategoryOptions";
 import type { TopProduct } from "../types/reports.types";
 
 const { Text } = Typography;
@@ -12,13 +13,9 @@ interface Props {
   loading: boolean;
 }
 
-const CATEGORY_COLOR: Record<string, string> = {
-  pizza: "red", bebida: "blue", otro: "green",
-};
-
 type ReportsTranslator = ReturnType<typeof useTranslations>;
 
-function buildColumns(t: ReportsTranslator) {
+function buildColumns(t: ReportsTranslator, categoryLabel: (categoryId: string | null) => string) {
   return [
     {
       title: t("columns.product"),
@@ -32,9 +29,9 @@ function buildColumns(t: ReportsTranslator) {
     },
     {
       title: t("columns.category"),
-      dataIndex: "category",
-      key: "category",
-      render: (cat: string) => <Tag color={CATEGORY_COLOR[cat] ?? "default"}>{cat}</Tag>,
+      dataIndex: "category_id",
+      key: "category_id",
+      render: (categoryId: string | null) => <Tag>{categoryLabel(categoryId)}</Tag>,
     },
     {
       title: t("columns.units"),
@@ -57,7 +54,10 @@ export function TopProductsTable({ topProducts, loading }: Props) {
   const t = useTranslations("reports");
   const tc = useTranslations("common");
   const isMobile = useIsMobile();
-  const columns = buildColumns(t);
+  const { options: categoryOptions } = useCategoryOptions();
+  const categoryLabel = (categoryId: string | null) =>
+    categoryOptions.find((c) => c.value === categoryId)?.label ?? "—";
+  const columns = buildColumns(t, categoryLabel);
 
   return (
     <Card title={t("topProducts")} size="small" style={{ marginBottom: 24 }}>
@@ -79,7 +79,7 @@ export function TopProductsTable({ topProducts, loading }: Props) {
                     <Text strong style={{ fontSize: 13, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.product_name}</Text>
                     <div style={{ display: "flex", gap: 4, marginTop: 2 }}>
                       <Text type="secondary" style={{ fontSize: 11 }}>{r.variant_name}</Text>
-                      <Tag color={CATEGORY_COLOR[r.category] ?? "default"} style={{ margin: 0, fontSize: 10, lineHeight: "16px" }}>{r.category}</Tag>
+                      <Tag style={{ margin: 0, fontSize: 10, lineHeight: "16px" }}>{categoryLabel(r.category_id)}</Tag>
                     </div>
                   </div>
                 </div>

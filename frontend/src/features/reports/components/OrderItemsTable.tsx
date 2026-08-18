@@ -4,15 +4,14 @@ import { Table, Tag, Typography, Space } from "antd";
 import { FileTextOutlined } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/lib/useIsMobile";
+import { useCategoryOptions } from "@/features/categories/hooks/useCategoryOptions";
 import type { OrderItem } from "../types/reports.types";
 
 const { Text } = Typography;
 
-const CATEGORY_COLOR: Record<string, string> = { pizza: "red", bebida: "blue", otro: "green" };
-
 type ReportsTranslator = ReturnType<typeof useTranslations>;
 
-function buildOrderItemColumns(t: ReportsTranslator) {
+function buildOrderItemColumns(t: ReportsTranslator, categoryLabel: (categoryId: string | null) => string) {
   return [
     {
       title: t("columns.product"),
@@ -27,10 +26,7 @@ function buildOrderItemColumns(t: ReportsTranslator) {
     {
       title: t("columns.category"),
       key: "category",
-      render: (_: unknown, item: OrderItem) => {
-        const cat = item.product_variants?.products?.category ?? "";
-        return <Tag color={CATEGORY_COLOR[cat] ?? "default"}>{cat}</Tag>;
-      },
+      render: (_: unknown, item: OrderItem) => <Tag>{categoryLabel(item.product_variants?.products?.category_id ?? null)}</Tag>,
     },
     { title: t("columns.qty"), dataIndex: "qty", key: "qty", width: 60, render: (qty: number) => <Text strong>{qty}</Text> },
     {
@@ -87,14 +83,17 @@ function OrderNote({ notes }: { notes?: string | null }) {
 export function OrderItemsTable({ items, notes }: Props) {
   const t = useTranslations("reports");
   const isMobile = useIsMobile();
-  const orderItemColumns = buildOrderItemColumns(t);
+  const { options: categoryOptions } = useCategoryOptions();
+  const categoryLabel = (categoryId: string | null) =>
+    categoryOptions.find((c) => c.value === categoryId)?.label ?? "—";
+  const orderItemColumns = buildOrderItemColumns(t, categoryLabel);
 
   if (isMobile) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "4px 0" }}>
         <OrderNote notes={notes} />
         {items.map((item, i) => {
-          const cat = item.product_variants?.products?.category ?? "";
+          const cat = categoryLabel(item.product_variants?.products?.category_id ?? null);
           const sub = (Number(item.unit_price) * item.qty) - Number(item.discount_applied);
           return (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", background: "#fff", borderRadius: 6, border: "1px solid #e5e7eb" }}>
@@ -102,7 +101,7 @@ export function OrderItemsTable({ items, notes }: Props) {
                 <Text strong style={{ fontSize: 13 }}>{item.product_variants?.products?.name}</Text>
                 <div style={{ display: "flex", gap: 4, marginTop: 2 }}>
                   <Text type="secondary" style={{ fontSize: 11 }}>{item.product_variants?.name}</Text>
-                  <Tag color={CATEGORY_COLOR[cat] ?? "default"} style={{ margin: 0, fontSize: 10, lineHeight: "16px" }}>{cat}</Tag>
+                  <Tag style={{ margin: 0, fontSize: 10, lineHeight: "16px" }}>{cat}</Tag>
                   {item.promo_label && Number(item.discount_applied) > 0 && (
                     <Tag color="orange" style={{ margin: 0, fontSize: 10, lineHeight: "16px" }}>{item.promo_label}</Tag>
                   )}

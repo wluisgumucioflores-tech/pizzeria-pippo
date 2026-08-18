@@ -21,7 +21,7 @@ export interface CartItem {
   unit_price: number;
   product_name: string;
   variant_name: string;
-  category: string;
+  category: string | null;
   flavors?: FlavorItem[]; // only present for mixed pizzas (mitad/mitad)
   promo_id?: string; // set when added via the POS "Promociones" tab — ties this line to that specific promotion
   extras?: ExtraItem[]; // mesero only, never combined with flavors/promo_id — survives passthrough/split since both do `{...item}`
