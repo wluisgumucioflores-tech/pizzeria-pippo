@@ -15,6 +15,7 @@
 
 - El usuario ejecuta manualmente `npm run dev` y `npm run build` — Claude **nunca** ejecuta estos dos comandos
 - Claude **puede ejecutar** cualquier otro comando: `npm install`, `mkdir`, mover archivos, `tsc --noEmit`, etc.
+- **Excepción**: si el usuario invoca manualmente un skill que requiere `npm run build` (ej. `/validate-build`), Claude sí puede ejecutarlo como parte de ese skill. La regla general sigue aplicando fuera de esos skills.
 
 ---
 
