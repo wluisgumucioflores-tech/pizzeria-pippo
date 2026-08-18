@@ -8,7 +8,7 @@ import {
   DeleteOutlined, CopyOutlined, MoreOutlined,
 } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
-import { getCategoryOptions, CATEGORY_COLORS } from "../constants/product.constants";
+import { useCategoryOptions } from "@/features/categories/hooks/useCategoryOptions";
 import { ProductImage } from "./ProductImage";
 import type { Product } from "../types/product.types";
 
@@ -34,7 +34,9 @@ export function ProductsMobileList({ products, loading, total, page, pageSize, o
   const router = useRouter();
   const t = useTranslations("common");
   const tp = useTranslations("products");
-  const CATEGORY_OPTIONS = getCategoryOptions(tp);
+  const { options: categoryOptions } = useCategoryOptions();
+  const categoryLabel = (categoryId: string | null) =>
+    categoryOptions.find((c) => c.value === categoryId)?.label ?? "—";
 
   const confirmDelete = (record: Product) => {
     Modal.confirm({
@@ -71,9 +73,7 @@ export function ProductsMobileList({ products, loading, total, page, pageSize, o
                   {!product.is_active && <Tag color="default" style={{ margin: 0 }}>{tp("inactiveTag")}</Tag>}
                 </div>
                 <div style={{ marginTop: 4, display: "flex", gap: 4, flexWrap: "wrap" }}>
-                  <Tag color={product.category ? CATEGORY_COLORS[product.category] : "default"} style={{ margin: 0 }}>
-                    {product.category ? (CATEGORY_OPTIONS.find((c) => c.value === product.category)?.label ?? product.category) : "—"}
-                  </Tag>
+                  <Tag style={{ margin: 0 }}>{categoryLabel(product.category_id)}</Tag>
                   <Tag color={product.product_type === "resale" ? "purple" : "orange"} style={{ margin: 0 }}>
                     {product.product_type === "resale" ? tp("typeResale") : tp("typeMade")}
                   </Tag>

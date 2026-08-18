@@ -8,7 +8,7 @@ import {
   DeleteOutlined, MoreOutlined,
 } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
-import { getCategoryOptions, CATEGORY_COLORS } from "../constants/product.constants";
+import { useCategoryOptions } from "@/features/categories/hooks/useCategoryOptions";
 import { ProductImage } from "./ProductImage";
 import type { Product } from "../types/product.types";
 
@@ -36,7 +36,9 @@ export function ProductsDesktopTable({ products, loading, page, pageSize, total,
   const router = useRouter();
   const t = useTranslations("common");
   const tp = useTranslations("products");
-  const CATEGORY_OPTIONS = getCategoryOptions(tp);
+  const { options: categoryOptions } = useCategoryOptions();
+  const categoryLabel = (categoryId: string | null) =>
+    categoryOptions.find((c) => c.value === categoryId)?.label ?? "—";
 
   const confirmDelete = (record: Product) => {
     Modal.confirm({
@@ -71,11 +73,9 @@ export function ProductsDesktopTable({ products, loading, page, pageSize, total,
     },
     {
       title: tp("columns.category"),
-      dataIndex: "category",
-      key: "category",
-      render: (cat: string) => (
-        <Tag color={CATEGORY_COLORS[cat]}>{CATEGORY_OPTIONS.find((c) => c.value === cat)?.label ?? cat}</Tag>
-      ),
+      dataIndex: "category_id",
+      key: "category_id",
+      render: (categoryId: string | null) => <Tag>{categoryLabel(categoryId)}</Tag>,
     },
     {
       title: tp("columns.type"),
