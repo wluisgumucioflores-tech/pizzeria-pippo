@@ -1,3 +1,5 @@
+import type { EnabledModules } from "@pippo/shared";
+
 export type UserRole = "admin" | "cajero" | "cocinero" | "superadmin" | "mesero";
 
 const TOKEN_STORAGE_KEY = "pippo_auth_token";
@@ -10,6 +12,7 @@ export interface UserProfile {
   branch_id: string | null;
   full_name: string | null;
   business_name: string | null;
+  enabled_modules: EnabledModules;
 }
 
 function decodeJwtExpiry(token: string): number | null {

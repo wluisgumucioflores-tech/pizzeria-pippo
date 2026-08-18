@@ -1,8 +1,9 @@
 "use client";
 
-import { Modal, Form, Input, Button, Divider } from "antd";
+import { Modal, Form, Input, Button, Divider, Checkbox } from "antd";
 import type { FormInstance } from "antd";
-import type { CreateBusinessInput } from "../types/business.types";
+import type { CreateBusinessInput, EnabledModules } from "../types/business.types";
+import { BUSINESS_MODULE_KEYS, DEFAULT_ENABLED_MODULES_LIST, MODULE_LABELS } from "../constants/modules.constants";
 
 interface Props {
   open: boolean;
@@ -12,10 +13,22 @@ interface Props {
   onSubmit: (values: CreateBusinessInput) => void;
 }
 
+interface FormValues extends Omit<CreateBusinessInput, "enabled_modules"> {
+  enabled_modules_selected?: string[];
+}
+
 export function BusinessModal({ open, saving, form, onClose, onSubmit }: Props) {
+  const handleFinish = (values: FormValues) => {
+    const { enabled_modules_selected, ...rest } = values;
+    const enabled_modules = Object.fromEntries(
+      BUSINESS_MODULE_KEYS.map((key) => [key, (enabled_modules_selected ?? []).includes(key)]),
+    ) as Partial<EnabledModules>;
+    onSubmit({ ...rest, enabled_modules });
+  };
+
   return (
     <Modal title="Nuevo negocio" open={open} onCancel={onClose} footer={null} destroyOnHidden>
-      <Form form={form} layout="vertical" onFinish={onSubmit} className="mt-4">
+      <Form form={form} layout="vertical" onFinish={handleFinish} className="mt-4">
         <Form.Item label="Nombre del negocio" name="name" rules={[{ required: true, message: "Ingresá el nombre del negocio" }]}>
           <Input placeholder="Ej: Burger House" />
         </Form.Item>
@@ -44,6 +57,17 @@ export function BusinessModal({ open, saving, form, onClose, onSubmit }: Props) 
           rules={[{ required: true, message: "Ingresá una contraseña" }, { min: 6, message: "Mínimo 6 caracteres" }]}
         >
           <Input.Password placeholder="••••••••" />
+        </Form.Item>
+
+        <Divider orientation="left" plain>
+          Módulos habilitados
+        </Divider>
+
+        <Form.Item name="enabled_modules_selected" initialValue={DEFAULT_ENABLED_MODULES_LIST}>
+          <Checkbox.Group
+            className="flex flex-col gap-2"
+            options={BUSINESS_MODULE_KEYS.map((key) => ({ label: MODULE_LABELS[key], value: key }))}
+          />
         </Form.Item>
 
         <div className="flex justify-end gap-2 mt-4">

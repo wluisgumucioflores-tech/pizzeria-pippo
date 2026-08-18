@@ -1,8 +1,9 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { Refine, Authenticated, useGetIdentity } from "@refinedev/core";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
-import { Layout as AntdLayout, Typography, Avatar, Space, theme } from "antd";
+import { Layout as AntdLayout, Typography, Avatar, Space, theme, Skeleton } from "antd";
 import {
   ThemedLayout,
   ThemedSider,
@@ -15,25 +16,13 @@ import { ConfigProvider } from "antd";
 import esES from "antd/locale/es_ES";
 import enUS from "antd/locale/en_US";
 import { useLocale, useTranslations } from "next-intl";
+import { DEFAULT_ENABLED_MODULES, type EnabledModules } from "@pippo/shared";
 import { authProvider } from "@/lib/authProvider";
+import { getUserProfile } from "@/lib/auth";
 import { refineUnusedDataProvider } from "@/lib/refineUnusedDataProvider";
 import { LocaleSwitcher } from "@/features/i18n/components/LocaleSwitcher";
 import Image from "next/image";
-import {
-  DashboardOutlined,
-  BankOutlined,
-  ShopOutlined,
-  InboxOutlined,
-  DatabaseOutlined,
-  GiftOutlined,
-  TeamOutlined,
-  BarChartOutlined,
-  HomeOutlined,
-  TagsOutlined,
-  SettingOutlined,
-  IdcardOutlined,
-  ScheduleOutlined,
-} from "@ant-design/icons";
+import { buildAdminResources } from "./admin-resources";
 
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "1.0.0";
 
@@ -109,6 +98,28 @@ export default function AdminLayout({
 }) {
   const locale = useLocale();
   const t = useTranslations("nav");
+  const [enabledModules, setEnabledModules] = useState<EnabledModules | null>(null);
+  const [profileReady, setProfileReady] = useState(false);
+
+  useEffect(() => {
+    getUserProfile().then((profile) => {
+      setEnabledModules(profile?.enabled_modules ?? null);
+      setProfileReady(true);
+    });
+  }, []);
+
+  const resources = useMemo(
+    () => buildAdminResources(t, enabledModules ?? DEFAULT_ENABLED_MODULES),
+    [t, enabledModules],
+  );
+
+  if (!profileReady) {
+    return (
+      <div style={{ padding: 24 }}>
+        <Skeleton active paragraph={{ rows: 8 }} />
+      </div>
+    );
+  }
 
   return (
     <AntdRegistry>
@@ -119,83 +130,7 @@ export default function AdminLayout({
           routerProvider={routerProvider}
           authProvider={authProvider}
           notificationProvider={useNotificationProvider}
-          resources={[
-            {
-              name: "dashboard",
-              list: "/dashboard",
-              meta: { label: t("dashboard"), icon: <DashboardOutlined /> },
-            },
-            {
-              name: "branches",
-              list: "/branches",
-              create: "/branches/create",
-              edit: "/branches/edit/:id",
-              meta: { label: t("branches"), icon: <BankOutlined /> },
-            },
-            {
-              name: "products",
-              list: "/products",
-              create: "/products/create",
-              edit: "/products/edit/:id",
-              meta: { label: t("products"), icon: <ShopOutlined /> },
-            },
-            {
-              name: "variant-types",
-              list: "/variant-types",
-              meta: { label: t("variantTypes"), icon: <TagsOutlined /> },
-            },
-            {
-              name: "ingredients",
-              list: "/ingredients",
-              create: "/ingredients/create",
-              edit: "/ingredients/edit/:id",
-              meta: { label: t("ingredients"), icon: <InboxOutlined /> },
-            },
-            {
-              name: "stock",
-              list: "/stock",
-              meta: { label: t("stock"), icon: <DatabaseOutlined /> },
-            },
-            {
-              name: "warehouse",
-              list: "/warehouse",
-              meta: { label: t("warehouse"), icon: <HomeOutlined /> },
-            },
-            {
-              name: "promotions",
-              list: "/promotions",
-              create: "/promotions/create",
-              edit: "/promotions/edit/:id",
-              meta: { label: t("promotions"), icon: <GiftOutlined /> },
-            },
-            {
-              name: "users",
-              list: "/users",
-              create: "/users/create",
-              edit: "/users/edit/:id",
-              meta: { label: t("users"), icon: <TeamOutlined /> },
-            },
-            {
-              name: "employees",
-              list: "/employees",
-              meta: { label: t("employees"), icon: <IdcardOutlined /> },
-            },
-            {
-              name: "attendance",
-              list: "/attendance",
-              meta: { label: t("attendance"), icon: <ScheduleOutlined /> },
-            },
-            {
-              name: "reports",
-              list: "/reports",
-              meta: { label: t("reports"), icon: <BarChartOutlined /> },
-            },
-            {
-              name: "settings",
-              list: "/settings",
-              meta: { label: t("settings"), icon: <SettingOutlined /> },
-            },
-          ]}
+          resources={resources}
           options={{
             syncWithLocation: true,
             warnWhenUnsavedChanges: true,

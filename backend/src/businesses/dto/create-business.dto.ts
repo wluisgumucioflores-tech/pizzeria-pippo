@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
-import { IsString, ValidateNested } from 'class-validator';
+import { IsObject, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { CreateAdminInputDto } from './create-admin-input.dto';
+import type { EnabledModules } from '@pippo/shared';
 
 export class CreateBusinessDto {
   @IsString()
@@ -9,4 +10,8 @@ export class CreateBusinessDto {
   @ValidateNested()
   @Type(() => CreateAdminInputDto)
   admin!: CreateAdminInputDto;
+
+  @IsOptional()
+  @IsObject()
+  enabled_modules?: Partial<EnabledModules>;
 }

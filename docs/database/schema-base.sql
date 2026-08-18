@@ -42,6 +42,7 @@ CREATE TABLE public.businesses (
   name text NOT NULL,
   is_active boolean NOT NULL DEFAULT true,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
+  enabled_modules jsonb NOT NULL DEFAULT '{"kitchen":true,"stock":true,"employees":true,"telegram":false,"printer":true,"mesero":false}'::jsonb,
   CONSTRAINT businesses_pkey PRIMARY KEY (id)
 );
 

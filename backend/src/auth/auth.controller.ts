@@ -5,6 +5,7 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CurrentUserPayload } from './types/jwt.types';
+import { DEFAULT_ENABLED_MODULES, type EnabledModules } from '@pippo/shared';
 
 @Controller('auth')
 export class AuthController {
@@ -22,9 +23,11 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async me(@CurrentUser() user: CurrentUserPayload) {
     const business = user.business_id
-      ? await this.prisma.business.findUnique({ where: { id: user.business_id }, select: { name: true } })
+      ? await this.prisma.business.findUnique({ where: { id: user.business_id }, select: { name: true, enabledModules: true } })
       : null;
 
-    return { ...user, business_name: business?.name ?? null };
+    const enabledModules = { ...DEFAULT_ENABLED_MODULES, ...(business?.enabledModules as Partial<EnabledModules> | undefined) };
+
+    return { ...user, business_name: business?.name ?? null, enabled_modules: enabledModules };
   }
 }

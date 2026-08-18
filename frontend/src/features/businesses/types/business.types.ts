@@ -1,4 +1,6 @@
-export type { Business } from "@pippo/shared";
+import type { EnabledModules } from "@pippo/shared";
+
+export type { Business, EnabledModules } from "@pippo/shared";
 
 export interface CreateBusinessInput {
   name: string;
@@ -7,4 +9,10 @@ export interface CreateBusinessInput {
     password: string;
     full_name: string;
   };
+  enabled_modules?: Partial<EnabledModules>;
+}
+
+export interface UpdateBusinessInput {
+  name?: string;
+  enabled_modules?: Partial<EnabledModules>;
 }

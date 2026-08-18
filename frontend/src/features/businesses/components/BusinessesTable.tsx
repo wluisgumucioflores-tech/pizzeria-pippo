@@ -1,7 +1,7 @@
 "use client";
 
 import { Table, Button, Space, Tag, Typography, Tooltip, Popconfirm } from "antd";
-import { PlusOutlined, StopOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { PlusOutlined, StopOutlined, CheckCircleOutlined, EyeOutlined, EditOutlined } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
 import type { Business } from "../types/business.types";
 
@@ -12,9 +12,11 @@ interface Props {
   loading: boolean;
   onCreate: () => void;
   onToggleActive: (business: Business) => void;
+  onViewDetail: (business: Business) => void;
+  onEdit: (business: Business) => void;
 }
 
-export function BusinessesTable({ businesses, loading, onCreate, onToggleActive }: Props) {
+export function BusinessesTable({ businesses, loading, onCreate, onToggleActive, onViewDetail, onEdit }: Props) {
   const t = useTranslations("common");
   const columns = [
     {
@@ -39,24 +41,32 @@ export function BusinessesTable({ businesses, loading, onCreate, onToggleActive 
     {
       title: t("actions"),
       key: "actions",
-      width: 120,
+      width: 160,
       render: (_: unknown, record: Business) => (
-        <Popconfirm
-          title={record.is_active ? "¿Suspender este negocio?" : "¿Reactivar este negocio?"}
-          description={record.is_active ? "Sus usuarios no podrán operar mientras esté suspendido." : undefined}
-          onConfirm={() => onToggleActive(record)}
-          okText={record.is_active ? "Suspender" : "Reactivar"}
-          cancelText={t("cancel")}
-          okButtonProps={{ danger: record.is_active }}
-        >
-          <Tooltip title={record.is_active ? "Suspender" : "Reactivar"}>
-            <Button
-              icon={record.is_active ? <StopOutlined /> : <CheckCircleOutlined />}
-              size="small"
-              danger={record.is_active}
-            />
+        <Space size="small">
+          <Tooltip title="Ver detalle">
+            <Button icon={<EyeOutlined />} size="small" onClick={() => onViewDetail(record)} />
           </Tooltip>
-        </Popconfirm>
+          <Tooltip title="Editar">
+            <Button icon={<EditOutlined />} size="small" onClick={() => onEdit(record)} />
+          </Tooltip>
+          <Popconfirm
+            title={record.is_active ? "¿Suspender este negocio?" : "¿Reactivar este negocio?"}
+            description={record.is_active ? "Sus usuarios no podrán operar mientras esté suspendido." : undefined}
+            onConfirm={() => onToggleActive(record)}
+            okText={record.is_active ? "Suspender" : "Reactivar"}
+            cancelText={t("cancel")}
+            okButtonProps={{ danger: record.is_active }}
+          >
+            <Tooltip title={record.is_active ? "Suspender" : "Reactivar"}>
+              <Button
+                icon={record.is_active ? <StopOutlined /> : <CheckCircleOutlined />}
+                size="small"
+                danger={record.is_active}
+              />
+            </Tooltip>
+          </Popconfirm>
+        </Space>
       ),
     },
   ];

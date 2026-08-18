@@ -4,7 +4,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { BusinessesService } from './businesses.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
-import { ToggleActiveBusinessDto } from './dto/toggle-active-business.dto';
+import { UpdateBusinessDto } from './dto/update-business.dto';
 
 // Solo el superadmin de la plataforma administra negocios — un admin de
 // comercio no tiene por qué ver ni tocar este endpoint.
@@ -25,7 +25,7 @@ export class BusinessesController {
   }
 
   @Patch(':id')
-  setActive(@Param('id') id: string, @Body() dto: ToggleActiveBusinessDto) {
-    return this.businessesService.setActive(id, dto.is_active);
+  update(@Param('id') id: string, @Body() dto: UpdateBusinessDto) {
+    return this.businessesService.update(id, dto);
   }
 }
