@@ -53,6 +53,7 @@ export const authProvider: AuthProvider = {
       role: profile.role,
       branch_id: profile.branch_id,
       business_name: profile.business_name,
+      enabled_modules: profile.enabled_modules,
       avatar: null,
     };
   },
