@@ -601,6 +601,7 @@ export class OrdersService {
                     name: item.variant.product.name,
                     description: item.variant.product.description,
                     category: item.variant.product.category,
+                    category_id: item.variant.product.categoryId,
                   }
                 : null,
             }

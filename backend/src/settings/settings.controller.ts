@@ -47,7 +47,7 @@ export class SettingsController {
   }
 
   // No RolesGuard: fix for the RLS bug — cocinero needs to read this (see Fase 3 plan).
-  // También devuelve kitchen_display_mode para no sumar otra llamada desde Cocina.
+  // También devuelve kitchen_visible_category_ids para no sumar otra llamada desde Cocina.
   @Get('kitchen-threshold')
   getKitchenThreshold(@CurrentUser() user: CurrentUserPayload) {
     return this.settingsService.getKitchenStageSettings(user);

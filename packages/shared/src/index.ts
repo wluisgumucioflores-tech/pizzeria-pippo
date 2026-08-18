@@ -8,5 +8,6 @@ export * from "./models/promotion";
 export * from "./models/order";
 export * from "./models/stock";
 export * from "./models/telegram";
+export * from "./models/category";
 export * from "./constants/payment-providers";
 export * from "./constants/business-modules";

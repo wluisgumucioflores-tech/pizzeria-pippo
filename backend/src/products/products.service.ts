@@ -26,7 +26,7 @@ export class ProductsService {
       businessId: this.resolveBusinessId(user),
       ...(showInactive ? {} : { isActive: true }),
       ...(query.search ? { name: { contains: query.search, mode: 'insensitive' as const } } : {}),
-      ...(query.category ? { category: query.category } : {}),
+      ...(query.category_id ? { categoryId: query.category_id } : {}),
     };
 
     const [rows, total] = await Promise.all([
@@ -63,6 +63,7 @@ export class ProductsService {
       id: row.id,
       name: row.name,
       category: row.category,
+      category_id: row.categoryId,
       description: row.description,
       image_url: row.imageUrl,
       product_type: row.productType,
@@ -108,6 +109,7 @@ export class ProductsService {
       id: row.id,
       name: row.name,
       category: row.category,
+      category_id: row.categoryId,
       description: row.description,
       image_url: row.imageUrl,
       is_active: row.isActive,
@@ -258,11 +260,13 @@ export class ProductsService {
   async create(dto: CreateProductDto, user: CurrentUserPayload): Promise<{ id: string }> {
     const businessId = this.resolveBusinessId(user);
     const productType = dto.product_type ?? 'made';
+    const category = await this.resolveCategory(dto.category_id, businessId);
     const product = await this.prisma.product.create({
       data: {
         businessId,
         name: dto.name,
-        category: dto.category,
+        categoryId: category.id,
+        category: category.isPizza ? 'pizza' : null,
         description: dto.description,
         imageUrl: dto.image_url,
         productType,
@@ -296,6 +300,7 @@ export class ProductsService {
           businessId: original.businessId,
           name: `${original.name} (copia)`,
           category: original.category,
+          categoryId: original.categoryId,
           description: original.description,
           imageUrl: original.imageUrl,
           productType: original.productType,
@@ -342,11 +347,13 @@ export class ProductsService {
       throw new NotFoundException('Producto no encontrado');
     }
 
+    const category = await this.resolveCategory(dto.category_id, businessId);
     await this.prisma.product.update({
       where: { id },
       data: {
         name: dto.name,
-        category: dto.category,
+        categoryId: category.id,
+        category: category.isPizza ? 'pizza' : null,
         description: dto.description,
         imageUrl: dto.image_url,
         ...(dto.product_type ? { productType: dto.product_type } : {}),
@@ -429,6 +436,16 @@ export class ProductsService {
     return user.business_id;
   }
 
+  // Evita asignarle a un producto una categoría de otro negocio, y de paso
+  // resuelve isPizza para derivar el espejo legado (category: 'pizza'|null).
+  private async resolveCategory(categoryId: string, businessId: string): Promise<{ id: string; isPizza: boolean }> {
+    const category = await this.prisma.category.findUnique({ where: { id: categoryId }, select: { businessId: true, isPizza: true } });
+    if (!category || category.businessId !== businessId) {
+      throw new NotFoundException('Categoría no encontrada');
+    }
+    return { id: categoryId, isPizza: category.isPizza };
+  }
+
   // Evita que un admin del negocio B opere sobre un producto del negocio A
   // conociendo su UUID — 404 en vez de 403 para no revelar que el id existe.
   private async assertOwnership(id: string, user: CurrentUserPayload): Promise<void> {
@@ -487,7 +504,8 @@ export class ProductsService {
   private mapProduct(row: {
     id: string;
     name: string;
-    category: string;
+    category: string | null;
+    categoryId: string | null;
     description: string | null;
     imageUrl: string | null;
     productType: string;
@@ -499,6 +517,7 @@ export class ProductsService {
       id: row.id,
       name: row.name,
       category: row.category as never,
+      category_id: row.categoryId,
       description: row.description,
       image_url: row.imageUrl,
       product_type: row.productType as never,

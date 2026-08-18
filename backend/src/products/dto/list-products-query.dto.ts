@@ -24,5 +24,5 @@ export class ListProductsQueryDto {
 
   @IsOptional()
   @IsString()
-  category?: string;
+  category_id?: string;
 }

@@ -17,7 +17,8 @@ export interface KitchenOrderResult {
       products: {
         name: string;
         description: string | null;
-        category: string;
+        category: string | null;
+        category_id: string | null;
       } | null;
     } | null;
     order_item_flavors: {

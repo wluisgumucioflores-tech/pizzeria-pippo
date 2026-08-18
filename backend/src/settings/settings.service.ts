@@ -15,7 +15,7 @@ const SETTINGS_KEYS = [
   'telegram_enabled',
   'kitchen_stage_warning_minutes',
   'kitchen_late_threshold_minutes',
-  'kitchen_display_mode',
+  'kitchen_visible_category_ids',
   'kitchen_color_fresh',
   'kitchen_color_warning',
   'kitchen_color_late',
@@ -31,8 +31,14 @@ const KITCHEN_STAGE_KEYS = [
   'kitchen_color_fresh',
   'kitchen_color_warning',
   'kitchen_color_late',
-  'kitchen_display_mode',
+  'kitchen_visible_category_ids',
 ];
+
+// Clave legada del binario "modo completo"/"solo pizzas" — ya no se lee ni
+// escribe en SETTINGS_KEYS/KITCHEN_STAGE_KEYS, pero las filas viejas siguen
+// en app_settings. Se usa una sola vez para no resetear silenciosamente el
+// filtro de un negocio que ya tenía "solo pizzas" activo antes de migrar.
+const LEGACY_KITCHEN_DISPLAY_MODE_KEY = 'kitchen_display_mode';
 
 const KITCHEN_STAGE_DEFAULTS = {
   kitchen_stage_warning_minutes: 7,
@@ -55,6 +61,7 @@ export class SettingsService {
       where: { businessId, key: { in: SETTINGS_KEYS } },
     });
     const config = new Map(rows.map((r) => [r.key, r.value]));
+    const kitchenVisibleCategoryIds = await this.resolveVisibleCategoryIds(businessId, config);
 
     return {
       telegram_bot_token: this.maskToken(
@@ -72,10 +79,7 @@ export class SettingsService {
           String(KITCHEN_STAGE_DEFAULTS.kitchen_late_threshold_minutes),
         10,
       ),
-      kitchen_display_mode:
-        config.get('kitchen_display_mode') === 'pizzas_only'
-          ? 'pizzas_only'
-          : 'full',
+      kitchen_visible_category_ids: kitchenVisibleCategoryIds,
       kitchen_color_fresh:
         config.get('kitchen_color_fresh') ??
         KITCHEN_STAGE_DEFAULTS.kitchen_color_fresh,
@@ -139,8 +143,8 @@ export class SettingsService {
         dto.kitchen_color_late ?? KITCHEN_STAGE_DEFAULTS.kitchen_color_late,
       ],
       [
-        'kitchen_display_mode',
-        dto.kitchen_display_mode === 'pizzas_only' ? 'pizzas_only' : 'full',
+        'kitchen_visible_category_ids',
+        JSON.stringify(dto.kitchen_visible_category_ids ?? []),
       ],
       ['printer_paper_width', String(paperWidth)],
       [
@@ -197,13 +201,14 @@ export class SettingsService {
     kitchen_color_fresh: string;
     kitchen_color_warning: string;
     kitchen_color_late: string;
-    kitchen_display_mode: 'full' | 'pizzas_only';
+    kitchen_visible_category_ids: string[];
   }> {
     const businessId = this.resolveBusinessId(user);
     const rows = await this.prisma.appSetting.findMany({
       where: { businessId, key: { in: KITCHEN_STAGE_KEYS } },
     });
     const config = new Map(rows.map((r) => [r.key, r.value]));
+    const kitchenVisibleCategoryIds = await this.resolveVisibleCategoryIds(businessId, config);
 
     return {
       kitchen_stage_warning_minutes: parseInt(
@@ -225,10 +230,7 @@ export class SettingsService {
       kitchen_color_late:
         config.get('kitchen_color_late') ??
         KITCHEN_STAGE_DEFAULTS.kitchen_color_late,
-      kitchen_display_mode:
-        config.get('kitchen_display_mode') === 'pizzas_only'
-          ? 'pizzas_only'
-          : 'full',
+      kitchen_visible_category_ids: kitchenVisibleCategoryIds,
     };
   }
 
@@ -338,6 +340,37 @@ export class SettingsService {
       );
     }
     return user.business_id;
+  }
+
+  // Si el negocio ya guardó kitchen_visible_category_ids explícitamente, se
+  // usa eso. Si no (negocio que nunca tocó el nuevo selector), se deriva del
+  // modo binario legado para no resetear en silencio el filtro de cocina de
+  // quien ya tenía "solo pizzas" activo antes de esta migración.
+  private async resolveVisibleCategoryIds(
+    businessId: string,
+    config: Map<string, string>,
+  ): Promise<string[]> {
+    const stored = config.get('kitchen_visible_category_ids');
+    if (stored !== undefined) {
+      try {
+        return JSON.parse(stored) as string[];
+      } catch {
+        return [];
+      }
+    }
+
+    const legacy = await this.prisma.appSetting.findUnique({
+      where: {
+        businessId_key: { businessId, key: LEGACY_KITCHEN_DISPLAY_MODE_KEY },
+      },
+    });
+    if (legacy?.value !== 'pizzas_only') return [];
+
+    const pizzaCategory = await this.prisma.category.findFirst({
+      where: { businessId, isPizza: true },
+      select: { id: true },
+    });
+    return pizzaCategory ? [pizzaCategory.id] : [];
   }
 
   private maskToken(token: string): string {

@@ -113,8 +113,24 @@ model Business {
   warehouseProductMovements WarehouseProductMovement[]
   promotions                Promotion[]
   promotionRules            PromotionRule[]
+  categories                Category[]
 
   @@map("businesses")
+}
+
+model Category {
+  id         String   @id @default(uuid()) @db.Uuid
+  businessId String   @map("business_id") @db.Uuid
+  name       String
+  isPizza    Boolean  @default(false) @map("is_pizza")
+  sortOrder  Int      @default(0) @map("sort_order")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  business Business  @relation(fields: [businessId], references: [id])
+  products Product[]
+
+  @@map("categories")
 }
 
 model Profile {
@@ -216,15 +232,20 @@ model Product {
   id          String   @id @default(uuid()) @db.Uuid
   businessId  String   @map("business_id") @db.Uuid
   name        String
-  category    String
+  // Legado: espejo best-effort derivado de categoryRef.isPizza ('pizza' o
+  // null), ya no es la fuente de verdad. Se mantiene solo para lo poco que
+  // todavía lo lee (combo builder, motor de promociones) — ver categoryId.
+  category    String?
+  categoryId  String?  @map("category_id") @db.Uuid
   description String?
   imageUrl    String?  @map("image_url")
   productType String   @default("made") @map("product_type")
   createdAt   DateTime @default(now()) @map("created_at")
   isActive    Boolean  @default(true) @map("is_active")
 
-  business Business         @relation(fields: [businessId], references: [id])
-  variants ProductVariant[]
+  business    Business         @relation(fields: [businessId], references: [id])
+  categoryRef Category?        @relation(fields: [categoryId], references: [id])
+  variants    ProductVariant[]
 
   @@map("products")
 }
@@ -490,13 +511,13 @@ model OrderPayment {
 }
 
 model OrderItem {
-  id              String  @id @default(uuid()) @db.Uuid
-  orderId         String  @map("order_id") @db.Uuid
-  variantId       String  @map("variant_id") @db.Uuid
+  id              String   @id @default(uuid()) @db.Uuid
+  orderId         String   @map("order_id") @db.Uuid
+  variantId       String   @map("variant_id") @db.Uuid
   qty             Int
-  unitPrice       Decimal @map("unit_price")
-  discountApplied Decimal @default(0) @map("discount_applied")
-  qtyPhysical     Int     @default(1) @map("qty_physical")
+  unitPrice       Decimal  @map("unit_price")
+  discountApplied Decimal  @default(0) @map("discount_applied")
+  qtyPhysical     Int      @default(1) @map("qty_physical")
   promoLabel      String?  @map("promo_label")
   priceEdited     Boolean  @default(false) @map("price_edited")
   createdAt       DateTime @default(now()) @map("created_at")

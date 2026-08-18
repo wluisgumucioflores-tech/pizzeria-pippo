@@ -4,7 +4,7 @@ export interface OrderReportItemResult {
   discount_applied: number;
   promo_label: string | null;
   price_edited: boolean;
-  product_variants: { name: string; products: { name: string; category: string } | null } | null;
+  product_variants: { name: string; products: { name: string; category: string | null; category_id: string | null } | null } | null;
 }
 
 export interface OrderReportPaymentResult {

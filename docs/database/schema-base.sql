@@ -46,6 +46,20 @@ CREATE TABLE public.businesses (
   CONSTRAINT businesses_pkey PRIMARY KEY (id)
 );
 
+CREATE TABLE public.categories (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  business_id uuid NOT NULL,
+  name text NOT NULL,
+  is_pizza boolean NOT NULL DEFAULT false,
+  sort_order integer NOT NULL DEFAULT 0,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT categories_pkey PRIMARY KEY (id),
+  CONSTRAINT categories_business_id_fkey FOREIGN KEY (business_id) REFERENCES public.businesses(id)
+);
+CREATE INDEX idx_categories_business_id ON public.categories(business_id);
+CREATE UNIQUE INDEX idx_categories_one_pizza_per_business ON public.categories(business_id) WHERE is_pizza;
+
 CREATE TABLE public.profiles (
   id uuid NOT NULL,
   role text NOT NULL CHECK (role = ANY (ARRAY['admin'::text, 'cajero'::text, 'cocinero'::text])),
@@ -74,13 +88,16 @@ CREATE TABLE public.app_settings (
 CREATE TABLE public.products (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   name text NOT NULL,
-  category text NOT NULL CHECK (category = ANY (ARRAY['pizza'::text, 'bebida'::text, 'otro'::text])),
+  category text CHECK (category IS NULL OR category = ANY (ARRAY['pizza'::text, 'bebida'::text, 'otro'::text])),
+  category_id uuid,
   description text,
   image_url text,
   created_at timestamp with time zone DEFAULT now(),
   is_active boolean DEFAULT true,
-  CONSTRAINT products_pkey PRIMARY KEY (id)
+  CONSTRAINT products_pkey PRIMARY KEY (id),
+  CONSTRAINT products_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.categories(id)
 );
+CREATE INDEX idx_products_category_id ON public.products(category_id);
 
 CREATE TABLE public.variant_types (
   id uuid NOT NULL DEFAULT gen_random_uuid(),

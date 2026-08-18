@@ -19,7 +19,7 @@ export interface CartItem {
   unit_price: number;
   product_name: string;
   variant_name: string;
-  category: string;
+  category: string | null;
   flavors?: FlavorItem[];
   promo_id?: string;
   // Solo en items sin promo/flavors (ver orders.service.ts) — sobrevive sin

@@ -2,6 +2,7 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PasswordHasherService } from '../auth/password/password-hasher.service';
+import { CategoriesService } from '../categories/categories.service';
 import type { BusinessResult } from './types/business-result.types';
 import type { CreateBusinessDto } from './dto/create-business.dto';
 import type { UpdateBusinessDto } from './dto/update-business.dto';
@@ -23,6 +24,7 @@ export class BusinessesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly passwordHasher: PasswordHasherService,
+    private readonly categoriesService: CategoriesService,
   ) {}
 
   async list(): Promise<BusinessResult[]> {
@@ -53,6 +55,9 @@ export class BusinessesService {
           },
         },
       });
+      // Categorías reales para todo negocio nuevo, sin condición de flag —
+      // ya no existe un camino hardcodeado al que caer si esto falla.
+      await this.categoriesService.seedDefaults(business.id);
       return this.toResult(business);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -72,11 +77,8 @@ export class BusinessesService {
 
     if (dto.enabled_modules !== undefined) {
       const current = await this.prisma.business.findUniqueOrThrow({ where: { id }, select: { enabledModules: true } });
-      data.enabledModules = {
-        ...DEFAULT_ENABLED_MODULES,
-        ...(current.enabledModules as Partial<EnabledModules>),
-        ...pickValidModules(dto.enabled_modules),
-      };
+      const currentModules = { ...DEFAULT_ENABLED_MODULES, ...(current.enabledModules as Partial<EnabledModules>) };
+      data.enabledModules = { ...currentModules, ...pickValidModules(dto.enabled_modules) };
     }
 
     const business = await this.prisma.business.update({ where: { id }, data });

@@ -26,7 +26,8 @@ export interface ProductDetailVariant {
 export interface ProductDetailResult {
   id: string;
   name: string;
-  category: string;
+  category: string | null;
+  category_id: string | null;
   description: string | null;
   image_url: string | null;
   product_type: string;

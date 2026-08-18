@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsIn, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsIn, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
 import { VariantInputDto } from './variant-input.dto';
 
 const PRODUCT_TYPES = ['made', 'resale'] as const;
@@ -8,8 +8,8 @@ export class UpdateProductDto {
   @IsString()
   name: string;
 
-  @IsString()
-  category: string;
+  @IsUUID()
+  category_id: string;
 
   @IsOptional()
   @IsString()

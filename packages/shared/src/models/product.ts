@@ -31,7 +31,10 @@ export interface ProductVariant {
 export interface Product {
   id: string;
   name: string;
-  category: ProductCategory;
+  // Legado: espejo best-effort ('pizza' o null), ya no es la fuente de
+  // verdad — usar category_id. Se mantiene para lo poco que todavía lo lee.
+  category: ProductCategory | null;
+  category_id: string | null;
   description: string | null;
   image_url: string | null;
   product_type: ProductType;

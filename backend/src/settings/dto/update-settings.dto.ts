@@ -1,14 +1,15 @@
 import {
+  IsArray,
   IsBoolean,
   IsIn,
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   Matches,
   Min,
 } from 'class-validator';
 
-export type KitchenDisplayMode = 'full' | 'pizzas_only';
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 
 export class UpdateSettingsDto {
@@ -35,8 +36,9 @@ export class UpdateSettingsDto {
   kitchen_late_threshold_minutes?: number;
 
   @IsOptional()
-  @IsIn(['full', 'pizzas_only'])
-  kitchen_display_mode?: KitchenDisplayMode;
+  @IsArray()
+  @IsUUID('4', { each: true })
+  kitchen_visible_category_ids?: string[];
 
   @IsOptional()
   @IsString()

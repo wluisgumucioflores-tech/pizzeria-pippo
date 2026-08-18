@@ -152,6 +152,7 @@ export class ReportsService {
           product_name: variant.product.name,
           variant_name: variant.name,
           category: variant.product.category,
+          category_id: variant.product.categoryId,
           qty: 0,
           revenue: 0,
         };
@@ -209,6 +210,7 @@ export class ReportsService {
             product_name: variant.product.name,
             variant_name: variant.name,
             category: variant.product.category,
+            category_id: variant.product.categoryId,
             qty: item.qty,
             revenue,
           });
@@ -279,7 +281,7 @@ export class ReportsService {
       discountApplied: { toNumber(): number };
       promoLabel: string | null;
       priceEdited: boolean;
-      variant: { name: string; product: { name: string; category: string } } | null;
+      variant: { name: string; product: { name: string; category: string | null; categoryId: string | null } } | null;
     }[];
     payments: { method: string; amount: { toNumber(): number } }[];
   }): OrderReportResult {
@@ -304,7 +306,7 @@ export class ReportsService {
         promo_label: item.promoLabel,
         price_edited: item.priceEdited,
         product_variants: item.variant
-          ? { name: item.variant.name, products: { name: item.variant.product.name, category: item.variant.product.category } }
+          ? { name: item.variant.name, products: { name: item.variant.product.name, category: item.variant.product.category, category_id: item.variant.product.categoryId } }
           : null,
       })),
       payments: order.payments.map((p) => ({ method: p.method, amount: p.amount.toNumber() })),

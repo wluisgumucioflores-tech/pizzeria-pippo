@@ -11,7 +11,8 @@ export interface PosCatalogVariant {
 export interface PosCatalogProduct {
   id: string;
   name: string;
-  category: string;
+  category: string | null;
+  category_id: string | null;
   description: string | null;
   image_url: string | null;
   is_active: boolean;
