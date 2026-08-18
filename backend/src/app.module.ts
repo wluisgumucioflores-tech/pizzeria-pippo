@@ -24,6 +24,7 @@ import { PublicMenuModule } from './public-menu/public-menu.module';
 import { EmployeesModule } from './employees/employees.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { BusinessesModule } from './businesses/businesses.module';
+import { AiChatModule } from './ai-chat/ai-chat.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { BusinessesModule } from './businesses/businesses.module';
     EmployeesModule,
     AttendanceModule,
     BusinessesModule,
+    AiChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],

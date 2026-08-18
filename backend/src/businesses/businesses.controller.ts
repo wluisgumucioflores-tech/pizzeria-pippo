@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -10,6 +11,7 @@ import { ToggleActiveBusinessDto } from './dto/toggle-active-business.dto';
 // comercio no tiene por qué ver ni tocar este endpoint.
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('superadmin')
+@ApiTags('businesses')
 @Controller('businesses')
 export class BusinessesController {
   constructor(private readonly businessesService: BusinessesService) {}

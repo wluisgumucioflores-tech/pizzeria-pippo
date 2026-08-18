@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import { BadRequestException, Controller, Inject, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -6,6 +7,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { STORAGE_PORT, type StoragePort } from './storage.port';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
+@ApiTags('storage')
 @Controller('storage')
 export class StorageController {
   constructor(@Inject(STORAGE_PORT) private readonly storagePort: StoragePort) {}

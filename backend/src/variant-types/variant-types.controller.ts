@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import { Body, Controller, Get, Param, Patch, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -13,6 +14,7 @@ import { PatchVariantTypeDto } from './dto/patch-variant-type.dto';
 // Real RLS (confirmed against the DB): SELECT is public for any authenticated user
 // (variant_types_select_all), INSERT/UPDATE/DELETE admin-only.
 @UseGuards(JwtAuthGuard)
+@ApiTags('variant-types')
 @Controller('variant-types')
 export class VariantTypesController {
   constructor(private readonly variantTypesService: VariantTypesService) {}

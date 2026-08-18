@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { OwnBranchOrAdminGuard } from '../common/guards/own-branch-or-admin.guard';
@@ -19,6 +29,7 @@ import { PurchaseProductStockDto } from './dto/purchase-product-stock.dto';
 import { AdjustProductStockDto } from './dto/adjust-product-stock.dto';
 
 @UseGuards(JwtAuthGuard)
+@ApiTags('stock')
 @Controller('stock')
 export class StockController {
   constructor(
@@ -28,26 +39,38 @@ export class StockController {
 
   @UseGuards(OwnBranchOrAdminGuard)
   @Get()
-  list(@Query() query: ListStockQueryDto, @CurrentUser() user: CurrentUserPayload) {
+  list(
+    @Query() query: ListStockQueryDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
     return this.stockService.list(query, user);
   }
 
   @UseGuards(OwnBranchOrAdminGuard)
   @Get('alerts')
-  getAlerts(@Query() query: ListAlertsQueryDto, @CurrentUser() user: CurrentUserPayload) {
+  getAlerts(
+    @Query() query: ListAlertsQueryDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
     return this.stockService.getAlerts(query, user);
   }
 
   @UseGuards(OwnBranchOrAdminGuard)
   @Get('movements')
-  getMovements(@Query() query: ListMovementsQueryDto, @CurrentUser() user: CurrentUserPayload) {
+  getMovements(
+    @Query() query: ListMovementsQueryDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
     return this.stockService.getMovements(query, user);
   }
 
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Post('purchase')
-  purchase(@Body() dto: PurchaseStockDto, @CurrentUser() user: CurrentUserPayload) {
+  purchase(
+    @Body() dto: PurchaseStockDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
     return this.stockService.purchase(dto, user);
   }
 
@@ -61,7 +84,11 @@ export class StockController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Patch(':id')
-  updateMinQuantity(@Param('id') id: string, @Body() dto: UpdateMinQuantityDto, @CurrentUser() user: CurrentUserPayload) {
+  updateMinQuantity(
+    @Param('id') id: string,
+    @Body() dto: UpdateMinQuantityDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
     return this.stockService.updateMinQuantity(id, dto.min_quantity, user);
   }
 
@@ -70,12 +97,18 @@ export class StockController {
   // That's why these endpoints only carry JwtAuthGuard, no RolesGuard or OwnBranchOrAdminGuard
   // (el scoping por negocio se hace en el service, no acá).
   @Get('products')
-  listProductStock(@Query() query: ListProductStockQueryDto, @CurrentUser() user: CurrentUserPayload) {
+  listProductStock(
+    @Query() query: ListProductStockQueryDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
     return this.productStockService.list(query, user);
   }
 
   @Get('product-movements')
-  getProductMovements(@Query() query: ListProductMovementsQueryDto, @CurrentUser() user: CurrentUserPayload) {
+  getProductMovements(
+    @Query() query: ListProductMovementsQueryDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
     return this.productStockService.getMovements(query, user);
   }
 
@@ -85,17 +118,31 @@ export class StockController {
   }
 
   @Post('product-purchase')
-  productPurchase(@Body() dto: PurchaseProductStockDto, @CurrentUser() user: CurrentUserPayload) {
+  productPurchase(
+    @Body() dto: PurchaseProductStockDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
     return this.productStockService.purchase(dto, user);
   }
 
   @Post('product-adjust')
-  productAdjust(@Body() dto: AdjustProductStockDto, @CurrentUser() user: CurrentUserPayload) {
+  productAdjust(
+    @Body() dto: AdjustProductStockDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
     return this.productStockService.adjust(dto, user);
   }
 
   @Patch('products/:id')
-  updateProductMinQuantity(@Param('id') id: string, @Body() dto: UpdateMinQuantityDto, @CurrentUser() user: CurrentUserPayload) {
-    return this.productStockService.updateMinQuantity(id, dto.min_quantity, user);
+  updateProductMinQuantity(
+    @Param('id') id: string,
+    @Body() dto: UpdateMinQuantityDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.productStockService.updateMinQuantity(
+      id,
+      dto.min_quantity,
+      user,
+    );
   }
 }

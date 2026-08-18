@@ -1,5 +1,14 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsDateString, IsIn, IsInt, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsDateString,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  ValidateNested,
+} from 'class-validator';
 import { PromotionRuleInputDto } from './promotion-rule-input.dto';
 
 const PROMOTION_TYPES = ['BUY_X_GET_Y', 'PERCENTAGE', 'COMBO'] as const;

@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -24,6 +25,7 @@ import { PayOrderDto } from './dto/pay-order.dto';
 import { AddOrderItemsDto } from './dto/add-order-items.dto';
 
 @UseGuards(JwtAuthGuard)
+@ApiTags('orders')
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}

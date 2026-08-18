@@ -93,6 +93,10 @@ export const API_ENDPOINTS = {
     stock: "/settings/stock",
     posTableNumber: "/settings/pos-table-number",
   },
+  aiChat: {
+    message: "/ai-chat/message",
+    generateInternalKey: "/ai-chat/internal-key/generate",
+  },
   paymentValidation: {
     start: "/payment-validation/start",
     reject: "/payment-validation/reject",

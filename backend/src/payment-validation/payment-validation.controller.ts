@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiKeyGuard } from '../common/guards/api-key.guard';
@@ -11,6 +12,7 @@ import { RejectPaymentValidationDto } from './dto/reject-payment-validation.dto'
 import { CancelPaymentValidationDto } from './dto/cancel-payment-validation.dto';
 import { ReportPaymentNotificationDto } from './dto/report-payment-notification.dto';
 
+@ApiTags('payment-validation')
 @Controller('payment-validation')
 export class PaymentValidationController {
   constructor(private readonly paymentValidationService: PaymentValidationService) {}

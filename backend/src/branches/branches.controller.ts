@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -13,6 +14,7 @@ import { PatchBranchDto } from './dto/patch-branch.dto';
 // Real RLS (confirmed against the DB): SELECT lets admin see all, non-admin only
 // their own branch (id = get_user_branch_id()) — replicated in the service, not a guard.
 @UseGuards(JwtAuthGuard)
+@ApiTags('branches')
 @Controller('branches')
 export class BranchesController {
   constructor(private readonly branchesService: BranchesService) {}

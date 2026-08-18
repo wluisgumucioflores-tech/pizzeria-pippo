@@ -1,7 +1,7 @@
 "use client";
 
 import { Tabs } from "antd";
-import { BellOutlined, RobotOutlined, FireOutlined, PrinterOutlined, MobileOutlined, DatabaseOutlined, ShopOutlined } from "@ant-design/icons";
+import { BellOutlined, RobotOutlined, CommentOutlined, FireOutlined, PrinterOutlined, MobileOutlined, DatabaseOutlined, ShopOutlined } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
 import { TelegramSettingsForm } from "@/features/settings/components/TelegramSettingsForm";
 import { KitchenSettingsForm } from "@/features/settings/components/KitchenSettingsForm";
@@ -16,6 +16,7 @@ import { DevicesTable } from "@/features/devices/components/DevicesTable";
 import { DeviceModal } from "@/features/devices/components/DeviceModal";
 import { DeviceApiKeyModal } from "@/features/devices/components/DeviceApiKeyModal";
 import { useDevices } from "@/features/devices/hooks/useDevices";
+import { AiChatSettingsForm } from "@/features/ai-chat/components/AiChatSettingsForm";
 
 function BotTab() {
   const { chats, loading, modalOpen, editing, openCreate, openEdit, closeModal, handleSave, handleToggleActive, handleDelete } = useTelegramChats();
@@ -84,6 +85,11 @@ export default function SettingsPage() {
             key: "bot",
             label: <span><RobotOutlined /> {t("bot")}</span>,
             children: <BotTab />,
+          },
+          {
+            key: "ai-chat",
+            label: <span><CommentOutlined /> {t("aiChat")}</span>,
+            children: <AiChatSettingsForm />,
           },
           {
             key: "printer",

@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -13,6 +14,7 @@ import { PosCatalogQueryDto } from './dto/pos-catalog-query.dto';
 import { UpsertBranchPriceDto } from './dto/upsert-branch-price.dto';
 
 @UseGuards(JwtAuthGuard)
+@ApiTags('products')
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}

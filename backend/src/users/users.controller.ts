@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import { Body, Controller, Delete, Get, Param, Patch, Post, Put, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -14,6 +15,7 @@ import { ToggleBanUserDto } from './dto/toggle-ban-user.dto';
 // applies to every endpoint, no exceptions.
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('admin')
+@ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}

@@ -20,6 +20,9 @@ import { PasswordModule } from './password/password.module';
   ],
   controllers: [AuthController],
   providers: [JwtStrategy, JwtAuthGuard, AuthService],
-  exports: [JwtAuthGuard, AuthService],
+  // JwtModule también se reexporta: ai-chat necesita JwtService para firmar
+  // los JWT de corta duración del agente (mismo secret que AuthService, pasado
+  // explícito en cada sign()/verify() — ver comentario arriba).
+  exports: [JwtAuthGuard, AuthService, JwtModule],
 })
 export class AuthModule {}

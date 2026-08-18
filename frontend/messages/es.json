@@ -813,6 +813,7 @@
       "notifications": "Notificaciones",
       "kitchen": "Cocina",
       "bot": "Bot de IA",
+      "aiChat": "Chat IA",
       "printer": "Impresora",
       "devices": "Dispositivos",
       "stock": "Inventario",
@@ -913,6 +914,43 @@
         "gpt4o": "GPT-4o"
       }
     },
+    "aiChat": {
+      "title": "Chat IA",
+      "description": "Chat de IA en el panel admin, con acceso de solo lectura a ventas, stock, productos y promociones.",
+      "providerLabel": "Proveedor de IA",
+      "providerOpenAI": "Compatible con OpenAI (Qwen, Groq, etc.)",
+      "providerAnthropic": "Anthropic (Claude)",
+      "anthropicKeyLabel": "Anthropic API Key",
+      "apiKeyExtra": "Solo se actualiza si ingresás un nuevo valor.",
+      "apiKeyLabel": "API Key",
+      "baseUrlLabel": "Base URL",
+      "baseUrlExtra": "Para Qwen: dashscope-intl.aliyuncs.com/compatible-mode/v1. Para Ollama local: http://localhost:11434/v1",
+      "modelLabel": "Modelo",
+      "modelExtra": "Podés elegir una opción sugerida o escribir cualquier modelo (ej. un tag local de Ollama como qwen3:4b o qwen3:8b).",
+      "loadError": "Error al cargar la configuración del chat",
+      "saveError": "Error al guardar",
+      "saved": "Configuración del chat guardada",
+      "internalKeySection": "API key interna del agente",
+      "internalKeyDescription": "Identidad propia del agente para consultar datos reales (no depende del usuario que abre el chat). Generá una key para habilitar el acceso a herramientas de consulta.",
+      "generateKeyButton": "Generar API key interna",
+      "generateKeyError": "Error al generar la API key",
+      "apiKeyModal": {
+        "title": "API key interna generada",
+        "warning": "Guardala ahora — no se va a volver a mostrar.",
+        "hint": "Esta key habilita el acceso del agente a herramientas de consulta. Podés regenerarla cuando quieras desde acá.",
+        "gotIt": "Listo",
+        "copied": "Copiado al portapapeles"
+      },
+      "models": {
+        "haiku": "Haiku (rápido, económico)",
+        "sonnet": "Sonnet (mayor precisión)",
+        "qwenPlus": "Qwen Plus (recomendado)",
+        "qwenTurbo": "Qwen Turbo (más rápido)",
+        "qwenMax": "Qwen Max (mayor precisión)",
+        "gpt4oMini": "GPT-4o Mini",
+        "gpt4o": "GPT-4o"
+      }
+    },
     "chats": {
       "title": "Chats autorizados",
       "add": "Agregar chat",
@@ -953,6 +991,13 @@
       "revoked": "Acceso revocado",
       "revokeError": "Error al revocar el acceso"
     }
+  },
+  "aiChatWidget": {
+    "title": "Asistente IA",
+    "placeholder": "Preguntá algo sobre tu negocio...",
+    "emptyState": "Preguntame sobre ventas, stock, productos o promociones.",
+    "error": "Ocurrió un error, intentá de nuevo.",
+    "disclaimer": "Es una IA y puede cometer errores. Verificá los datos importantes."
   },
   "devices": {
     "title": "Dispositivos",

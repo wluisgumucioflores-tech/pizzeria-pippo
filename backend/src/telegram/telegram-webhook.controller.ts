@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { SettingsService } from '../settings/settings.service';
 import { TelegramChatsService } from './telegram-chats.service';
@@ -9,6 +10,7 @@ import type { TelegramUpdatePayload } from './types/telegram-update-payload.type
 
 const WEBHOOK_SETTINGS_KEYS = ['telegram_ai_enabled', 'telegram_bot_token'];
 
+@ApiTags('telegram')
 @Controller('telegram')
 export class TelegramWebhookController {
   constructor(

@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -19,6 +20,7 @@ import { GetRawSettingsQueryDto } from './dto/get-raw-settings-query.dto';
 import { SaveRawSettingsDto } from './dto/save-raw-settings.dto';
 
 @UseGuards(JwtAuthGuard)
+@ApiTags('settings')
 @Controller('settings')
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}

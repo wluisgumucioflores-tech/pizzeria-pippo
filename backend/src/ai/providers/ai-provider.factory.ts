@@ -13,6 +13,8 @@ export class AiProviderFactory {
   ) {}
 
   resolve(providerName: AiProviderName): AiProviderClient {
-    return providerName === 'anthropic' ? this.anthropic : this.openaiCompatible;
+    return providerName === 'anthropic'
+      ? this.anthropic
+      : this.openaiCompatible;
   }
 }

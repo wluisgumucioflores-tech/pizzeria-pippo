@@ -1,9 +1,25 @@
-import { IsIn, IsInt, IsNumber, IsOptional, IsUUID, Min } from 'class-validator';
+import {
+  IsIn,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsUUID,
+  Min,
+} from 'class-validator';
 
 const CATEGORIES = ['pizza', 'bebida', 'otro'] as const;
 const VARIANT_SIZES = [
-  'Personal', 'Mediana', 'Familiar', 'Popular', 'Pequeña', 'Mini',
-  'Grande', 'Garrafita', 'Litro', 'Litro y medio', 'Juguete',
+  'Personal',
+  'Mediana',
+  'Familiar',
+  'Popular',
+  'Pequeña',
+  'Mini',
+  'Grande',
+  'Garrafita',
+  'Litro',
+  'Litro y medio',
+  'Juguete',
 ] as const;
 
 export class PromotionRuleInputDto {

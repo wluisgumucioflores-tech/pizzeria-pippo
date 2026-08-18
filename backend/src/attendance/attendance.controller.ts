@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -8,6 +9,7 @@ import { AttendanceService } from './attendance.service';
 import { ScanAttendanceDto } from './dto/scan-attendance.dto';
 import { AttendanceHistoryQueryDto } from './dto/attendance-history-query.dto';
 
+@ApiTags('attendance')
 @Controller('attendance')
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}

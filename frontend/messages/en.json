@@ -813,6 +813,7 @@
       "notifications": "Notifications",
       "kitchen": "Kitchen",
       "bot": "AI Bot",
+      "aiChat": "AI Chat",
       "printer": "Printer",
       "devices": "Devices",
       "stock": "Inventory",
@@ -913,6 +914,43 @@
         "gpt4o": "GPT-4o"
       }
     },
+    "aiChat": {
+      "title": "AI Chat",
+      "description": "AI chat in the admin panel, with read-only access to sales, stock, products and promotions.",
+      "providerLabel": "AI provider",
+      "providerOpenAI": "OpenAI-compatible (Qwen, Groq, etc.)",
+      "providerAnthropic": "Anthropic (Claude)",
+      "anthropicKeyLabel": "Anthropic API Key",
+      "apiKeyExtra": "Only updated if you enter a new value.",
+      "apiKeyLabel": "API Key",
+      "baseUrlLabel": "Base URL",
+      "baseUrlExtra": "For Qwen: dashscope-intl.aliyuncs.com/compatible-mode/v1. For local Ollama: http://localhost:11434/v1",
+      "modelLabel": "Model",
+      "modelExtra": "You can pick a suggested option or type any model (e.g. a local Ollama tag like qwen3:4b or qwen3:8b).",
+      "loadError": "Error loading chat settings",
+      "saveError": "Error saving",
+      "saved": "Chat settings saved",
+      "internalKeySection": "Agent internal API key",
+      "internalKeyDescription": "The agent's own identity for querying real data (independent of whoever opens the chat). Generate a key to enable access to query tools.",
+      "generateKeyButton": "Generate internal API key",
+      "generateKeyError": "Error generating the API key",
+      "apiKeyModal": {
+        "title": "Internal API key generated",
+        "warning": "Save it now — it won't be shown again.",
+        "hint": "This key enables the agent's access to query tools. You can regenerate it anytime from here.",
+        "gotIt": "Got it",
+        "copied": "Copied to clipboard"
+      },
+      "models": {
+        "haiku": "Haiku (fast, economical)",
+        "sonnet": "Sonnet (higher accuracy)",
+        "qwenPlus": "Qwen Plus (recommended)",
+        "qwenTurbo": "Qwen Turbo (faster)",
+        "qwenMax": "Qwen Max (higher accuracy)",
+        "gpt4oMini": "GPT-4o Mini",
+        "gpt4o": "GPT-4o"
+      }
+    },
     "chats": {
       "title": "Authorized chats",
       "add": "Add chat",
@@ -953,6 +991,13 @@
       "revoked": "Access revoked",
       "revokeError": "Error revoking access"
     }
+  },
+  "aiChatWidget": {
+    "title": "AI Assistant",
+    "placeholder": "Ask something about your business...",
+    "emptyState": "Ask me about sales, stock, products or promotions.",
+    "error": "Something went wrong, try again.",
+    "disclaimer": "This is an AI and can make mistakes. Verify important data."
   },
   "devices": {
     "title": "Devices",

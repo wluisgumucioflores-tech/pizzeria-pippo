@@ -1,11 +1,18 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { dateRangeFrom, dateRangeTo, toBoliviaDate } from '../common/utils/timezone';
+import {
+  dateRangeFrom,
+  dateRangeTo,
+  toBoliviaDate,
+} from '../common/utils/timezone';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import type { ReportQueryDto } from './dto/report-query.dto';
 import type { CashierReportQueryDto } from './dto/cashier-report-query.dto';
 import type { OrdersReportQueryDto } from './dto/orders-report-query.dto';
-import type { CashierReportResult, TopProductResult } from './types/report-result.types';
+import type {
+  CashierReportResult,
+  TopProductResult,
+} from './types/report-result.types';
 import type { OrderReportResult } from './types/order-report-result.types';
 
 @Injectable()
@@ -33,7 +40,9 @@ export class ReportsService {
 
   private resolveBusinessId(user: CurrentUserPayload): string {
     if (!user.business_id) {
-      throw new InternalServerErrorException('El usuario no tiene un negocio asociado');
+      throw new InternalServerErrorException(
+        'El usuario no tiene un negocio asociado',
+      );
     }
     return user.business_id;
   }
@@ -53,8 +62,10 @@ export class ReportsService {
     const delivery = orders.filter((o) => o.orderType === 'delivery');
     const pedidosYa = orders.filter((o) => o.orderType === 'pedidos_ya');
 
-    const byMethod = (method: string) => orders.filter((o) => o.paymentMethod === method);
-    const sumTotal = (rows: typeof orders) => rows.reduce((sum, o) => sum + o.total.toNumber(), 0);
+    const byMethod = (method: string) =>
+      orders.filter((o) => o.paymentMethod === method);
+    const sumTotal = (rows: typeof orders) =>
+      rows.reduce((sum, o) => sum + o.total.toNumber(), 0);
 
     // Mixed orders don't carry a single method — their cash/qr split lives in
     // order_payments, and its two legs get folded into the efectivo/qr totals
@@ -67,7 +78,9 @@ export class ReportsService {
         })
       : [];
     const sumMixedLeg = (method: string) =>
-      mixedPayments.filter((p) => p.method === method).reduce((sum, p) => sum + p.amount.toNumber(), 0);
+      mixedPayments
+        .filter((p) => p.method === method)
+        .reduce((sum, p) => sum + p.amount.toNumber(), 0);
 
     return {
       total,
@@ -92,9 +105,18 @@ export class ReportsService {
         },
       },
       by_payment_method: {
-        efectivo: { total: sumTotal(byMethod('efectivo')) + sumMixedLeg('efectivo'), count: byMethod('efectivo').length },
-        qr: { total: sumTotal(byMethod('qr')) + sumMixedLeg('qr'), count: byMethod('qr').length },
-        online: { total: sumTotal(byMethod('online')), count: byMethod('online').length },
+        efectivo: {
+          total: sumTotal(byMethod('efectivo')) + sumMixedLeg('efectivo'),
+          count: byMethod('efectivo').length,
+        },
+        qr: {
+          total: sumTotal(byMethod('qr')) + sumMixedLeg('qr'),
+          count: byMethod('qr').length,
+        },
+        online: {
+          total: sumTotal(byMethod('online')),
+          count: byMethod('online').length,
+        },
         mixto: { count: mixedOrders.length },
         sin_especificar: {
           total: sumTotal(orders.filter((o) => !o.paymentMethod)),
@@ -104,7 +126,10 @@ export class ReportsService {
     };
   }
 
-  async getDaily(query: ReportQueryDto, user: CurrentUserPayload): Promise<{ date: string; total: number }[]> {
+  async getDaily(
+    query: ReportQueryDto,
+    user: CurrentUserPayload,
+  ): Promise<{ date: string; total: number }[]> {
     const orders = await this.prisma.order.findMany({
       where: this.buildWhere(query, user),
       select: { total: true, createdAt: true },
@@ -123,7 +148,10 @@ export class ReportsService {
       .sort((a, b) => a.date.localeCompare(b.date));
   }
 
-  async getTopProducts(query: ReportQueryDto, user: CurrentUserPayload): Promise<TopProductResult[]> {
+  async getTopProducts(
+    query: ReportQueryDto,
+    user: CurrentUserPayload,
+  ): Promise<TopProductResult[]> {
     // Rank in the DB first (GROUP BY + LIMIT) instead of pulling every order_item
     // of the period into Node just to sort and slice — this is what made the
     // endpoint the slowest of the reports page (it scaled with total monthly
@@ -139,7 +167,10 @@ export class ReportsService {
 
     const variantIds = topVariants.map((v) => v.variantId);
     const items = await this.prisma.orderItem.findMany({
-      where: { order: this.buildWhere(query, user), variantId: { in: variantIds } },
+      where: {
+        order: this.buildWhere(query, user),
+        variantId: { in: variantIds },
+      },
       include: { variant: { include: { product: true } } },
     });
 
@@ -157,14 +188,18 @@ export class ReportsService {
         };
       }
       map[variant.id].qty += item.qty;
-      map[variant.id].revenue += item.unitPrice.toNumber() * item.qty - item.discountApplied.toNumber();
+      map[variant.id].revenue +=
+        item.unitPrice.toNumber() * item.qty - item.discountApplied.toNumber();
     }
 
     // groupBy already ranked these — keep that order instead of re-sorting.
     return variantIds.map((id) => map[id]).filter(Boolean);
   }
 
-  async getCashiers(query: CashierReportQueryDto, user: CurrentUserPayload): Promise<CashierReportResult[]> {
+  async getCashiers(
+    query: CashierReportQueryDto,
+    user: CurrentUserPayload,
+  ): Promise<CashierReportResult[]> {
     const orders = await this.prisma.order.findMany({
       where: {
         ...this.buildWhere(query, user),
@@ -198,8 +233,12 @@ export class ReportsService {
 
       for (const item of order.items) {
         const { variant } = item;
-        const revenue = item.unitPrice.toNumber() * item.qty - item.discountApplied.toNumber();
-        const existing = cashierMap[cid].items.find((i) => i.variant_id === variant.id);
+        const revenue =
+          item.unitPrice.toNumber() * item.qty -
+          item.discountApplied.toNumber();
+        const existing = cashierMap[cid].items.find(
+          (i) => i.variant_id === variant.id,
+        );
         if (existing) {
           existing.qty += item.qty;
           existing.revenue += revenue;
@@ -219,7 +258,10 @@ export class ReportsService {
     return Object.values(cashierMap).sort((a, b) => b.total - a.total);
   }
 
-  async getOrders(query: OrdersReportQueryDto, user: CurrentUserPayload): Promise<{ data: OrderReportResult[]; total: number }> {
+  async getOrders(
+    query: OrdersReportQueryDto,
+    user: CurrentUserPayload,
+  ): Promise<{ data: OrderReportResult[]; total: number }> {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 20;
     const where = this.buildOrdersHistoryWhere(query, user);
@@ -240,13 +282,19 @@ export class ReportsService {
       this.prisma.order.count({ where }),
     ]);
 
-    return { data: orders.map((order) => this.mapOrderToReportResult(order)), total };
+    return {
+      data: orders.map((order) => this.mapOrderToReportResult(order)),
+      total,
+    };
   }
 
   // Unlike buildWhere (used by the aggregate reports), the order history
   // shows cancelled orders too — the UI displays their cancel reason instead
   // of hiding them.
-  private buildOrdersHistoryWhere(query: OrdersReportQueryDto, user: CurrentUserPayload) {
+  private buildOrdersHistoryWhere(
+    query: OrdersReportQueryDto,
+    user: CurrentUserPayload,
+  ) {
     return {
       branch: { businessId: this.resolveBusinessId(user) },
       ...(query.branchId && { branchId: query.branchId }),
@@ -279,7 +327,10 @@ export class ReportsService {
       discountApplied: { toNumber(): number };
       promoLabel: string | null;
       priceEdited: boolean;
-      variant: { name: string; product: { name: string; category: string } } | null;
+      variant: {
+        name: string;
+        product: { name: string; category: string };
+      } | null;
     }[];
     payments: { method: string; amount: { toNumber(): number } }[];
   }): OrderReportResult {
@@ -304,10 +355,19 @@ export class ReportsService {
         promo_label: item.promoLabel,
         price_edited: item.priceEdited,
         product_variants: item.variant
-          ? { name: item.variant.name, products: { name: item.variant.product.name, category: item.variant.product.category } }
+          ? {
+              name: item.variant.name,
+              products: {
+                name: item.variant.product.name,
+                category: item.variant.product.category,
+              },
+            }
           : null,
       })),
-      payments: order.payments.map((p) => ({ method: p.method, amount: p.amount.toNumber() })),
+      payments: order.payments.map((p) => ({
+        method: p.method,
+        amount: p.amount.toNumber(),
+      })),
     };
   }
 }

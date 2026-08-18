@@ -41,7 +41,11 @@ describe('ReportsService', () => {
   describe('getSales', () => {
     it('sums totals and splits by order type', async () => {
       prisma.order.findMany.mockResolvedValue([
-        { total: decimal(100), orderType: 'dine_in', paymentMethod: 'efectivo' },
+        {
+          total: decimal(100),
+          orderType: 'dine_in',
+          paymentMethod: 'efectivo',
+        },
         { total: decimal(50), orderType: 'takeaway', paymentMethod: 'qr' },
         { total: decimal(25), orderType: 'takeaway', paymentMethod: null },
       ]);
@@ -57,7 +61,11 @@ describe('ReportsService', () => {
 
     it('splits totals by payment method, including online', async () => {
       prisma.order.findMany.mockResolvedValue([
-        { total: decimal(100), orderType: 'dine_in', paymentMethod: 'efectivo' },
+        {
+          total: decimal(100),
+          orderType: 'dine_in',
+          paymentMethod: 'efectivo',
+        },
         { total: decimal(50), orderType: 'takeaway', paymentMethod: 'qr' },
         { total: decimal(30), orderType: 'takeaway', paymentMethod: 'online' },
         { total: decimal(25), orderType: 'takeaway', paymentMethod: null },
@@ -76,8 +84,18 @@ describe('ReportsService', () => {
 
     it('folds split (mixto) orders into the efectivo/qr totals via order_payments', async () => {
       prisma.order.findMany.mockResolvedValue([
-        { id: 'order-1', total: decimal(100), orderType: 'dine_in', paymentMethod: 'efectivo' },
-        { id: 'order-2', total: decimal(50), orderType: 'takeaway', paymentMethod: 'mixto' },
+        {
+          id: 'order-1',
+          total: decimal(100),
+          orderType: 'dine_in',
+          paymentMethod: 'efectivo',
+        },
+        {
+          id: 'order-2',
+          total: decimal(50),
+          orderType: 'takeaway',
+          paymentMethod: 'mixto',
+        },
       ]);
       prisma.orderPayment.findMany.mockResolvedValue([
         { method: 'efectivo', amount: decimal(20) },
@@ -128,7 +146,10 @@ describe('ReportsService', () => {
   describe('getDaily', () => {
     it('groups totals by Bolivia-local date', async () => {
       prisma.order.findMany.mockResolvedValue([
-        { total: decimal(100), createdAt: new Date('2026-07-01T12:00:00.000Z') },
+        {
+          total: decimal(100),
+          createdAt: new Date('2026-07-01T12:00:00.000Z'),
+        },
         { total: decimal(50), createdAt: new Date('2026-07-01T23:30:00.000Z') },
       ]);
 
@@ -140,20 +161,45 @@ describe('ReportsService', () => {
 
   describe('getTopProducts', () => {
     it('aggregates qty and revenue per variant', async () => {
-      const variant = { id: 'v1', name: 'Familiar', product: { name: 'Napolitana', category: 'pizza' } };
-      prisma.orderItem.groupBy.mockResolvedValue([{ variantId: 'v1', _sum: { qty: 3 } }]);
+      const variant = {
+        id: 'v1',
+        name: 'Familiar',
+        product: { name: 'Napolitana', category: 'pizza' },
+      };
+      prisma.orderItem.groupBy.mockResolvedValue([
+        { variantId: 'v1', _sum: { qty: 3 } },
+      ]);
       prisma.orderItem.findMany.mockResolvedValue([
-        { qty: 2, unitPrice: decimal(50), discountApplied: decimal(0), variant },
-        { qty: 1, unitPrice: decimal(50), discountApplied: decimal(10), variant },
+        {
+          qty: 2,
+          unitPrice: decimal(50),
+          discountApplied: decimal(0),
+          variant,
+        },
+        {
+          qty: 1,
+          unitPrice: decimal(50),
+          discountApplied: decimal(10),
+          variant,
+        },
       ]);
 
       const result = await service.getTopProducts({}, admin);
 
       expect(prisma.orderItem.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ variantId: { in: ['v1'] } }) }),
+        expect.objectContaining({
+          where: expect.objectContaining({ variantId: { in: ['v1'] } }),
+        }),
       );
       expect(result).toEqual([
-        { variant_id: 'v1', product_name: 'Napolitana', variant_name: 'Familiar', category: 'pizza', qty: 3, revenue: 140 },
+        {
+          variant_id: 'v1',
+          product_name: 'Napolitana',
+          variant_name: 'Familiar',
+          category: 'pizza',
+          qty: 3,
+          revenue: 140,
+        },
       ]);
     });
 
@@ -167,36 +213,64 @@ describe('ReportsService', () => {
     });
 
     it('el ranking del top 5 lo define el groupBy (LIMIT en la base), no un slice en memoria', async () => {
-      const ranking = Array.from({ length: 5 }, (_, i) => ({ variantId: `v${i}`, _sum: { qty: 8 - i } }));
+      const ranking = Array.from({ length: 5 }, (_, i) => ({
+        variantId: `v${i}`,
+        _sum: { qty: 8 - i },
+      }));
       prisma.orderItem.groupBy.mockResolvedValue(ranking);
       prisma.orderItem.findMany.mockResolvedValue(
         ranking.map(({ variantId }, i) => ({
           qty: 8 - i,
           unitPrice: decimal(10),
           discountApplied: decimal(0),
-          variant: { id: variantId, name: 'Única', product: { name: `Producto ${i}`, category: 'pizza' } },
+          variant: {
+            id: variantId,
+            name: 'Única',
+            product: { name: `Producto ${i}`, category: 'pizza' },
+          },
         })),
       );
 
       const result = await service.getTopProducts({}, admin);
 
       expect(prisma.orderItem.groupBy).toHaveBeenCalledWith(
-        expect.objectContaining({ by: ['variantId'], take: 5, orderBy: { _sum: { qty: 'desc' } } }),
+        expect.objectContaining({
+          by: ['variantId'],
+          take: 5,
+          orderBy: { _sum: { qty: 'desc' } },
+        }),
       );
       expect(result).toHaveLength(5);
-      expect(result.map((r) => r.variant_id)).toEqual(['v0', 'v1', 'v2', 'v3', 'v4']);
+      expect(result.map((r) => r.variant_id)).toEqual([
+        'v0',
+        'v1',
+        'v2',
+        'v3',
+        'v4',
+      ]);
     });
   });
 
   describe('getCashiers', () => {
     it('groups orders and items by cashier', async () => {
-      const variant = { id: 'v1', name: 'Familiar', product: { name: 'Napolitana', category: 'pizza' } };
+      const variant = {
+        id: 'v1',
+        name: 'Familiar',
+        product: { name: 'Napolitana', category: 'pizza' },
+      };
       prisma.order.findMany.mockResolvedValue([
         {
           paidById: 'c1',
           paidBy: { fullName: 'Ana' },
           total: decimal(100),
-          items: [{ qty: 2, unitPrice: decimal(50), discountApplied: decimal(0), variant }],
+          items: [
+            {
+              qty: 2,
+              unitPrice: decimal(50),
+              discountApplied: decimal(0),
+              variant,
+            },
+          ],
         },
       ]);
 
@@ -208,7 +282,16 @@ describe('ReportsService', () => {
           cashier_name: 'Ana',
           orders: 1,
           total: 100,
-          items: [{ variant_id: 'v1', product_name: 'Napolitana', variant_name: 'Familiar', category: 'pizza', qty: 2, revenue: 100 }],
+          items: [
+            {
+              variant_id: 'v1',
+              product_name: 'Napolitana',
+              variant_name: 'Familiar',
+              category: 'pizza',
+              qty: 2,
+              revenue: 100,
+            },
+          ],
         },
       ]);
     });
@@ -235,7 +318,10 @@ describe('ReportsService', () => {
               unitPrice: decimal(70),
               discountApplied: decimal(0),
               promoLabel: null,
-              variant: { name: 'Familiar', product: { name: 'Napolitana', category: 'pizza' } },
+              variant: {
+                name: 'Familiar',
+                product: { name: 'Napolitana', category: 'pizza' },
+              },
             },
           ],
           payments: [],
@@ -266,7 +352,10 @@ describe('ReportsService', () => {
               unit_price: 70,
               discount_applied: 0,
               promo_label: null,
-              product_variants: { name: 'Familiar', products: { name: 'Napolitana', category: 'pizza' } },
+              product_variants: {
+                name: 'Familiar',
+                products: { name: 'Napolitana', category: 'pizza' },
+              },
             },
           ],
           payments: [],

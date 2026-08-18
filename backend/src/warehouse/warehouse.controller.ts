@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -22,6 +23,7 @@ import { TransferWarehouseProductStockDto } from './dto/transfer-warehouse-produ
 // Resale warehouse (warehouse_product_stock/warehouse_product_movements): real RLS
 // is "any authenticated user" with no restriction, same as branch_product_stock.
 @UseGuards(JwtAuthGuard)
+@ApiTags('warehouse')
 @Controller('warehouse')
 export class WarehouseController {
   constructor(

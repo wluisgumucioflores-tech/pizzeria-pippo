@@ -4,13 +4,17 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 import { ReportsService } from '../reports/reports.service';
 import { StockService } from '../stock/stock.service';
-import { AiProviderFactory } from './ai-providers/ai-provider.factory';
-import type { AiProviderName } from './ai-providers/ai-provider.factory';
-import type { AiCompletionConfig } from './ai-providers/ai-completion-config.types';
+import { AiProviderFactory } from '../ai/providers/ai-provider.factory';
+import type { AiProviderName } from '../ai/providers/ai-provider.factory';
+import type { AiCompletionConfig } from '../ai/providers/ai-completion-config.types';
 import { buildSystemPrompt } from './lib/build-system-prompt';
 import { todayInBolivia } from '../common/utils/timezone';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
-import type { TelegramAiParams, TelegramAiResult, TelegramResponse } from './types/telegram-ai.types';
+import type {
+  TelegramAiParams,
+  TelegramAiResult,
+  TelegramResponse,
+} from './types/telegram-ai.types';
 
 const SETTINGS_KEYS = [
   'ai_provider',
@@ -27,7 +31,9 @@ function toDisplayDate(isoDate: string): string {
 }
 
 function dateLabel(from: string, to: string): string {
-  return from === to ? toDisplayDate(from) : `${toDisplayDate(from)} al ${toDisplayDate(to)}`;
+  return from === to
+    ? toDisplayDate(from)
+    : `${toDisplayDate(from)} al ${toDisplayDate(to)}`;
 }
 
 @Injectable()
@@ -43,10 +49,15 @@ export class TelegramAiService {
   ) {}
 
   async processMessage(userMessage: string): Promise<TelegramResponse> {
-    const settings = await this.settingsService.getRawSettingsForFirstBusiness(SETTINGS_KEYS);
+    const settings =
+      await this.settingsService.getRawSettingsForFirstBusiness(SETTINGS_KEYS);
     const resolved = this.resolveProviderConfig(settings);
     if (!resolved) {
-      return { type: 'text', content: '❌ El bot de IA no está configurado. Falta la API key del proveedor de IA.' };
+      return {
+        type: 'text',
+        content:
+          '❌ El bot de IA no está configurado. Falta la API key del proveedor de IA.',
+      };
     }
 
     const today = todayInBolivia();
@@ -55,11 +66,21 @@ export class TelegramAiService {
     let aiResult: TelegramAiResult;
     try {
       const client = this.aiProviderFactory.resolve(resolved.provider);
-      const text = await client.complete(resolved.config, buildSystemPrompt(today, branches), userMessage);
-      aiResult = JSON.parse(text) as TelegramAiResult;
+      const result = await client.complete(
+        resolved.config,
+        buildSystemPrompt(today, branches),
+        [{ role: 'user', content: userMessage }],
+      );
+      aiResult = JSON.parse(
+        result.type === 'text' ? result.content : '',
+      ) as TelegramAiResult;
     } catch (err) {
       this.logger.error('processMessage error', err);
-      return { type: 'text', content: 'No pude entender tu mensaje. Intentá con una pregunta sobre ventas, stock o promociones.' };
+      return {
+        type: 'text',
+        content:
+          'No pude entender tu mensaje. Intentá con una pregunta sobre ventas, stock o promociones.',
+      };
     }
 
     const { intent, params } = aiResult;
@@ -75,13 +96,17 @@ export class TelegramAiService {
       case 'top_products':
         return { type: 'text', content: await this.handleTopProducts(params) };
       case 'promotions_query':
-        return { type: 'text', content: await this.handlePromotionsQuery(params) };
+        return {
+          type: 'text',
+          content: await this.handlePromotionsQuery(params),
+        };
       case 'sales_report_excel':
         return await this.handleSalesExcel(params);
       default:
         return {
           type: 'text',
-          content: 'Solo puedo ayudarte con información del restaurante: ventas, stock, reportes y promociones. ¿En qué te puedo ayudar?',
+          content:
+            'Solo puedo ayudarte con información del restaurante: ventas, stock, reportes y promociones. ¿En qué te puedo ayudar?',
         };
     }
   }
@@ -112,28 +137,48 @@ export class TelegramAiService {
     const provider = (settings['ai_provider'] || 'anthropic') as AiProviderName;
 
     if (provider === 'anthropic') {
-      const apiKey = settings['anthropic_api_key'] || process.env.ANTHROPIC_API_KEY || '';
+      const apiKey =
+        settings['anthropic_api_key'] || process.env.ANTHROPIC_API_KEY || '';
       if (!apiKey) return null;
-      return { provider, config: { apiKey, model: settings['telegram_ai_model'] || 'claude-haiku-4-5-20251001' } };
+      return {
+        provider,
+        config: {
+          apiKey,
+          model: settings['telegram_ai_model'] || 'claude-haiku-4-5-20251001',
+        },
+      };
     }
 
-    const apiKey = settings['openai_compatible_api_key'] || process.env.OPENAI_COMPATIBLE_API_KEY || '';
+    const apiKey =
+      settings['openai_compatible_api_key'] ||
+      process.env.OPENAI_COMPATIBLE_API_KEY ||
+      '';
     if (!apiKey) return null;
     return {
       provider,
       config: {
         apiKey,
         model: settings['telegram_ai_model'] || 'qwen-plus',
-        baseURL: settings['openai_compatible_base_url'] || process.env.OPENAI_COMPATIBLE_BASE_URL || undefined,
+        baseURL:
+          settings['openai_compatible_base_url'] ||
+          process.env.OPENAI_COMPATIBLE_BASE_URL ||
+          undefined,
       },
     };
   }
 
   private async handleStockQuery(params: TelegramAiParams): Promise<string> {
     const user = await this.resolveFirstBusinessUser();
-    const { data } = await this.stockService.list({ branchId: params.branch_id, page: 1, pageSize: 9999 }, user);
+    const { data } = await this.stockService.list(
+      { branchId: params.branch_id, page: 1, pageSize: 9999 },
+      user,
+    );
     const rows = params.ingredient_name
-      ? data.filter((r) => r.ingredients.name.toLowerCase().includes(params.ingredient_name!.toLowerCase()))
+      ? data.filter((r) =>
+          r.ingredients.name
+            .toLowerCase()
+            .includes(params.ingredient_name!.toLowerCase()),
+        )
       : data;
 
     if (!rows.length) return 'No se encontraron registros de stock.';
@@ -159,7 +204,10 @@ export class TelegramAiService {
 
   private async handleStockAlerts(params: TelegramAiParams): Promise<string> {
     const user = await this.resolveFirstBusinessUser();
-    const alerts = await this.stockService.getAlerts({ branchId: params.branch_id }, user);
+    const alerts = await this.stockService.getAlerts(
+      { branchId: params.branch_id },
+      user,
+    );
     if (!alerts.length) return '✅ Todo el stock está sobre el mínimo.';
 
     const byBranch: Record<string, typeof alerts> = {};
@@ -170,7 +218,10 @@ export class TelegramAiService {
     return Object.entries(byBranch)
       .map(([branch, rows]) => {
         const lines = rows
-          .map((r) => `• ${r.ingredients.name}: ${r.quantity} ${r.ingredients.unit} (mínimo: ${r.min_quantity} ${r.ingredients.unit})`)
+          .map(
+            (r) =>
+              `• ${r.ingredients.name}: ${r.quantity} ${r.ingredients.unit} (mínimo: ${r.min_quantity} ${r.ingredients.unit})`,
+          )
           .join('\n');
         return `⚠️ *Stock bajo — ${branch}*\n\n${lines}`;
       })
@@ -181,7 +232,10 @@ export class TelegramAiService {
     const from = params.from ?? todayInBolivia();
     const to = params.to ?? todayInBolivia();
     const user = await this.resolveFirstBusinessUser();
-    const { total, count, avg } = await this.reportsService.getSales({ branchId: params.branch_id, from, to }, user);
+    const { total, count, avg } = await this.reportsService.getSales(
+      { branchId: params.branch_id, from, to },
+      user,
+    );
 
     return `💰 *Ventas — ${dateLabel(from, to)}*\n\nTotal vendido: Bs ${total.toFixed(2)}\nÓrdenes: ${count}\nTicket promedio: Bs ${avg.toFixed(2)}`;
   }
@@ -190,19 +244,27 @@ export class TelegramAiService {
     const from = params.from ?? todayInBolivia();
     const to = params.to ?? todayInBolivia();
     const user = await this.resolveFirstBusinessUser();
-    const products = await this.reportsService.getTopProducts({ branchId: params.branch_id, from, to }, user);
+    const products = await this.reportsService.getTopProducts(
+      { branchId: params.branch_id, from, to },
+      user,
+    );
 
     if (!products.length) return 'No hubo ventas en ese período.';
 
     const lines = products
       .slice(0, 10)
-      .map((p, i) => `${i + 1}. ${p.product_name} (${p.variant_name}): ${p.qty} uds`)
+      .map(
+        (p, i) =>
+          `${i + 1}. ${p.product_name} (${p.variant_name}): ${p.qty} uds`,
+      )
       .join('\n');
 
     return `🏆 *Productos más vendidos — ${dateLabel(from, to)}*\n\n${lines}`;
   }
 
-  private async handlePromotionsQuery(params: TelegramAiParams): Promise<string> {
+  private async handlePromotionsQuery(
+    params: TelegramAiParams,
+  ): Promise<string> {
     const today = new Date(todayInBolivia());
     const user = await this.resolveFirstBusinessUser();
     const promotions = await this.prisma.promotion.findMany({
@@ -227,7 +289,9 @@ export class TelegramAiService {
     return `🎁 *Promociones activas hoy*\n\n${lines}`;
   }
 
-  private async handleSalesExcel(params: TelegramAiParams): Promise<TelegramResponse> {
+  private async handleSalesExcel(
+    params: TelegramAiParams,
+  ): Promise<TelegramResponse> {
     const from = params.from ?? todayInBolivia();
     const to = params.to ?? todayInBolivia();
     const user = await this.resolveFirstBusinessUser();
@@ -237,15 +301,23 @@ export class TelegramAiService {
     );
     const orders = allOrders.filter((o) => !o.cancelled_at);
 
-    if (!orders.length) return { type: 'text', content: 'No hay ventas en ese período.' };
+    if (!orders.length)
+      return { type: 'text', content: 'No hay ventas en ese período.' };
 
-    const rows: (string | number)[][] = [['#', 'Sucursal', 'Fecha', 'Tipo', 'Pago', 'Total (Bs)', 'Productos']];
+    const rows: (string | number)[][] = [
+      ['#', 'Sucursal', 'Fecha', 'Tipo', 'Pago', 'Total (Bs)', 'Productos'],
+    ];
 
     for (const order of orders) {
       const products = order.order_items
-        .map((i) => `${i.product_variants?.products?.name ?? '?'} ${i.product_variants?.name ?? ''} x${i.qty}`)
+        .map(
+          (i) =>
+            `${i.product_variants?.products?.name ?? '?'} ${i.product_variants?.name ?? ''} x${i.qty}`,
+        )
         .join(', ');
-      const date = new Date(order.created_at).toLocaleDateString('es-BO', { timeZone: 'America/La_Paz' });
+      const date = new Date(order.created_at).toLocaleDateString('es-BO', {
+        timeZone: 'America/La_Paz',
+      });
       rows.push([
         order.daily_number ?? '',
         order.branches?.name ?? '',
@@ -260,7 +332,10 @@ export class TelegramAiService {
     const ws = XLSX.utils.aoa_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Ventas');
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+    const buffer = XLSX.write(wb, {
+      type: 'buffer',
+      bookType: 'xlsx',
+    }) as Buffer;
 
     const label = from === to ? from : `${from}_al_${to}`;
     return { type: 'file', content: buffer, filename: `ventas_${label}.xlsx` };

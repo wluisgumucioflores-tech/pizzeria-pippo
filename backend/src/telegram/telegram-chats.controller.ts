@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -8,6 +9,7 @@ import { UpdateAuthorizedChatDto } from './dto/update-authorized-chat.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('admin')
+@ApiTags('telegram')
 @Controller('telegram/chats')
 export class TelegramChatsController {
   constructor(private readonly telegramChatsService: TelegramChatsService) {}

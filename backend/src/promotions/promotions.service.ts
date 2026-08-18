@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { getActivePromotions } from '../orders/lib/promotions-engine';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
@@ -19,7 +23,10 @@ function toDateOnlyString(date: Date): string {
 export class PromotionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async list(query: ListPromotionsQueryDto, user: CurrentUserPayload): Promise<PromotionResult[]> {
+  async list(
+    query: ListPromotionsQueryDto,
+    user: CurrentUserPayload,
+  ): Promise<PromotionResult[]> {
     const showInactive = query.showInactive === 'true';
     const businessId = this.resolveBusinessId(user);
 
@@ -38,15 +45,24 @@ export class PromotionsService {
     return promotions;
   }
 
-  async getById(id: string, user: CurrentUserPayload): Promise<PromotionResult> {
-    const row = await this.prisma.promotion.findUnique({ where: { id }, include: { rules: true } });
+  async getById(
+    id: string,
+    user: CurrentUserPayload,
+  ): Promise<PromotionResult> {
+    const row = await this.prisma.promotion.findUnique({
+      where: { id },
+      include: { rules: true },
+    });
     if (!row || row.businessId !== this.resolveBusinessId(user)) {
       throw new NotFoundException('Promoción no encontrada');
     }
     return this.mapPromotion(row);
   }
 
-  async create(dto: CreatePromotionDto, user: CurrentUserPayload): Promise<{ id: string }> {
+  async create(
+    dto: CreatePromotionDto,
+    user: CurrentUserPayload,
+  ): Promise<{ id: string }> {
     const businessId = this.resolveBusinessId(user);
     const promo = await this.prisma.promotion.create({
       data: {
@@ -80,7 +96,11 @@ export class PromotionsService {
     return { id: promo.id };
   }
 
-  async update(id: string, dto: UpdatePromotionDto, user: CurrentUserPayload): Promise<void> {
+  async update(
+    id: string,
+    dto: UpdatePromotionDto,
+    user: CurrentUserPayload,
+  ): Promise<void> {
     await this.assertOwnership(id, user);
 
     const promo = await this.prisma.promotion.update({
@@ -117,7 +137,11 @@ export class PromotionsService {
     }
   }
 
-  async patch(id: string, dto: PatchPromotionDto, user: CurrentUserPayload): Promise<void> {
+  async patch(
+    id: string,
+    dto: PatchPromotionDto,
+    user: CurrentUserPayload,
+  ): Promise<void> {
     await this.assertOwnership(id, user);
     // Accepts is_active (soft-delete) and/or active (POS toggle) — never a full update
     await this.prisma.promotion.update({
@@ -131,21 +155,32 @@ export class PromotionsService {
 
   async remove(id: string, user: CurrentUserPayload): Promise<void> {
     await this.assertOwnership(id, user);
-    await this.prisma.promotion.update({ where: { id }, data: { isActive: false } });
+    await this.prisma.promotion.update({
+      where: { id },
+      data: { isActive: false },
+    });
   }
 
   private resolveBusinessId(user: CurrentUserPayload): string {
     if (!user.business_id) {
-      throw new InternalServerErrorException('El usuario no tiene un negocio asociado');
+      throw new InternalServerErrorException(
+        'El usuario no tiene un negocio asociado',
+      );
     }
     return user.business_id;
   }
 
   // Evita que un admin del negocio B opere sobre una promoción del negocio A
   // conociendo su UUID — 404 en vez de 403 para no revelar que el id existe.
-  private async assertOwnership(id: string, user: CurrentUserPayload): Promise<void> {
+  private async assertOwnership(
+    id: string,
+    user: CurrentUserPayload,
+  ): Promise<void> {
     const businessId = this.resolveBusinessId(user);
-    const promo = await this.prisma.promotion.findUnique({ where: { id }, select: { businessId: true } });
+    const promo = await this.prisma.promotion.findUnique({
+      where: { id },
+      select: { businessId: true },
+    });
     if (!promo || promo.businessId !== businessId) {
       throw new NotFoundException('Promoción no encontrada');
     }
