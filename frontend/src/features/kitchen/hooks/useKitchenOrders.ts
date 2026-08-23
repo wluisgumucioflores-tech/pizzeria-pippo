@@ -58,9 +58,9 @@ export function useKitchenOrders(lateThresholdMinutes: number) {
 
     const channel = KitchenService.subscribeToOrders(
       branchId,
-      () => {
-        // Re-fetch to get full order with items
-        fetchOrders();
+      (order) => {
+        // Pedido nuevo con todos sus datos — se inserta directo, sin refetch.
+        setOrders((prev) => prev.some((o) => o.id === order.id) ? prev : [...prev, order]);
       },
       (payload) => {
         if (payload.new.kitchen_status === "ready" || payload.new.cancelled_at) {
@@ -71,6 +71,10 @@ export function useKitchenOrders(lateThresholdMinutes: number) {
           // que se refresca la orden completa para traer los items nuevos.
           fetchOrders();
         }
+      },
+      () => {
+        // Reconexión — refetch completo por si se perdió algún evento.
+        fetchOrders();
       },
       setConnected
     );

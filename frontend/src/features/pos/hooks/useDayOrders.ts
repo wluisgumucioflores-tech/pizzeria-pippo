@@ -46,6 +46,9 @@ export function useDayOrders(branchId: string | undefined, showOrders: boolean) 
             : o)
         );
       },
+      (order) => {
+        setDayOrders((prev) => prev.some((o) => o.id === order.id) ? prev : [order, ...prev]);
+      },
       () => { fetchDayOrders(branchId); },
       setConnected
     );

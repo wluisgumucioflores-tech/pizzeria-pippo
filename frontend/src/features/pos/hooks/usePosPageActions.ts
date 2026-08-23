@@ -17,14 +17,14 @@ interface Params {
   cart: ReturnType<typeof usePosCart>;
   broadcast: (event: string) => void;
   fetchDayOrders: (branchId: string) => void;
-  refreshProducts: () => void;
+  applyStockUpdates: (updates: { variant_id: string; quantity: number }[]) => void;
   paymentValidation: ReturnType<typeof usePaymentValidation>;
   setActiveTab: (tab: PosTab) => void;
 }
 
 export function usePosPageActions({
   branchId, isMobile, products, getVariantPrice, cart,
-  broadcast, fetchDayOrders, refreshProducts, paymentValidation, setActiveTab,
+  broadcast, fetchDayOrders, applyStockUpdates, paymentValidation, setActiveTab,
 }: Params) {
   const [variantModal, setVariantModal] = useState<Product | null>(null);
   const [paymentModal, setPaymentModal] = useState(false);
@@ -120,7 +120,7 @@ export function usePosPageActions({
         setSaleTableNumber(null);
         cart.clearCart();
         fetchDayOrders(branchId);
-        refreshProducts();
+        if (result.stock_updates?.length) applyStockUpdates(result.stock_updates);
       } else {
         message.error(`Error al confirmar venta: ${result.error}`, 5);
       }

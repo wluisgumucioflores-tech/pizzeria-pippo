@@ -34,6 +34,9 @@ export function useMeseroOrders(branchId: string | undefined, waiterName: string
       ({ new: updated }) => {
         setOrders((prev) => prev.map((o) => (o.id === updated.id ? { ...o, kitchen_status: updated.kitchen_status } : o)));
       },
+      (order) => {
+        setOrders((prev) => prev.some((o) => o.id === order.id) ? prev : [order, ...prev]);
+      },
       fetchOrders,
       setConnected
     );

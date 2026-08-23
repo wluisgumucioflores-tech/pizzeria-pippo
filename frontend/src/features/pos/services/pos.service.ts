@@ -74,7 +74,7 @@ export const PosService = {
     notes?: string | null,
     tableNumber?: string | null,
     waiterName?: string | null
-  ): Promise<{ ok: boolean; order_id?: string; daily_number?: number; error?: string }> {
+  ): Promise<{ ok: boolean; order_id?: string; daily_number?: number; stock_updates?: { variant_id: string; quantity: number }[]; error?: string }> {
     try {
       const res = await nestFetch(API_ENDPOINTS.orders.base, {
         method: "POST",
@@ -102,8 +102,8 @@ export const PosService = {
         }),
       });
       if (res.ok) {
-        const { order_id, daily_number } = await res.json();
-        return { ok: true, order_id, daily_number };
+        const { order_id, daily_number, stock_updates } = await res.json();
+        return { ok: true, order_id, daily_number, stock_updates };
       }
       const { error } = await res.json();
       return { ok: false, error };
@@ -147,7 +147,12 @@ export const PosService = {
   subscribeToKitchenStatus(
     branchId: string,
     onUpdate: (payload: { new: { id: string; kitchen_status: string; payment_method?: string | null } }) => void,
-    onInsert?: () => void,
+    // Pedido nuevo con todos sus datos — el caller lo inserta directo en su
+    // lista, sin volver a pedir todo. onReconnect sigue siendo un refetch
+    // completo (red de seguridad por si se perdió algún evento mientras
+    // estuvo caída la conexión).
+    onOrderCreated?: (order: DayOrder) => void,
+    onReconnect?: () => void,
     onConnectionChange?: (connected: boolean) => void
   ): KitchenStatusSubscription {
     const socket: Socket = io(NEST_API_URL, {
@@ -158,13 +163,13 @@ export const PosService = {
     socket.on("order:updated", (payload: { id: string; kitchen_status: string; payment_method?: string | null }) => {
       onUpdate({ new: payload });
     });
-    if (onInsert) socket.on("order:created", onInsert);
+    if (onOrderCreated) socket.on("order:created", onOrderCreated);
 
     // Fase 6 — robustez realtime, mismo patrón que KitchenService.subscribeToOrders.
     let everConnected = false;
     socket.on("connect", () => {
       onConnectionChange?.(true);
-      if (everConnected) onInsert?.();
+      if (everConnected) onReconnect?.();
       everConnected = true;
     });
     socket.on("disconnect", () => onConnectionChange?.(false));

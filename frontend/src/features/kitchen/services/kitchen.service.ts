@@ -35,8 +35,13 @@ export const KitchenService = {
 
   subscribeToOrders(
     branchId: string,
-    onInsert: () => void,
+    // Pedido nuevo con todos sus datos — se inserta directo en la lista de
+    // cocina sin volver a pedir todo. onReconnect sigue siendo un refetch
+    // completo (red de seguridad por si se perdió algún evento mientras
+    // estuvo caída la conexión).
+    onOrderCreated: (order: KitchenOrder) => void,
     onUpdate: (payload: OrderUpdatePayload) => void,
+    onReconnect: () => void,
     onConnectionChange?: (connected: boolean) => void
   ): OrdersSubscription {
     const socket: Socket = io(NEST_API_URL, {
@@ -44,20 +49,20 @@ export const KitchenService = {
       query: { branchId },
       transports: ["websocket"],
     });
-    socket.on("order:created", onInsert);
+    socket.on("order:created", onOrderCreated);
     socket.on("order:updated", (payload: { id: string; kitchen_status: string; cancelled_at: string | null }) => {
       onUpdate({ new: payload });
     });
 
     // Fase 6 (docs/features/mesero-y-mejoras-pos/) — robustez realtime.
     // socket.io ya reintenta la conexión solo; acá solo exponemos el estado
-    // para mostrar un indicador, y re-sincronizamos (onInsert = refetch
+    // para mostrar un indicador, y re-sincronizamos (onReconnect = refetch
     // completo) al reconectar, por si se perdió algún evento mientras
     // estuvo caído.
     let everConnected = false;
     socket.on("connect", () => {
       onConnectionChange?.(true);
-      if (everConnected) onInsert();
+      if (everConnected) onReconnect();
       everConnected = true;
     });
     socket.on("disconnect", () => onConnectionChange?.(false));

@@ -37,7 +37,11 @@ export class OrdersController {
     const result = await this.ordersService.create(dto, user);
     // 200 for an idempotency-key hit (order already existed), 201 for a new order
     res.status(result.duplicate ? 200 : 201);
-    return { order_id: result.order_id, daily_number: result.daily_number };
+    return {
+      order_id: result.order_id,
+      daily_number: result.daily_number,
+      stock_updates: result.stock_updates,
+    };
   }
 
   @Get()

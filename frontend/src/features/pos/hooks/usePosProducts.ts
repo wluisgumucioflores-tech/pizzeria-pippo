@@ -75,6 +75,25 @@ export function usePosProducts(branchId: string | undefined) {
     return branchId ? fetchData(branchId, true) : Promise.resolve();
   }, [branchId, fetchData]);
 
+  // Actualiza stock_quantity de las variantes puntuales que devuelve una venta
+  // recién confirmada, en vez de recargar todo el catálogo (getPosCatalog).
+  const applyStockUpdates = useCallback((updates: { variant_id: string; quantity: number }[]) => {
+    if (!updates.length || !branchId) return;
+    const qtyByVariant = new Map(updates.map((u) => [u.variant_id, u.quantity]));
+    setProducts((prev) => {
+      const next = prev.map((product) => ({
+        ...product,
+        product_variants: product.product_variants.map((variant) =>
+          qtyByVariant.has(variant.id)
+            ? { ...variant, stock_quantity: qtyByVariant.get(variant.id)! }
+            : variant
+        ),
+      }));
+      setCache(branchId, next, promotions, useStock, enableTableNumber);
+      return next;
+    });
+  }, [branchId, promotions, useStock, enableTableNumber]);
+
   useEffect(() => {
     if (branchId) fetchData(branchId);
   }, [branchId, fetchData]);
@@ -132,5 +151,5 @@ export function usePosProducts(branchId: string | undefined) {
     return null;
   }, [products, useStock]);
 
-  return { products, promotions, useStock, enableTableNumber, loading, getVariantPrice, getPromoLabel, getStockQty, refresh };
+  return { products, promotions, useStock, enableTableNumber, loading, getVariantPrice, getPromoLabel, getStockQty, refresh, applyStockUpdates };
 }

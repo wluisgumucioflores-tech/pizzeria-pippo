@@ -306,6 +306,25 @@ export class OrdersService {
     `;
     const result = rows[0].create_order_atomic;
 
+    // 6b. Stock puntual de las variantes de reventa afectadas — el POS lo usa
+    // para actualizar solo esas 1-3 variantes en memoria en vez de recargar
+    // todo el catálogo (getPosCatalog) después de cada venta.
+    if (deductions.resale_deductions.length > 0) {
+      const stockRows = await this.prisma.branchProductStock.findMany({
+        where: {
+          branchId: dto.branch_id,
+          variantId: {
+            in: deductions.resale_deductions.map((d) => d.variant_id),
+          },
+        },
+        select: { variantId: true, quantity: true },
+      });
+      result.stock_updates = stockRows.map((r) => ({
+        variant_id: r.variantId,
+        quantity: r.quantity.toNumber(),
+      }));
+    }
+
     // 7. Low-stock alert — fire-and-forget, outside the "transaction" (best-effort)
     if (
       user.business_id &&
@@ -321,11 +340,65 @@ export class OrdersService {
     }
 
     // 8. Live update for kitchen/POS — skip on an idempotency-key hit, the
-    // order already existed and was already broadcast the first time.
+    // order already existed and was already broadcast the first time. El
+    // payload se arma con lo que ya se resolvió en memoria (variantes,
+    // precios, sabores) — nada de esto pega a la base de nuevo.
     if (!result.duplicate) {
+      const now = new Date().toISOString();
       this.ordersGateway.emitOrderCreated(dto.branch_id, {
         id: result.order_id,
         daily_number: result.daily_number,
+        created_at: now,
+        total: serverTotal,
+        kitchen_status: 'pending',
+        payment_method: payload.payment_method,
+        payment_provider: payload.payment_provider,
+        order_type: payload.order_type,
+        table_number: payload.table_number,
+        waiter_name: payload.waiter_name,
+        cancelled_at: null,
+        notes: payload.notes,
+        last_ready_at: null,
+        order_items: discounted.map((d, idx) => {
+          const variant = variantById.get(d.variant_id);
+          return {
+            id: `${d.variant_id}-${idx}`,
+            qty: d.qty,
+            qty_physical: d.qty_physical,
+            created_at: now,
+            unit_price: d.unit_price,
+            discount_applied: round2(d.discount_applied),
+            promo_label: d.promo_label,
+            product_variants: variant
+              ? {
+                  name: variant.name,
+                  products: variant.product
+                    ? {
+                        name: variant.product.name,
+                        description: variant.product.description,
+                        category: variant.product.category,
+                        category_id: variant.product.categoryId,
+                      }
+                    : null,
+                }
+              : null,
+            order_item_flavors: (d.flavors ?? []).map((f) => {
+              const flavorVariant = variantById.get(f.variant_id);
+              return {
+                variant_id: f.variant_id,
+                proportion: f.proportion,
+                product_variants: flavorVariant?.product
+                  ? { products: { name: flavorVariant.product.name } }
+                  : null,
+              };
+            }),
+            order_item_extras: (d.extras ?? []).map((e) => ({
+              name: e.name,
+              price: e.price,
+            })),
+          };
+        }),
+        payments: payload.payments,
       });
     }
 

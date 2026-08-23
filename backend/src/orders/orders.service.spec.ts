@@ -33,6 +33,7 @@ describe('OrdersService', () => {
   let tx: TxMock;
   let prisma: {
     productVariant: { findMany: jest.Mock };
+    branchProductStock: { findMany: jest.Mock };
     $queryRaw: jest.Mock;
     $transaction: jest.Mock;
     order: { findMany: jest.Mock; findUnique: jest.Mock; update: jest.Mock };
@@ -115,6 +116,7 @@ describe('OrdersService', () => {
     };
     prisma = {
       productVariant: { findMany: jest.fn() },
+      branchProductStock: { findMany: jest.fn().mockResolvedValue([]) },
       $queryRaw: jest.fn(),
       $transaction: jest.fn(async (cb: (tx: TxMock) => unknown) => cb(tx)),
       order: { findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
@@ -199,7 +201,37 @@ describe('OrdersService', () => {
       order_id: 'o2',
       daily_number: 1,
       duplicate: false,
+      stock_updates: [],
     });
+  });
+
+  it('devuelve el stock actualizado de las variantes de reventa vendidas', async () => {
+    prisma.productVariant.findMany.mockResolvedValue([resaleVariant]);
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        create_order_atomic: {
+          order_id: 'o2',
+          daily_number: 1,
+          duplicate: false,
+        },
+      },
+    ]);
+    prisma.branchProductStock.findMany.mockResolvedValue([
+      { variantId: 'v-coca', quantity: decimal(4) },
+    ]);
+
+    const result = await service.create(
+      baseDto({ total: 10, items: [{ variant_id: 'v-coca', qty: 1 }] }),
+      cashier,
+    );
+
+    expect(prisma.branchProductStock.findMany).toHaveBeenCalledWith({
+      where: { branchId: 'b1', variantId: { in: ['v-coca'] } },
+      select: { variantId: true, quantity: true },
+    });
+    expect(result.stock_updates).toEqual([
+      { variant_id: 'v-coca', quantity: 4 },
+    ]);
   });
 
   it('rechaza si el producto o la variante están inactivos', async () => {
@@ -336,9 +368,46 @@ describe('OrdersService', () => {
 
     await service.create(baseDto({ total: 75 }), cashier);
 
+    // El payload lleva la orden completa (armada en memoria, sin queries
+    // extra) para que POS/cocina la inserten en su lista sin volver a pedir
+    // todo — created_at es real, así que se matchea con expect.any(String).
     expect(ordersGateway.emitOrderCreated).toHaveBeenCalledWith('b1', {
       id: 'o1',
       daily_number: 3,
+      created_at: expect.any(String),
+      total: 75,
+      kitchen_status: 'pending',
+      payment_method: 'efectivo',
+      payment_provider: null,
+      order_type: 'dine_in',
+      table_number: null,
+      waiter_name: null,
+      cancelled_at: null,
+      notes: null,
+      last_ready_at: null,
+      order_items: [
+        {
+          id: 'v-pizza-0',
+          qty: 1,
+          qty_physical: 1,
+          created_at: expect.any(String),
+          unit_price: 75,
+          discount_applied: 0,
+          promo_label: null,
+          product_variants: {
+            name: 'Familiar',
+            products: {
+              name: 'Hawaiana',
+              category: 'pizza',
+              category_id: undefined,
+              description: undefined,
+            },
+          },
+          order_item_flavors: [],
+          order_item_extras: [],
+        },
+      ],
+      payments: [],
     });
   });
 
