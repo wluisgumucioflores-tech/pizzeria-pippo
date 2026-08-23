@@ -94,9 +94,9 @@ export function PosModals({
         canPrint={printer.status !== "unsupported"}
       />
       <CancelOrderModal order={cancelModal} loading={cancelling} onConfirm={onCancelOrder} onClose={onCloseCancelModal} />
-      <CollectPaymentModal key={payModal?.id ?? "closed"} order={payModal} submitting={paying} onConfirm={onPayOrder} onClose={onClosePayModal} />
+      <CollectPaymentModal key={payModal?.id ?? "pay-closed"} order={payModal} submitting={paying} onConfirm={onPayOrder} onClose={onClosePayModal} />
       <AddItemsModal
-        key={addItemsModal?.id ?? "closed"}
+        key={addItemsModal?.id ?? "add-items-closed"}
         order={addItemsModal}
         branchId={branchId}
         products={products}
