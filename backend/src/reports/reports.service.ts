@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { dateRangeFrom, dateRangeTo, toBoliviaDate } from '../common/utils/timezone';
+import { dateRangeFrom, dateRangeTo, toBoliviaDate, todayInBolivia } from '../common/utils/timezone';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import type { ReportQueryDto } from './dto/report-query.dto';
 import type { CashierReportQueryDto } from './dto/cashier-report-query.dto';
@@ -13,6 +13,12 @@ export class ReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
   private buildWhere(query: ReportQueryDto, user: CurrentUserPayload) {
+    // Sin from/to el caller (chat IA, Telegram, API directa) no puso rango —
+    // se acota a hoy en vez de traer el historial completo del negocio.
+    const hasRange = query.from || query.to;
+    const from = hasRange ? query.from : todayInBolivia();
+    const to = hasRange ? query.to : todayInBolivia();
+
     return {
       cancelledAt: null,
       // Fase 4 — cobro diferido: una orden sin cobrar todavía no es una
@@ -22,10 +28,10 @@ export class ReportsService {
       paymentMethod: { not: null },
       branch: { businessId: this.resolveBusinessId(user) },
       ...(query.branchId && { branchId: query.branchId }),
-      ...((query.from || query.to) && {
+      ...((from || to) && {
         createdAt: {
-          ...(query.from && { gte: new Date(dateRangeFrom(query.from)) }),
-          ...(query.to && { lte: new Date(dateRangeTo(query.to)) }),
+          ...(from && { gte: new Date(dateRangeFrom(from)) }),
+          ...(to && { lte: new Date(dateRangeTo(to)) }),
         },
       }),
     };
@@ -249,13 +255,18 @@ export class ReportsService {
   // shows cancelled orders too — the UI displays their cancel reason instead
   // of hiding them.
   private buildOrdersHistoryWhere(query: OrdersReportQueryDto, user: CurrentUserPayload) {
+    // Mismo criterio que buildWhere: sin rango explícito, se acota a hoy.
+    const hasRange = query.from || query.to;
+    const from = hasRange ? query.from : todayInBolivia();
+    const to = hasRange ? query.to : todayInBolivia();
+
     return {
       branch: { businessId: this.resolveBusinessId(user) },
       ...(query.branchId && { branchId: query.branchId }),
-      ...((query.from || query.to) && {
+      ...((from || to) && {
         createdAt: {
-          ...(query.from && { gte: new Date(dateRangeFrom(query.from)) }),
-          ...(query.to && { lte: new Date(dateRangeTo(query.to)) }),
+          ...(from && { gte: new Date(dateRangeFrom(from)) }),
+          ...(to && { lte: new Date(dateRangeTo(to)) }),
         },
       }),
     };
