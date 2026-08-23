@@ -101,7 +101,7 @@ export class ProductsService {
       where: { businessId: this.resolveBusinessId(user), isActive: true },
       orderBy: { name: 'asc' },
       include: {
-        variants: { include: { branchPrices: true, recipes: true } },
+        variants: { include: { branchPrices: { where: { branchId } }, recipes: true } },
       },
     });
 
@@ -133,9 +133,7 @@ export class ProductsService {
         if (p.product_type === 'resale') return p;
         return {
           ...p,
-          product_variants: p.product_variants.filter((v) =>
-            v.branch_prices.some((bp) => bp.branch_id === branchId),
-          ),
+          product_variants: p.product_variants.filter((v) => v.branch_prices.length > 0),
         };
       })
       .filter((p) => p.product_type === 'resale' || p.product_variants.length > 0);
