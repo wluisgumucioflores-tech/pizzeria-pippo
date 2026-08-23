@@ -13,7 +13,7 @@ function PizzaCard({ pizza, branches }: { pizza: PublicPizza; branches: PublicBr
         alt={pizza.name}
         width={400}
         height={240}
-        unoptimized
+        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         className="w-full h-40 object-cover"
       />
       <div className="p-5 flex flex-col flex-1">

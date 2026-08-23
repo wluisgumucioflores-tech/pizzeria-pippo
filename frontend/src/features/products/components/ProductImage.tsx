@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { CATEGORY_BG } from "../constants/product.constants";
 import { CategoryIcon } from "./CategoryIcon";
 
@@ -11,7 +12,7 @@ interface Props {
 export function ProductImage({ url, category, width = 48, height = 48 }: Props) {
   if (url) {
     return (
-      <img
+      <Image
         src={url}
         alt="producto"
         width={width}

@@ -130,7 +130,7 @@ export function ProductCatalog({ products, loading, branchId, useStock, getVaria
                   {/* Image */}
                   <div style={{ position: "relative" }}>
                     {product.image_url ? (
-                      <NextImage src={product.image_url} alt={product.name} width={300} height={130} unoptimized style={{ width: "100%", height: 130, objectFit: "cover", display: "block" }} />
+                      <NextImage src={product.image_url} alt={product.name} width={300} height={130} sizes="(max-width: 640px) 50vw, 200px" style={{ width: "100%", height: 130, objectFit: "cover", display: "block" }} />
                     ) : (
                       <div style={{ width: "100%", height: 130, background: "linear-gradient(135deg, #fff7ed, #fed7aa)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44 }}>
                         🍽️
