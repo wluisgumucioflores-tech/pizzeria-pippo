@@ -25,6 +25,7 @@ import { EmployeesModule } from './employees/employees.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { BusinessesModule } from './businesses/businesses.module';
 import { CategoriesModule } from './categories/categories.module';
+import { McpModule } from './mcp/mcp.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { CategoriesModule } from './categories/categories.module';
     AttendanceModule,
     BusinessesModule,
     CategoriesModule,
+    McpModule,
   ],
   controllers: [AppController],
   providers: [AppService],

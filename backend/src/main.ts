@@ -4,6 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { FileLogger } from './common/logger/file-logger.service';
+import { OpenApiDocumentHolder } from './mcp/openapi-document.holder';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { logger: new FileLogger() });
@@ -37,6 +38,8 @@ async function bootstrap() {
       .addBearerAuth()
       .build(),
   );
+  app.get(OpenApiDocumentHolder).setDocument(swaggerDocument);
+
   if (process.env.NODE_ENV !== 'production') {
     SwaggerModule.setup('api-docs', app, swaggerDocument);
   }
