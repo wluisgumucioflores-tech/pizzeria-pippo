@@ -1,7 +1,7 @@
 "use client";
 
 import { Tabs } from "antd";
-import { BellOutlined, RobotOutlined, FireOutlined, PrinterOutlined, MobileOutlined, DatabaseOutlined, ShopOutlined } from "@ant-design/icons";
+import { BellOutlined, RobotOutlined, FireOutlined, PrinterOutlined, MobileOutlined, DatabaseOutlined, ShopOutlined, ApiOutlined } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
 import { useGetIdentity } from "@refinedev/core";
 import { DEFAULT_ENABLED_MODULES, type EnabledModules } from "@pippo/shared";
@@ -12,6 +12,7 @@ import { StockSettingsForm } from "@/features/settings/components/StockSettingsF
 import { PosSettingsForm } from "@/features/settings/components/PosSettingsForm";
 import { BotTab } from "@/features/settings/components/BotTab";
 import { DevicesTab } from "@/features/settings/components/DevicesTab";
+import { McpTab } from "@/features/settings/components/McpTab";
 
 interface Identity {
   enabled_modules?: EnabledModules;
@@ -58,6 +59,12 @@ export default function SettingsPage() {
       label: <span><DatabaseOutlined /> {t("stock")}</span>,
       children: <StockSettingsForm />,
       hidden: !enabledModules.stock,
+    },
+    {
+      key: "mcp",
+      label: <span><ApiOutlined /> {t("mcp")}</span>,
+      children: <McpTab />,
+      hidden: !enabledModules.mcpSaas,
     },
     {
       key: "pos",
