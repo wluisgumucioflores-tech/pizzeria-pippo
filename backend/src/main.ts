@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { FileLogger } from './common/logger/file-logger.service';
@@ -22,6 +23,24 @@ async function bootstrap() {
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.useGlobalFilters(new HttpExceptionFilter());
+
+  // The OpenAPI document also feeds the MCP tool registry (derives tool
+  // schemas from the same spec) — generated in every env since that's cheap
+  // and in-memory. Only the browsable HTML UI is gated to non-prod: we don't
+  // want the full API map publicly navigable in production.
+  const swaggerDocument = SwaggerModule.createDocument(
+    app,
+    new DocumentBuilder()
+      .setTitle('Pizzería Pippo API')
+      .setDescription('API del backend de gestión multi-sucursal')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build(),
+  );
+  if (process.env.NODE_ENV !== 'production') {
+    SwaggerModule.setup('api-docs', app, swaggerDocument);
+  }
+
   await app.listen(process.env.PORT ?? 3333);
 }
 bootstrap();
