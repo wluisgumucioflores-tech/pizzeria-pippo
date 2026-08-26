@@ -1,5 +1,7 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { logger } from 'hono/logger';
 import { webcrypto } from 'node:crypto';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
@@ -23,7 +25,37 @@ interface TenantSession {
 // tenants later is just "more entries", no structural change.
 const tenantSessions = new Map<string, TenantSession>();
 
+// Uncaught errors used to be invisible: nothing logged them, and an
+// unhandled rejection would silently kill the whole process (leaving the
+// tunnel's origin unreachable for every client, not just the one that
+// triggered it) with zero trace of why. Log instead of crashing — a bad
+// request from one client shouldn't take down the process for everyone
+// else.
+process.on('uncaughtException', (err) => {
+  console.error('uncaughtException:', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('unhandledRejection:', reason);
+});
+
 const app = new Hono();
+
+app.use('*', logger());
+
+// Some MCP clients (browser-based or app connectors like ChatGPT) send a
+// CORS preflight OPTIONS before the real POST — without this, that
+// preflight fails before our Authorization check even runs, and it looks
+// like the request "disappeared" (no application log, just a generic
+// failure from the client). Matches the SDK's own reference Hono example.
+app.use(
+  '*',
+  cors({
+    origin: '*',
+    allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization', 'mcp-session-id', 'mcp-protocol-version'],
+    exposeHeaders: ['mcp-session-id', 'mcp-protocol-version'],
+  }),
+);
 
 app.get('/health', (c) => c.json({ status: 'ok' }));
 
@@ -49,12 +81,17 @@ app.all('/mcp', async (c) => {
     return c.text(`mcp-saas: no se pudo autenticar contra el backend (${(err as Error).message})`, 502);
   }
 
-  const server = new Server({ name: 'pippo-mcp-saas', version: '0.1.0' }, { capabilities: { tools: {} } });
-  registerHandlers(server, session);
+  try {
+    const server = new Server({ name: 'pippo-mcp-saas', version: '0.1.0' }, { capabilities: { tools: {} } });
+    registerHandlers(server, session);
 
-  const transport = new WebStandardStreamableHTTPServerTransport();
-  await server.connect(transport);
-  return transport.handleRequest(c.req.raw);
+    const transport = new WebStandardStreamableHTTPServerTransport();
+    await server.connect(transport);
+    return await transport.handleRequest(c.req.raw);
+  } catch (err) {
+    console.error(`Error manejando ${c.req.method} /mcp:`, err);
+    return c.text('Internal server error', 500);
+  }
 });
 
 async function getOrCreateSession(apiKey: string): Promise<TenantSession> {
