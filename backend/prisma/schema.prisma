@@ -91,18 +91,33 @@ model Device {
   @@map("devices")
 }
 
+model McpApiKey {
+  id         String    @id @default(uuid()) @db.Uuid
+  businessId String    @map("business_id") @db.Uuid
+  name       String
+  apiKeyHash String    @map("api_key_hash")
+  isActive   Boolean   @default(true) @map("is_active")
+  lastUsedAt DateTime? @map("last_used_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@map("mcp_api_keys")
+}
+
 model Business {
   id             String   @id @default(uuid()) @db.Uuid
   name           String
   isActive       Boolean  @default(true) @map("is_active")
   createdAt      DateTime @default(now()) @map("created_at")
-  enabledModules Json     @default("{\"kitchen\":true,\"stock\":true,\"employees\":true,\"telegram\":false,\"printer\":true,\"mesero\":false}") @map("enabled_modules")
+  enabledModules Json     @default("{\"kitchen\":true,\"stock\":true,\"employees\":true,\"telegram\":false,\"printer\":true,\"mesero\":false,\"mcpSaas\":false}") @map("enabled_modules")
 
   profiles                  Profile[]
   appSettings               AppSetting[]
   branches                  Branch[]
   employees                 Employee[]
   devices                   Device[]
+  mcpApiKeys                McpApiKey[]
   variantTypes              VariantType[]
   ingredients               Ingredient[]
   products                  Product[]
