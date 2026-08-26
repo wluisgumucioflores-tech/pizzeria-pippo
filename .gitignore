@@ -13,6 +13,10 @@ backend/.env
 backend/logs
 packages/*/dist
 
+# mcp-saas
+services/mcp-saas/dist
+services/mcp-saas/.env
+
 # testing
 frontend/coverage
 
