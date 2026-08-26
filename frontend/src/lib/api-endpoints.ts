@@ -109,6 +109,12 @@ export const API_ENDPOINTS = {
     base: "/devices",
     byId: (id: string) => `/devices/${id}`,
   },
+  mcp: {
+    keys: {
+      base: "/mcp/keys",
+      byId: (id: string) => `/mcp/keys/${id}`,
+    },
+  },
   employees: {
     list: (qs: string) => `/employees${qs ? `?${qs}` : ""}`,
     base: "/employees",

@@ -20,6 +20,9 @@ import { PasswordModule } from './password/password.module';
   ],
   controllers: [AuthController],
   providers: [JwtStrategy, JwtAuthGuard, AuthService],
-  exports: [JwtAuthGuard, AuthService],
+  // JwtModule is re-exported so other modules that import AuthModule (e.g.
+  // McpModule, to sign its own short-lived agent tokens) can inject
+  // JwtService without registering a second JwtModule of their own.
+  exports: [JwtAuthGuard, AuthService, JwtModule],
 })
 export class AuthModule {}

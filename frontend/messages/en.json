@@ -817,6 +817,7 @@
       "printer": "Printer",
       "devices": "Devices",
       "stock": "Inventory",
+      "mcp": "MCP",
       "pos": "Cashier"
     },
     "testConnection": "Test connection",
@@ -984,6 +985,30 @@
       "warning": "Copy this API key now — it can't be shown again.",
       "copied": "Copied to clipboard",
       "hint": "Set this value in the phone app (backend URL + this API key) so it can report Yape payments."
+    }
+  },
+  "mcp": {
+    "title": "MCP API keys",
+    "new": "New API key",
+    "columns": {
+      "name": "Name",
+      "lastUsed": "Last used",
+      "active": "Active"
+    },
+    "never": "Never",
+    "modal": {
+      "createTitle": "New MCP API key",
+      "name": "Name",
+      "namePlaceholder": "Claude Desktop",
+      "nameRequired": "Enter a name",
+      "nameHint": "A name to identify where this key is used."
+    },
+    "apiKeyModal": {
+      "title": "API key created",
+      "gotIt": "I copied it",
+      "warning": "Copy this API key now — it can't be shown again.",
+      "copied": "Copied to clipboard",
+      "hint": "Set this value in your MCP client (Claude or another app) so it can query your business data."
     }
   },
   "employees": {

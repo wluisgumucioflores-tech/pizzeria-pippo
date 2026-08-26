@@ -10,6 +10,7 @@ export const MODULE_LABELS: Record<BusinessModuleKey, string> = {
   telegram: "Bot de Telegram / Notificaciones",
   printer: "Impresora / Dispositivos",
   mesero: "Mesero (mesas / dine-in)",
+  mcpSaas: "MCP (servidor MCP externo)",
 };
 
 export const DEFAULT_ENABLED_MODULES_LIST: BusinessModuleKey[] = BUSINESS_MODULE_KEYS.filter(

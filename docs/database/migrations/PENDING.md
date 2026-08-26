@@ -12,6 +12,8 @@
 | ⏳ | `046_employees_attendance.sql` | Fichaje de empleados con credencial QR: tablas `employees` y `attendance_records` + `branches.expected_start_time` (informativo) |
 | ⏳ | `047_orders_notes.sql` | Columna `notes` (texto opcional) en `orders` + rewrite de `create_order_atomic` para guardarla — nota de venta opcional en el POS |
 | ⏳ | `052_kitchen_stage_colors.sql` | Inserta keys `kitchen_stage_warning_minutes` y `kitchen_color_fresh/warning/late` en `app_settings` — 3 etapas de color configurables en la pantalla de cocina |
+| ⏳ | `056_mcp_api_keys.sql` | Crea tabla `mcp_api_keys` con RLS — API keys self-serve por negocio para el servidor MCP (`services/mcp-saas`) |
+| ⏳ | `057_business_enabled_modules_mcp_saas.sql` | Agrega el flag `mcpSaas` (default `false`) a `businesses.enabled_modules` |
 
 ## Aplicadas en producción
 
