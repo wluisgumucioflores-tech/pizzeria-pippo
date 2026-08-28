@@ -14,10 +14,13 @@ export class AuthService {
   ) {}
 
   async login(email: string, password: string): Promise<{ access_token: string; user: CurrentUserPayload }> {
-    const profile = await this.prisma.profile.findUnique({ where: { email } });
-    // Same generic message for nonexistent email, wrong password, or a
-    // banned user — prevents the response from letting attackers enumerate users.
-    if (!profile || profile.isBanned) throw new UnauthorizedException('Credenciales incorrectas');
+    const profile = await this.prisma.profile.findUnique({ where: { email }, include: { business: true } });
+    // Same generic message for nonexistent email, wrong password, a banned
+    // user, or a suspended business — prevents the response from letting
+    // attackers enumerate users. businessId is null only for superadmin.
+    if (!profile || profile.isBanned || profile.business?.isActive === false) {
+      throw new UnauthorizedException('Credenciales incorrectas');
+    }
 
     const passwordMatches = await this.passwordHasher.compare(password, profile.passwordHash);
     if (!passwordMatches) throw new UnauthorizedException('Credenciales incorrectas');
@@ -52,8 +55,10 @@ export class AuthService {
       throw new UnauthorizedException('Token inválido o expirado');
     }
 
-    const profile = await this.prisma.profile.findUnique({ where: { id: payload.sub } });
-    if (!profile || profile.isBanned) throw new UnauthorizedException('Perfil no encontrado');
+    const profile = await this.prisma.profile.findUnique({ where: { id: payload.sub }, include: { business: true } });
+    if (!profile || profile.isBanned || profile.business?.isActive === false) {
+      throw new UnauthorizedException('Perfil no encontrado');
+    }
 
     return toCurrentUserPayload(profile);
   }

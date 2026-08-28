@@ -21,8 +21,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: AppJwtPayload): Promise<CurrentUserPayload> {
     const profile = await this.prisma.profile.findUnique({
       where: { id: payload.sub },
+      include: { business: true },
     });
-    if (!profile || profile.isBanned) throw new UnauthorizedException('Perfil no encontrado');
+    if (!profile || profile.isBanned || profile.business?.isActive === false) {
+      throw new UnauthorizedException('Perfil no encontrado');
+    }
 
     return toCurrentUserPayload(profile);
   }

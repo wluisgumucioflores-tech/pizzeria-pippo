@@ -85,6 +85,20 @@ describe('AuthService', () => {
 
       await expect(service.login('cajero@pippo.local', 'wrong')).rejects.toThrow(UnauthorizedException);
     });
+
+    it('rechaza con el mismo mensaje si el negocio está suspendido', async () => {
+      prisma.profile.findUnique.mockResolvedValue({ ...profile, business: { isActive: false } });
+
+      await expect(service.login('cajero@pippo.local', 'plain-password')).rejects.toThrow(UnauthorizedException);
+      expect(passwordHasher.compare).not.toHaveBeenCalled();
+    });
+
+    it('permite el login de superadmin sin negocio asociado', async () => {
+      prisma.profile.findUnique.mockResolvedValue({ ...profile, businessId: null, business: null, role: 'superadmin' });
+      passwordHasher.compare.mockResolvedValue(true);
+
+      await expect(service.login('cajero@pippo.local', 'plain-password')).resolves.toBeDefined();
+    });
   });
 
   describe('resolveUserFromToken', () => {
@@ -123,6 +137,13 @@ describe('AuthService', () => {
     it('rechaza si el perfil está baneado', async () => {
       jwtService.verify.mockReturnValue({ sub: 'u1' });
       prisma.profile.findUnique.mockResolvedValue({ ...profile, isBanned: true });
+
+      await expect(service.resolveUserFromToken('token-valido')).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('rechaza si el negocio del perfil está suspendido', async () => {
+      jwtService.verify.mockReturnValue({ sub: 'u1' });
+      prisma.profile.findUnique.mockResolvedValue({ ...profile, business: { isActive: false } });
 
       await expect(service.resolveUserFromToken('token-valido')).rejects.toThrow(UnauthorizedException);
     });
