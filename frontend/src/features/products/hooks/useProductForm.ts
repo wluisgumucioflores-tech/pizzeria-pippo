@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Form, notification } from "antd";
 import { mutate } from "swr";
 import { getToken } from "@/lib/auth";
+import { resizeImageToWebp } from "@/lib/resizeImage";
 import { ProductsService } from "../services/products.service";
 import { VariantTypesService } from "@/features/variant-types/services/variant-types.service";
 import { useProductVariants } from "./useProductVariants";
@@ -82,8 +83,8 @@ export function useProductForm(onSuccess: () => void) {
 
   const handleImageUpload = async (file: File) => {
     setUploading(true);
-    const token = await getToken();
-    const { url, error } = await ProductsService.uploadImage(file, token);
+    const [token, resized] = await Promise.all([getToken(), resizeImageToWebp(file)]);
+    const { url, error } = await ProductsService.uploadImage(resized, token);
     if (url) {
       setImageUrl(url);
     } else {
