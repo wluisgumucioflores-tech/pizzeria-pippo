@@ -10,6 +10,7 @@
 # backend (NestJS)
 backend/dist
 backend/.env
+backend/.env.docker
 backend/logs
 packages/*/dist
 
