@@ -5,7 +5,8 @@
 - **Next.js 14** (App Router) — framework principal
 - **Refine** + **Ant Design** — panel admin
 - **Tailwind CSS** — POS y display cliente
-- **Supabase** — PostgreSQL, Auth (JWT), Storage
+- **NestJS** — backend (API, auth, lógica de negocio), conecta a Supabase Postgres vía Prisma
+- **Supabase** — solo PostgreSQL + Storage (la Auth de Supabase ya NO se usa, ver sección "Autenticación y Sesiones")
 - **next-intl** — i18n (español default, inglés soportado)
 - **next-pwa** — PWA para el admin
 
@@ -70,7 +71,7 @@ src/features/<nombre>/
 
 ### Regla estricta: hooks nunca tocan Supabase directamente
 
-**Los hooks NO deben importar `supabase` ni llamar a `supabase.from()`, `supabase.auth.*`, ni `supabase.channel()` directamente.**
+**Los hooks NO deben importar `supabase` ni llamar a `supabase.from()` directamente.**
 
 Toda comunicación con Supabase debe pasar por el service de la feature:
 
@@ -84,12 +85,8 @@ import { MyService } from "../services/my.service";
 const branches = await MyService.getBranches();
 ```
 
-Esto aplica también para:
-- **Auth** → `supabase.auth.signOut()` debe estar en el service, no en el hook
-- **Realtime** → `supabase.channel(...)` debe encapsularse en métodos del service (`subscribeToX`, `unsubscribe`)
-- **Token** → nunca llamar `supabase.auth.getSession()` en un hook; usar `getToken()` de `@/lib/auth`
-
-La única excepción es `src/lib/auth.ts` que centraliza `getToken()` — esa es la única función que llama a `supabase.auth.getSession()` en toda la app.
+- **Token** → nunca leer el token manualmente en un hook; usar `getToken()` de `@/lib/auth`
+- **Realtime** (WebSockets contra el backend NestJS) → encapsular en métodos del service (`subscribeToX`, `unsubscribe`)
 
 ### Ejemplo de estructura para una feature
 
@@ -132,6 +129,37 @@ export default function BranchesPage() {
 
 Los módulos actuales aún no siguen esta arquitectura. El plan de refactor está documentado en:
 `docs/improves/refactor-architecture/` — un archivo por módulo, en orden de prioridad.
+
+---
+
+## Autenticación y Sesiones
+
+**Supabase Auth NO se usa.** La autenticación es 100% custom, emitida y validada por el backend NestJS. Supabase queda solo como motor Postgres (vía Prisma).
+
+### Backend (`backend/src/auth/`)
+
+- **Login** — `POST /auth/login` (`auth.controller.ts` → `auth.service.ts`): busca el `profile` + `business` en Prisma, rechaza con el mismo mensaje genérico si el usuario está baneado (`profiles.is_banned`) o si `business.isActive === false` (evita enumeración de usuarios). Password comparado con bcrypt. Firma un JWT propio (`{ sub: profile.id }`, secret `JWT_SECRET`).
+- **TTL diferenciado por rol**: `mesero` → 6h (tablet fija), resto de roles → `JWT_EXPIRES_IN` (default 10h).
+- **Validación en cada request** — `JwtAuthGuard` → `JwtStrategy.validate()` (`jwt.strategy.ts`): verifica firma/expiración y **re-consulta la DB** (perfil + business) en cada llamada, rechazando si el usuario fue baneado o el negocio suspendido después de emitido el token. Esto significa que suspender un negocio corta el acceso de inmediato, no solo en el próximo login.
+- **Autorización por rol** — `RolesGuard` + `@Roles(...)`, usuario inyectado vía `@CurrentUser()`.
+- **WebSockets** (reemplazo de `supabase.channel()`) — `orders.gateway.ts` valida el token manualmente con `AuthService.resolveUserFromToken()` en `handleConnection`, sin pasar por Passport.
+- **Sin estado de sesión en DB** — no hay tabla de sesiones, refresh tokens ni blacklist. El JWT es stateless hasta su `exp`.
+
+### Frontend (`frontend/src/lib/auth.ts`)
+
+- `getToken()` — única función permitida para leer el token; lee de `localStorage["pippo_auth_token"]`, valida expiración del payload, y devuelve `""` si no existe o expiró (nunca rechaza).
+- `signIn(email, password)` — `POST /auth/login`, guarda `access_token` en `localStorage`.
+- `signOut()` — **puramente client-side**: solo borra el token de `localStorage`. No invalida nada en el backend. Por eso cerrar sesión en un dispositivo **no afecta** sesiones activas del mismo usuario en otros dispositivos — cada login genera un JWT independiente.
+- `getUserProfile()` — `GET /auth/me` con `Authorization: Bearer`.
+- Cliente HTTP centralizado: `nestFetch.ts` agrega el header `Authorization` automáticamente a cada llamada al backend.
+
+### Protección de rutas — NO ocurre en `middleware.ts`
+
+`middleware.ts` es un no-op intencional (deja pasar todo). La protección real es **client-side**, en cada `layout.tsx`:
+- `/admin` y `/superadmin` → `AuthProvider` de Refine (`authProvider.ts` / `authProviderSuperadmin.ts`), valida `role` y hace logout automático en 401.
+- `kitchen`, `mesero`, `(pos)` → guards ad-hoc con `getUserProfile()` en el layout. Mesero además hace polling cada 60s (`SESSION_CHECK_INTERVAL_MS`) porque su sesión de 6h suele quedar inactiva en la tablet.
+
+Al construir una ruta o feature nueva que requiera auth, seguir este mismo patrón (guard en `layout.tsx`), no depender de `middleware.ts`.
 
 ---
 
