@@ -1,11 +1,16 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { signOut } from "@/lib/auth";
 import { LocaleSwitcher } from "@/features/i18n/components/LocaleSwitcher";
+import { ChangePasswordModal } from "@/features/account/components/ChangePasswordModal";
+import { useChangePassword } from "@/features/account/hooks/useChangePassword";
 import { useMeseroName } from "../hooks/useMeseroName";
 
 export function MeseroNameGate({ children }: { children: React.ReactNode }) {
   const { name, loaded, setName, clearName } = useMeseroName();
+  const t = useTranslations("account");
+  const changePassword = useChangePassword();
 
   const handleLogout = async () => {
     clearName();
@@ -72,6 +77,13 @@ export function MeseroNameGate({ children }: { children: React.ReactNode }) {
           </button>
           <button
             type="button"
+            onClick={changePassword.openModal}
+            className="text-base text-gray-500 hover:text-gray-700 cursor-pointer"
+          >
+            {t("changePassword")}
+          </button>
+          <button
+            type="button"
             onClick={handleLogout}
             className="text-base text-red-500 hover:text-red-700 cursor-pointer"
           >
@@ -80,6 +92,13 @@ export function MeseroNameGate({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       {children}
+      <ChangePasswordModal
+        open={changePassword.open}
+        saving={changePassword.saving}
+        form={changePassword.form}
+        onClose={changePassword.closeModal}
+        onSubmit={changePassword.handleSubmit}
+      />
     </div>
   );
 }

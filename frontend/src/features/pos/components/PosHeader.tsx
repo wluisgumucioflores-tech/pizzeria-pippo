@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Button, Tag, Typography } from "antd";
-import { LogoutOutlined, ReloadOutlined, ShoppingCartOutlined, UnorderedListOutlined, BarChartOutlined, GiftOutlined } from "@ant-design/icons";
+import { LogoutOutlined, ReloadOutlined, ShoppingCartOutlined, UnorderedListOutlined, BarChartOutlined, GiftOutlined, KeyOutlined } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
 import { formatTimeBolivia } from "@/lib/timezone";
 import { useIsMobile } from "@/lib/useIsMobile";
@@ -24,6 +24,7 @@ interface Props {
   refreshing: boolean;
   onRefresh: () => void;
   onTabChange: (tab: PosTab) => void;
+  onChangePassword: () => void;
   onLogout: () => void;
   printerSlot?: React.ReactNode;
 }
@@ -37,12 +38,13 @@ function ConnectionBadge({ connected }: { connected: boolean }) {
   );
 }
 
-export function PosHeader({ identity, branches, activeTab, pendingCount, promoCount, connected, refreshing, onRefresh, onTabChange, onLogout, printerSlot }: Props) {
+export function PosHeader({ identity, branches, activeTab, pendingCount, promoCount, connected, refreshing, onRefresh, onTabChange, onChangePassword, onLogout, printerSlot }: Props) {
   const branchName = branches.find((b) => b.id === identity.branch_id)?.name;
   const [currentTime, setCurrentTime] = useState("");
   const [businessName, setBusinessName] = useState(DEFAULT_TICKET_BUSINESS_NAME);
   const isMobile = useIsMobile();
   const t = useTranslations("pos");
+  const ta = useTranslations("account");
 
   useEffect(() => {
     const tick = () => setCurrentTime(formatTimeBolivia(new Date()));
@@ -114,6 +116,12 @@ export function PosHeader({ identity, branches, activeTab, pendingCount, promoCo
           <LocaleSwitcher />
           <Button
             size="small"
+            icon={<KeyOutlined />}
+            onClick={onChangePassword}
+            style={{ flexShrink: 0, padding: "0 8px" }}
+          />
+          <Button
+            size="small"
             icon={<LogoutOutlined />}
             onClick={onLogout}
             style={{ flexShrink: 0, padding: "0 8px" }}
@@ -148,6 +156,7 @@ export function PosHeader({ identity, branches, activeTab, pendingCount, promoCo
           {printerSlot}
           <Button icon={<ReloadOutlined spin={refreshing} />} onClick={onRefresh} disabled={refreshing} />
           <LocaleSwitcher />
+          <Button icon={<KeyOutlined />} onClick={onChangePassword}>{ta("changePassword")}</Button>
           <Button icon={<LogoutOutlined />} onClick={onLogout}>{t("header.logout")}</Button>
         </div>
       </div>

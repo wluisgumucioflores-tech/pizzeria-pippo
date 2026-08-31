@@ -20,6 +20,8 @@ import { BranchSelector } from "@/features/pos/components/BranchSelector";
 import { PrinterStatusButton } from "@/features/printing/components/PrinterStatusButton";
 import { usePrinter } from "@/features/printing/hooks/usePrinter";
 import { getActivePromotions } from "@/lib/promotions";
+import { ChangePasswordModal } from "@/features/account/components/ChangePasswordModal";
+import { useChangePassword } from "@/features/account/hooks/useChangePassword";
 
 export default function PosPage() {
   const t = useTranslations("pos");
@@ -39,6 +41,7 @@ export default function PosPage() {
   } = useDayOrders(effectiveBranchId ?? undefined, activeTab !== "sale");
   const printer = usePrinter();
   const paymentValidation = usePaymentValidation(effectiveBranchId ?? undefined);
+  const changePassword = useChangePassword();
 
   const handleRefresh = async () => {
     if (!effectiveBranchId) return;
@@ -89,6 +92,7 @@ export default function PosPage() {
         refreshing={refreshing}
         onRefresh={handleRefresh}
         onTabChange={setActiveTab}
+        onChangePassword={changePassword.openModal}
         onLogout={handleLogout}
         printerSlot={
           <PrinterStatusButton
@@ -154,6 +158,13 @@ export default function PosPage() {
         addItemsModal={addItemsModal}
         onCloseAddItemsModal={closeAddItemsModal}
         onItemsAdded={handleItemsAdded}
+      />
+      <ChangePasswordModal
+        open={changePassword.open}
+        saving={changePassword.saving}
+        form={changePassword.form}
+        onClose={changePassword.closeModal}
+        onSubmit={changePassword.handleSubmit}
       />
     </div>
   );

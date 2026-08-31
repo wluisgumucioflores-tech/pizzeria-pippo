@@ -10,12 +10,40 @@ import {
 import routerProvider from "@refinedev/nextjs-router";
 import "@refinedev/antd/dist/reset.css";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
+import { Layout as AntdLayout, Button, theme } from "antd";
+import { useTranslations } from "next-intl";
 import { authProviderSuperadmin } from "@/lib/authProviderSuperadmin";
 import { refineUnusedDataProvider } from "@/lib/refineUnusedDataProvider";
+import { ChangePasswordModal } from "@/features/account/components/ChangePasswordModal";
+import { useChangePassword } from "@/features/account/hooks/useChangePassword";
 import Image from "next/image";
-import { ShopOutlined } from "@ant-design/icons";
+import { ShopOutlined, KeyOutlined } from "@ant-design/icons";
 
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "1.0.0";
+
+function SuperadminHeader() {
+  const { token } = theme.useToken();
+  const t = useTranslations("account");
+  const { open, saving, form, openModal, closeModal, handleSubmit } = useChangePassword();
+
+  return (
+    <AntdLayout.Header
+      style={{
+        backgroundColor: token.colorBgElevated,
+        display: "flex",
+        justifyContent: "flex-end",
+        alignItems: "center",
+        padding: "0 24px",
+        height: 64,
+      }}
+    >
+      <Button type="text" icon={<KeyOutlined />} onClick={openModal}>
+        {t("changePassword")}
+      </Button>
+      <ChangePasswordModal open={open} saving={saving} form={form} onClose={closeModal} onSubmit={handleSubmit} />
+    </AntdLayout.Header>
+  );
+}
 
 function AppFooter() {
   return (
@@ -70,7 +98,7 @@ export default function SuperadminLayout({
           }}
         >
           <Authenticated key="superadmin-auth">
-            <ThemedLayout Sider={() => <ThemedSider fixed Title={SiderTitle} />} Footer={AppFooter}>
+            <ThemedLayout Sider={() => <ThemedSider fixed Title={SiderTitle} />} Header={SuperadminHeader} Footer={AppFooter}>
               {children}
             </ThemedLayout>
           </Authenticated>

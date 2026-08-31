@@ -5,6 +5,8 @@ import { KitchenEmptyState } from "@/features/kitchen/components/KitchenEmptySta
 import { OrderCard } from "@/features/kitchen/components/OrderCard";
 import { useKitchenOrders } from "@/features/kitchen/hooks/useKitchenOrders";
 import { useKitchenStageSettings } from "@/features/kitchen/hooks/useKitchenStageSettings";
+import { ChangePasswordModal } from "@/features/account/components/ChangePasswordModal";
+import { useChangePassword } from "@/features/account/hooks/useChangePassword";
 
 export default function KitchenPage() {
   const stageSettings = useKitchenStageSettings();
@@ -20,6 +22,7 @@ export default function KitchenPage() {
     handleLogout,
     handleRefresh,
   } = useKitchenOrders(stageSettings.kitchen_late_threshold_minutes);
+  const changePassword = useChangePassword();
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
@@ -31,7 +34,15 @@ export default function KitchenPage() {
         currentTime={currentTime}
         refreshing={refreshing}
         onRefresh={handleRefresh}
+        onChangePassword={changePassword.openModal}
         onLogout={handleLogout}
+      />
+      <ChangePasswordModal
+        open={changePassword.open}
+        saving={changePassword.saving}
+        form={changePassword.form}
+        onClose={changePassword.closeModal}
+        onSubmit={changePassword.handleSubmit}
       />
 
       <div className="flex-1 p-6">

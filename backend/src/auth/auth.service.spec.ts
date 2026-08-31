@@ -8,8 +8,8 @@ import { PasswordHasherService } from './password/password-hasher.service';
 describe('AuthService', () => {
   let service: AuthService;
   let jwtService: { verify: jest.Mock; sign: jest.Mock };
-  let prisma: { profile: { findUnique: jest.Mock } };
-  let passwordHasher: { compare: jest.Mock };
+  let prisma: { profile: { findUnique: jest.Mock; update: jest.Mock } };
+  let passwordHasher: { compare: jest.Mock; hash: jest.Mock };
 
   const profile = {
     id: 'u1',
@@ -25,8 +25,8 @@ describe('AuthService', () => {
 
   beforeEach(async () => {
     jwtService = { verify: jest.fn(), sign: jest.fn().mockReturnValue('signed-token') };
-    prisma = { profile: { findUnique: jest.fn() } };
-    passwordHasher = { compare: jest.fn() };
+    prisma = { profile: { findUnique: jest.fn(), update: jest.fn() } };
+    passwordHasher = { compare: jest.fn(), hash: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -146,6 +146,42 @@ describe('AuthService', () => {
       prisma.profile.findUnique.mockResolvedValue({ ...profile, business: { isActive: false } });
 
       await expect(service.resolveUserFromToken('token-valido')).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('changePassword', () => {
+    it('actualiza el password si la contraseña actual es correcta', async () => {
+      prisma.profile.findUnique.mockResolvedValue(profile);
+      passwordHasher.compare.mockResolvedValue(true);
+      passwordHasher.hash.mockResolvedValue('nuevo-hash');
+
+      await service.changePassword('u1', 'actual', 'nueva-password');
+
+      expect(passwordHasher.compare).toHaveBeenCalledWith('actual', 'hashed');
+      expect(passwordHasher.hash).toHaveBeenCalledWith('nueva-password');
+      expect(prisma.profile.update).toHaveBeenCalledWith({
+        where: { id: 'u1' },
+        data: { passwordHash: 'nuevo-hash' },
+      });
+    });
+
+    it('rechaza si la contraseña actual no coincide', async () => {
+      prisma.profile.findUnique.mockResolvedValue(profile);
+      passwordHasher.compare.mockResolvedValue(false);
+
+      await expect(service.changePassword('u1', 'incorrecta', 'nueva-password')).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(prisma.profile.update).not.toHaveBeenCalled();
+    });
+
+    it('rechaza si el usuario no existe', async () => {
+      prisma.profile.findUnique.mockResolvedValue(null);
+
+      await expect(service.changePassword('u404', 'actual', 'nueva-password')).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(passwordHasher.compare).not.toHaveBeenCalled();
     });
   });
 });

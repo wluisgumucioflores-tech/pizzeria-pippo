@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { LocaleSwitcher } from "@/features/i18n/components/LocaleSwitcher";
 
 export function KitchenHeader({
@@ -11,6 +12,7 @@ export function KitchenHeader({
   currentTime,
   refreshing,
   onRefresh,
+  onChangePassword,
   onLogout,
 }: {
   branchName: string;
@@ -20,8 +22,10 @@ export function KitchenHeader({
   currentTime: string;
   refreshing: boolean;
   onRefresh: () => void;
+  onChangePassword: () => void;
   onLogout: () => void;
 }) {
+  const t = useTranslations("account");
   return (
     <div className="bg-gray-950 border-b border-gray-800 px-6 py-3 flex justify-between items-center">
       <div className="flex items-center gap-3">
@@ -64,6 +68,12 @@ export function KitchenHeader({
           className="text-gray-300 hover:text-white text-sm font-semibold px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span className={refreshing ? "inline-block animate-spin" : "inline-block"}>🔄</span> Actualizar
+        </button>
+        <button
+          onClick={onChangePassword}
+          className="text-gray-300 hover:text-white text-sm font-semibold px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-colors whitespace-nowrap"
+        >
+          🔑 {t("changePassword")}
         </button>
         <button
           onClick={onLogout}

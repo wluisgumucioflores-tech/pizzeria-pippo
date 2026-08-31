@@ -1234,6 +1234,23 @@
       "deleteError": "Error deleting"
     }
   },
+  "account": {
+    "changePassword": "Change password",
+    "changePasswordTitle": "Change password",
+    "currentPasswordLabel": "Current password",
+    "currentPasswordRequired": "Enter your current password",
+    "newPasswordLabel": "New password",
+    "newPasswordRequired": "Enter the new password",
+    "newPasswordMin": "Minimum 6 characters",
+    "confirmPasswordLabel": "Confirm new password",
+    "confirmPasswordRequired": "Confirm the new password",
+    "confirmPasswordMismatch": "Passwords don't match",
+    "save": "Change password",
+    "toasts": {
+      "updated": "Password updated",
+      "updateError": "Couldn't change the password"
+    }
+  },
   "variantTypes": {
     "title": "Variant Types",
     "new": "New type",

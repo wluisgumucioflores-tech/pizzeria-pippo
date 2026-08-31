@@ -62,4 +62,15 @@ export class AuthService {
 
     return toCurrentUserPayload(profile);
   }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    const profile = await this.prisma.profile.findUnique({ where: { id: userId } });
+    if (!profile) throw new UnauthorizedException('Usuario no encontrado');
+
+    const passwordMatches = await this.passwordHasher.compare(currentPassword, profile.passwordHash);
+    if (!passwordMatches) throw new UnauthorizedException('La contraseña actual es incorrecta');
+
+    const passwordHash = await this.passwordHasher.hash(newPassword);
+    await this.prisma.profile.update({ where: { id: userId }, data: { passwordHash } });
+  }
 }

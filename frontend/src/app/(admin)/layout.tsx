@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Refine, Authenticated, useGetIdentity } from "@refinedev/core";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
-import { Layout as AntdLayout, Typography, Avatar, Space, theme, Skeleton } from "antd";
+import { Layout as AntdLayout, Typography, Avatar, Space, theme, Skeleton, Dropdown } from "antd";
+import type { MenuProps } from "antd";
 import {
   ThemedLayout,
   ThemedSider,
@@ -21,6 +22,8 @@ import { authProvider } from "@/lib/authProvider";
 import { getUserProfile } from "@/lib/auth";
 import { refineUnusedDataProvider } from "@/lib/refineUnusedDataProvider";
 import { LocaleSwitcher } from "@/features/i18n/components/LocaleSwitcher";
+import { ChangePasswordModal } from "@/features/account/components/ChangePasswordModal";
+import { useChangePassword } from "@/features/account/hooks/useChangePassword";
 import Image from "next/image";
 import { buildAdminResources } from "./admin-resources";
 
@@ -44,6 +47,12 @@ function AppFooter() {
 function AdminHeader() {
   const { data: user } = useGetIdentity<Identity & { name?: string; avatar?: string | null }>();
   const { token } = theme.useToken();
+  const t = useTranslations("account");
+  const { open, saving, form, openModal, closeModal, handleSubmit } = useChangePassword();
+
+  const menuItems: MenuProps["items"] = [
+    { key: "change-password", label: t("changePassword"), onClick: openModal },
+  ];
 
   return (
     <AntdLayout.Header
@@ -59,12 +68,15 @@ function AdminHeader() {
       <Space size="middle">
         <LocaleSwitcher />
         {(user?.name || user?.avatar) && (
-          <Space size="middle">
-            {user?.name && <Typography.Text strong>{user.name}</Typography.Text>}
-            {user?.avatar && <Avatar src={user.avatar} alt={user.name} />}
-          </Space>
+          <Dropdown menu={{ items: menuItems }} trigger={["click"]}>
+            <Space size="middle" style={{ cursor: "pointer" }}>
+              {user?.name && <Typography.Text strong>{user.name}</Typography.Text>}
+              {user?.avatar && <Avatar src={user.avatar} alt={user.name} />}
+            </Space>
+          </Dropdown>
         )}
       </Space>
+      <ChangePasswordModal open={open} saving={saving} form={form} onClose={closeModal} onSubmit={handleSubmit} />
     </AntdLayout.Header>
   );
 }

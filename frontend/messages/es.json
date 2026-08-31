@@ -1234,6 +1234,23 @@
       "deleteError": "Error al eliminar"
     }
   },
+  "account": {
+    "changePassword": "Cambiar contraseña",
+    "changePasswordTitle": "Cambiar contraseña",
+    "currentPasswordLabel": "Contraseña actual",
+    "currentPasswordRequired": "Ingresá tu contraseña actual",
+    "newPasswordLabel": "Nueva contraseña",
+    "newPasswordRequired": "Ingresá la nueva contraseña",
+    "newPasswordMin": "Mínimo 6 caracteres",
+    "confirmPasswordLabel": "Confirmar nueva contraseña",
+    "confirmPasswordRequired": "Confirmá la nueva contraseña",
+    "confirmPasswordMismatch": "Las contraseñas no coinciden",
+    "save": "Cambiar contraseña",
+    "toasts": {
+      "updated": "Contraseña actualizada",
+      "updateError": "No se pudo cambiar la contraseña"
+    }
+  },
   "variantTypes": {
     "title": "Tipos de Variante",
     "new": "Nuevo tipo",
