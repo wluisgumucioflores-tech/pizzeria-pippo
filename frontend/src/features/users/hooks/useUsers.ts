@@ -16,6 +16,9 @@ export function useUsers() {
   const [editing, setEditing] = useState<User | null>(null);
   const [selectedRole, setSelectedRole] = useState<UserRole>("cajero");
   const [form] = Form.useForm();
+  const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
+  const [resettingPassword, setResettingPassword] = useState(false);
+  const [resetPasswordForm] = Form.useForm();
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -112,6 +115,31 @@ export function useUsers() {
     }
   };
 
+  const openResetPassword = (record: User) => {
+    setResetPasswordUser(record);
+    resetPasswordForm.resetFields();
+  };
+
+  const closeResetPasswordModal = () => setResetPasswordUser(null);
+
+  const handleResetPasswordSubmit = async (values: { newPassword: string }) => {
+    if (!resetPasswordUser) return;
+    setResettingPassword(true);
+    const result = await UsersService.updateUser(resetPasswordUser.id, {
+      full_name: resetPasswordUser.full_name,
+      role: resetPasswordUser.role,
+      branch_id: resetPasswordUser.branch_id,
+      password: values.newPassword,
+    });
+    if (result.ok) {
+      setResetPasswordUser(null);
+      notification.success({ message: t("passwordReset") });
+    } else {
+      notification.error({ message: result.error ?? t("passwordResetError") });
+    }
+    setResettingPassword(false);
+  };
+
   return {
     users,
     branches,
@@ -128,5 +156,11 @@ export function useUsers() {
     handleSubmit,
     handleToggleBan,
     handleDelete,
+    resetPasswordUser,
+    resettingPassword,
+    resetPasswordForm,
+    openResetPassword,
+    closeResetPasswordModal,
+    handleResetPasswordSubmit,
   };
 }

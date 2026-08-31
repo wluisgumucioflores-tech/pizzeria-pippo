@@ -1,7 +1,7 @@
 "use client";
 
 import { Table, Button, Space, Tag, Typography, Popconfirm, Tooltip } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined, StopOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { PlusOutlined, EditOutlined, DeleteOutlined, StopOutlined, CheckCircleOutlined, KeyOutlined } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
 import { ROLE_COLORS, getRoleLabels } from "../constants/user.constants";
 import { useIsMobile } from "@/lib/useIsMobile";
@@ -17,9 +17,10 @@ interface Props {
   onEdit: (user: User) => void;
   onToggleBan: (user: User) => void;
   onDelete: (id: string) => void;
+  onResetPassword: (user: User) => void;
 }
 
-export function UsersTable({ users, branches, loading, onCreate, onEdit, onToggleBan, onDelete }: Props) {
+export function UsersTable({ users, branches, loading, onCreate, onEdit, onToggleBan, onDelete, onResetPassword }: Props) {
   const isMobile = useIsMobile();
   const t = useTranslations("common");
   const tu = useTranslations("users");
@@ -31,6 +32,10 @@ export function UsersTable({ users, branches, loading, onCreate, onEdit, onToggl
     <Space size={4}>
       <Tooltip title={t("edit")}>
         <Button icon={<EditOutlined />} size="small" onClick={() => onEdit(record)} />
+      </Tooltip>
+
+      <Tooltip title={tu("resetPasswordTooltip")}>
+        <Button icon={<KeyOutlined />} size="small" onClick={() => onResetPassword(record)} />
       </Tooltip>
 
       <Tooltip title={record.is_banned ? tu("reactivate") : tu("deactivate")}>

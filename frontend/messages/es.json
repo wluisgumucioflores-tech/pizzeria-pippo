@@ -1210,6 +1210,15 @@
     "deleteBlockedTooltip": "No se puede eliminar: tiene ventas registradas",
     "deleteTooltip": "Eliminar usuario",
     "inactiveTag": "Inactivo",
+    "resetPasswordTooltip": "Resetear contraseña",
+    "resetPasswordTitle": "Resetear contraseña de {name}",
+    "resetPasswordSave": "Resetear contraseña",
+    "newPasswordLabel": "Nueva contraseña",
+    "newPasswordRequired": "Ingresá la nueva contraseña",
+    "newPasswordMin": "Mínimo 6 caracteres",
+    "confirmPasswordLabel": "Confirmar nueva contraseña",
+    "confirmPasswordRequired": "Confirmá la nueva contraseña",
+    "confirmPasswordMismatch": "Las contraseñas no coinciden",
     "columns": {
       "name": "Nombre",
       "email": "Email",
@@ -1231,7 +1240,9 @@
       "accountDeactivated": "Cuenta de {name} desactivada",
       "updateError": "Error al actualizar",
       "deleted": "Usuario eliminado",
-      "deleteError": "Error al eliminar"
+      "deleteError": "Error al eliminar",
+      "passwordReset": "Contraseña actualizada",
+      "passwordResetError": "Error al resetear la contraseña"
     }
   },
   "account": {

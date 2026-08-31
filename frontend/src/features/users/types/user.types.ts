@@ -28,4 +28,5 @@ export interface UpdateUserPayload {
   full_name: string;
   role: UserRole;
   branch_id: string | null;
+  password?: string;
 }
