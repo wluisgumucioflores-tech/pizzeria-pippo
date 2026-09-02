@@ -110,8 +110,13 @@ model Business {
   name           String
   isActive       Boolean  @default(true) @map("is_active")
   createdAt      DateTime @default(now()) @map("created_at")
-  enabledModules Json     @default("{\"kitchen\":true,\"stock\":true,\"employees\":true,\"telegram\":false,\"printer\":true,\"mesero\":false,\"mcpSaas\":false}") @map("enabled_modules")
+  enabledModules Json     @default("{\"kitchen\":true,\"stock\":true,\"employees\":true,\"telegram\":false,\"printer\":true,\"mesero\":false,\"mcpSaas\":false,\"aiChat\":false}") @map("enabled_modules")
+  // Optional: aiChat is a per-business feature flag (enabledModules.aiChat) —
+  // a business that never turns it on doesn't need a plan assigned.
+  aiChatPlanId   String?  @map("ai_chat_plan_id") @db.Uuid
 
+  aiChatPlan                AiChatPlan?                @relation(fields: [aiChatPlanId], references: [id])
+  aiChatUsage               AiChatUsage[]
   profiles                  Profile[]
   appSettings               AppSetting[]
   branches                  Branch[]
@@ -131,6 +136,39 @@ model Business {
   categories                Category[]
 
   @@map("businesses")
+}
+
+// Catálogo de planes del Chat IA (administrable por superadmin desde
+// /ai-chat-plans). `limits` es JSON para poder agregar nuevos tipos de
+// límite a futuro (ej. modelos permitidos, ver AiModel) sin otra migración.
+model AiChatPlan {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  limits    Json     @default("{}")
+  isDefault Boolean  @default(false) @map("is_default")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  businesses Business[]
+
+  @@map("ai_chat_plans")
+}
+
+// Uso diario (mensajes + tokens) del Chat IA por negocio. Mismo patrón
+// date-keyed que TelegramUsage: una fila nueva por día, sin cron.
+model AiChatUsage {
+  id           String   @id @default(uuid()) @db.Uuid
+  businessId   String   @map("business_id") @db.Uuid
+  date         DateTime @db.Date
+  messageCount Int      @default(0) @map("message_count")
+  inputTokens  Int      @default(0) @map("input_tokens")
+  outputTokens Int      @default(0) @map("output_tokens")
+  updatedAt    DateTime @default(now()) @map("updated_at")
+
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@unique([businessId, date])
+  @@map("ai_chat_usage")
 }
 
 model Category {
@@ -185,6 +223,40 @@ model AppSetting {
 
   @@unique([businessId, key])
   @@map("app_settings")
+}
+
+// Catálogo global de modelos de IA disponibles (administrable por superadmin).
+// El servicio orquestador resuelve qué modelo usar consultando esta tabla vía
+// NestJS. Fase 8: las API keys de proveedores cloud se guardan acá,
+// cifradas (AES-256-GCM, ver common/utils/secret-crypto.ts) — nunca en texto
+// plano, nunca devueltas al frontend (solo un booleano has_api_key).
+model AiModel {
+  id        String   @id @default(uuid()) @db.Uuid
+  provider  String
+  modelId   String   @map("model_id")
+  label     String
+  baseUrl   String?  @map("base_url")
+  apiKey    String?  @map("api_key")
+  isLocal   Boolean  @default(false) @map("is_local")
+  isActive  Boolean  @default(true) @map("is_active")
+  isDefault Boolean  @default(false) @map("is_default")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("ai_models")
+}
+
+// Catálogo global de system prompts del agente del chat-ia (administrable por
+// superadmin). El servicio orquestador pide el prompt vigente en cada turno
+// de chat — editar una fila acá cambia el comportamiento del agente sin
+// recompilar ni reiniciar ningún proceso.
+model AiPrompt {
+  id        String   @id @default(uuid()) @db.Uuid
+  locale    String   @unique
+  content   String
+  updatedAt DateTime @default(now()) @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("ai_prompts")
 }
 
 model TelegramAuthorizedChat {

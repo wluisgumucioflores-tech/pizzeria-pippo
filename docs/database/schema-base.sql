@@ -42,8 +42,34 @@ CREATE TABLE public.businesses (
   name text NOT NULL,
   is_active boolean NOT NULL DEFAULT true,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
-  enabled_modules jsonb NOT NULL DEFAULT '{"kitchen":true,"stock":true,"employees":true,"telegram":false,"printer":true,"mesero":false}'::jsonb,
-  CONSTRAINT businesses_pkey PRIMARY KEY (id)
+  enabled_modules jsonb NOT NULL DEFAULT '{"kitchen":true,"stock":true,"employees":true,"telegram":false,"printer":true,"mesero":false,"mcpSaas":false,"aiChat":false}'::jsonb,
+  ai_chat_plan_id uuid, -- nullable (064): aiChat is opt-in per business (enabledModules.aiChat)
+  CONSTRAINT businesses_pkey PRIMARY KEY (id),
+  CONSTRAINT businesses_ai_chat_plan_id_fkey FOREIGN KEY (ai_chat_plan_id) REFERENCES public.ai_chat_plans(id)
+);
+
+-- Planes y uso del Chat IA (ver migración 061_ai_chat_plans_and_usage.sql).
+CREATE TABLE public.ai_chat_plans (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  limits jsonb NOT NULL DEFAULT '{}'::jsonb,
+  is_default boolean NOT NULL DEFAULT false,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT ai_chat_plans_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE public.ai_chat_usage (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  business_id uuid NOT NULL,
+  date date NOT NULL,
+  message_count integer NOT NULL DEFAULT 0,
+  input_tokens integer NOT NULL DEFAULT 0,
+  output_tokens integer NOT NULL DEFAULT 0,
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT ai_chat_usage_pkey PRIMARY KEY (id),
+  CONSTRAINT ai_chat_usage_business_id_fkey FOREIGN KEY (business_id) REFERENCES public.businesses(id),
+  CONSTRAINT ai_chat_usage_business_id_date_key UNIQUE (business_id, date)
 );
 
 CREATE TABLE public.categories (
@@ -83,6 +109,32 @@ CREATE TABLE public.app_settings (
   business_id uuid,
   CONSTRAINT app_settings_business_key_unique UNIQUE (business_id, key),
   CONSTRAINT app_settings_business_id_fkey FOREIGN KEY (business_id) REFERENCES public.businesses(id)
+);
+
+-- Catálogo global de system prompts del chat-ia (ver migración 059_ai_prompts.sql).
+CREATE TABLE public.ai_prompts (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  locale text NOT NULL,
+  content text NOT NULL,
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT ai_prompts_pkey PRIMARY KEY (id),
+  CONSTRAINT ai_prompts_locale_key UNIQUE (locale)
+);
+
+-- Catálogo global de modelos de IA (ver migración 058_ai_models.sql).
+CREATE TABLE public.ai_models (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  provider text NOT NULL,
+  model_id text NOT NULL,
+  label text NOT NULL,
+  base_url text,
+  api_key text, -- cifrado (AES-256-GCM), nunca en texto plano
+  is_local boolean NOT NULL DEFAULT false,
+  is_active boolean NOT NULL DEFAULT true,
+  is_default boolean NOT NULL DEFAULT false,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT ai_models_pkey PRIMARY KEY (id)
 );
 
 CREATE TABLE public.products (

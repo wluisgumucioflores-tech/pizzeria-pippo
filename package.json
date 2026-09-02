@@ -6,7 +6,7 @@
     "frontend",
     "backend",
     "packages/*",
-    "services/*"
+    "services/mcp-saas"
   ],
   "scripts": {
     "dev": "npm run dev --workspace=frontend",

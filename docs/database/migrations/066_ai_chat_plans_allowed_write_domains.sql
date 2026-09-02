@@ -1,0 +1,20 @@
+-- ============================================================
+-- 066_ai_chat_plans_allowed_write_domains.sql
+-- Feature: chat-ia orchestrator — see
+-- docs/features/chat-ia-backend/catalogo-tools.md.
+--
+-- No schema change: ai_chat_plans.limits is already jsonb (same pattern as
+-- 062_ai_chat_plans_model_id.sql). This documents the new `allowed_write_domains`
+-- key (string array, e.g. ["branches","stock"]) that the superadmin sets per
+-- plan from /ai-chat-plans — it gates whether the orchestrator's
+-- BranchesWriteTools/StockWriteTools are offered to the model for businesses
+-- on that plan, on top of the existing role=admin check.
+--
+-- categories/products/promotions write tools are NOT gated by this key —
+-- they stay admin-role-only, no retrofit (see catalogo-tools.md).
+--
+-- Backfill: absent key = treated as an empty array in code
+-- (AiChatPlansService/AiModelsService), so existing plans default to no
+-- write domain enabled. No UPDATE needed unless a plan should opt in —
+-- do that from the superadmin UI, not SQL.
+-- ============================================================

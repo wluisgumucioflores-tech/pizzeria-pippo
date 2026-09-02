@@ -1,12 +1,14 @@
 "use client";
 
-import { Modal, Form, Input, Button, Divider, Checkbox } from "antd";
+import { Modal, Form, Input, Button, Divider, Checkbox, Select } from "antd";
 import type { FormInstance } from "antd";
+import type { AiChatPlan } from "@/features/ai-chat-plans/types/aiChatPlan.types";
 import type { CreateBusinessInput, EnabledModules } from "../types/business.types";
 import { BUSINESS_MODULE_KEYS, DEFAULT_ENABLED_MODULES_LIST, MODULE_LABELS } from "../constants/modules.constants";
 
 interface Props {
   open: boolean;
+  plans: AiChatPlan[];
   saving: boolean;
   form: FormInstance;
   onClose: () => void;
@@ -17,7 +19,10 @@ interface FormValues extends Omit<CreateBusinessInput, "enabled_modules"> {
   enabled_modules_selected?: string[];
 }
 
-export function BusinessModal({ open, saving, form, onClose, onSubmit }: Props) {
+export function BusinessModal({ open, plans, saving, form, onClose, onSubmit }: Props) {
+  const selectedModules = Form.useWatch("enabled_modules_selected", form) as string[] | undefined;
+  const aiChatEnabled = (selectedModules ?? DEFAULT_ENABLED_MODULES_LIST).includes("aiChat");
+
   const handleFinish = (values: FormValues) => {
     const { enabled_modules_selected, ...rest } = values;
     const enabled_modules = Object.fromEntries(
@@ -69,6 +74,19 @@ export function BusinessModal({ open, saving, form, onClose, onSubmit }: Props) 
             options={BUSINESS_MODULE_KEYS.map((key) => ({ label: MODULE_LABELS[key], value: key }))}
           />
         </Form.Item>
+
+        {aiChatEnabled && (
+          <Form.Item
+            label="Plan Chat IA"
+            name="ai_chat_plan_id"
+            extra="Plan que usa este negocio para el asistente de Chat IA."
+          >
+            <Select
+              placeholder="Elegir un plan"
+              options={plans.map((p) => ({ value: p.id, label: p.name }))}
+            />
+          </Form.Item>
+        )}
 
         <div className="flex justify-end gap-2 mt-4">
           <Button onClick={onClose}>Cancelar</Button>

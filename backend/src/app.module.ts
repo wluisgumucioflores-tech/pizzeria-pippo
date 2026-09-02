@@ -26,6 +26,9 @@ import { AttendanceModule } from './attendance/attendance.module';
 import { BusinessesModule } from './businesses/businesses.module';
 import { CategoriesModule } from './categories/categories.module';
 import { McpModule } from './mcp/mcp.module';
+import { AiChatModule } from './ai-chat/ai-chat.module';
+import { AiChatPlansModule } from './ai-chat-plans/ai-chat-plans.module';
+import { AiChatUsageModule } from './ai-chat-usage/ai-chat-usage.module';
 
 @Module({
   imports: [
@@ -54,6 +57,9 @@ import { McpModule } from './mcp/mcp.module';
     BusinessesModule,
     CategoriesModule,
     McpModule,
+    AiChatModule,
+    AiChatPlansModule,
+    AiChatUsageModule,
   ],
   controllers: [AppController],
   providers: [AppService],

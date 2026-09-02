@@ -17,7 +17,7 @@ import { refineUnusedDataProvider } from "@/lib/refineUnusedDataProvider";
 import { ChangePasswordModal } from "@/features/account/components/ChangePasswordModal";
 import { useChangePassword } from "@/features/account/hooks/useChangePassword";
 import Image from "next/image";
-import { ShopOutlined, KeyOutlined } from "@ant-design/icons";
+import { ShopOutlined, KeyOutlined, CommentOutlined, RobotOutlined } from "@ant-design/icons";
 
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "1.0.0";
 
@@ -90,6 +90,16 @@ export default function SuperadminLayout({
               name: "businesses",
               list: "/businesses",
               meta: { label: "Negocios", icon: <ShopOutlined /> },
+            },
+            {
+              name: "ai-chat-plans",
+              list: "/ai-chat-plans",
+              meta: { label: "Planes Chat IA", icon: <CommentOutlined /> },
+            },
+            {
+              name: "ai-models",
+              list: "/ai-models",
+              meta: { label: "Modelos de IA", icon: <RobotOutlined /> },
             },
           ]}
           options={{

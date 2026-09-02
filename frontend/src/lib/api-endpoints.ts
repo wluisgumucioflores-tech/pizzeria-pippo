@@ -8,6 +8,20 @@ export const API_ENDPOINTS = {
   businesses: {
     base: "/businesses",
     byId: (id: string) => `/businesses/${id}`,
+    aiChatUsage: (id: string) => `/businesses/${id}/ai-chat-usage`,
+  },
+  aiChatPlans: {
+    base: "/ai-chat-plans",
+    list: (includeInactive: boolean) => `/ai-chat-plans${includeInactive ? "?includeInactive=true" : ""}`,
+    byId: (id: string) => `/ai-chat-plans/${id}`,
+  },
+  aiChat: {
+    message: "/ai-chat/message",
+  },
+  aiModels: {
+    base: "/ai-models",
+    list: (includeInactive: boolean) => `/ai-models${includeInactive ? "?includeInactive=true" : ""}`,
+    byId: (id: string) => `/ai-models/${id}`,
   },
   categories: {
     base: "/categories",

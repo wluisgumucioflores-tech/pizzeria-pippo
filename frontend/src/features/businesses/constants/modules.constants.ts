@@ -11,6 +11,7 @@ export const MODULE_LABELS: Record<BusinessModuleKey, string> = {
   printer: "Impresora / Dispositivos",
   mesero: "Mesero (mesas / dine-in)",
   mcpSaas: "MCP (servidor MCP externo)",
+  aiChat: "Chat IA (asistente inteligente)",
 };
 
 export const DEFAULT_ENABLED_MODULES_LIST: BusinessModuleKey[] = BUSINESS_MODULE_KEYS.filter(

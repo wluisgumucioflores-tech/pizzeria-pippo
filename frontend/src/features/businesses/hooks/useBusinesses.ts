@@ -3,11 +3,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { Form, notification } from "antd";
 import { BusinessesService } from "../services/businesses.service";
+import { AiChatPlansService } from "@/features/ai-chat-plans/services/aiChatPlans.service";
+import type { AiChatPlan } from "@/features/ai-chat-plans/types/aiChatPlan.types";
 import type { Business, CreateBusinessInput, UpdateBusinessInput } from "../types/business.types";
 import { BUSINESS_MODULE_KEYS } from "../constants/modules.constants";
 
 export function useBusinesses() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [plans, setPlans] = useState<AiChatPlan[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -25,6 +28,9 @@ export function useBusinesses() {
   }, []);
 
   useEffect(() => { fetchBusinesses(); }, [fetchBusinesses]);
+  // Only active plans — a superadmin picking a plan for a business shouldn't
+  // see stray inactive/duplicate rows (see migration 064).
+  useEffect(() => { AiChatPlansService.getPlans(false).then(setPlans); }, []);
 
   const openCreate = () => {
     form.resetFields();
@@ -69,6 +75,7 @@ export function useBusinesses() {
     editForm.setFieldsValue({
       name: business.name,
       enabled_modules_selected: BUSINESS_MODULE_KEYS.filter((key) => business.enabled_modules[key]),
+      ai_chat_plan_id: business.ai_chat_plan?.id,
     });
     setEditingBusiness(business);
   };
@@ -91,6 +98,7 @@ export function useBusinesses() {
 
   return {
     businesses,
+    plans,
     loading,
     saving,
     modalOpen,

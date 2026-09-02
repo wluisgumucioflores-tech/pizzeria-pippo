@@ -1,4 +1,4 @@
-import { IsBoolean, IsObject, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsObject, IsOptional, IsString, IsUUID } from 'class-validator';
 import type { EnabledModules } from '@pippo/shared';
 
 export class UpdateBusinessDto {
@@ -13,4 +13,8 @@ export class UpdateBusinessDto {
   @IsOptional()
   @IsObject()
   enabled_modules?: Partial<EnabledModules>;
+
+  @IsOptional()
+  @IsUUID()
+  ai_chat_plan_id?: string;
 }

@@ -20,6 +20,14 @@
     "password": "Contraseña",
     "loginError": "Credenciales incorrectas"
   },
+  "aiChatWidget": {
+    "title": "Asistente IA",
+    "placeholder": "Preguntá algo sobre tu negocio...",
+    "emptyState": "Preguntame sobre ventas, stock, productos o promociones.",
+    "error": "Ocurrió un error, intentá de nuevo.",
+    "disclaimer": "Es una IA y puede cometer errores. Verificá los datos importantes.",
+    "allBranches": "Todas las sucursales"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "branches": "Sucursales",

@@ -9,6 +9,7 @@ import { useBusinesses } from "@/features/businesses/hooks/useBusinesses";
 export default function BusinessesPage() {
   const {
     businesses,
+    plans,
     loading,
     saving,
     modalOpen,
@@ -40,6 +41,7 @@ export default function BusinessesPage() {
       />
       <BusinessModal
         open={modalOpen}
+        plans={plans}
         saving={saving}
         form={form}
         onClose={closeModal}
@@ -48,6 +50,7 @@ export default function BusinessesPage() {
       <BusinessDetailModal business={detailBusiness} onClose={closeDetail} />
       <BusinessEditModal
         business={editingBusiness}
+        plans={plans}
         saving={editSaving}
         form={editForm}
         onClose={closeEdit}

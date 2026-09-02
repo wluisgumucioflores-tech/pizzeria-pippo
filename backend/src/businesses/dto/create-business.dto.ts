@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsObject, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsObject, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
 import { CreateAdminInputDto } from './create-admin-input.dto';
 import type { EnabledModules } from '@pippo/shared';
 
@@ -14,4 +14,9 @@ export class CreateBusinessDto {
   @IsOptional()
   @IsObject()
   enabled_modules?: Partial<EnabledModules>;
+
+  // Si se omite, se asigna el plan marcado como default (ver AiChatPlan.isDefault).
+  @IsOptional()
+  @IsUUID()
+  ai_chat_plan_id?: string;
 }

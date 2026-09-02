@@ -24,6 +24,7 @@ import { refineUnusedDataProvider } from "@/lib/refineUnusedDataProvider";
 import { LocaleSwitcher } from "@/features/i18n/components/LocaleSwitcher";
 import { ChangePasswordModal } from "@/features/account/components/ChangePasswordModal";
 import { useChangePassword } from "@/features/account/hooks/useChangePassword";
+import { AiChatWidget } from "@/features/ai-chat/components/AiChatWidget";
 import Image from "next/image";
 import { buildAdminResources } from "./admin-resources";
 
@@ -152,6 +153,7 @@ export default function AdminLayout({
             <ThemedLayout Sider={() => <ThemedSider fixed Title={SiderTitle} />} Header={AdminHeader} Footer={AppFooter}>
               {children}
             </ThemedLayout>
+            {(enabledModules ?? DEFAULT_ENABLED_MODULES).aiChat && <AiChatWidget />}
           </Authenticated>
           <RefineKbar />
         </Refine>

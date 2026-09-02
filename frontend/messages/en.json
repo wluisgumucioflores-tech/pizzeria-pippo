@@ -20,6 +20,14 @@
     "password": "Password",
     "loginError": "Invalid credentials"
   },
+  "aiChatWidget": {
+    "title": "AI Assistant",
+    "placeholder": "Ask something about your business...",
+    "emptyState": "Ask me about sales, stock, products or promotions.",
+    "error": "Something went wrong, try again.",
+    "disclaimer": "This is an AI and can make mistakes. Verify important data.",
+    "allBranches": "All branches"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "branches": "Branches",

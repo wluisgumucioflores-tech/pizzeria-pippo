@@ -39,6 +39,12 @@ export function BusinessesTable({ businesses, loading, onCreate, onToggleActive,
       render: (date: string) => new Date(date).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }),
     },
     {
+      title: "Plan Chat IA",
+      key: "ai_chat_plan",
+      render: (_: unknown, record: Business) =>
+        record.ai_chat_plan ? <Tag color="blue">{record.ai_chat_plan.name}</Tag> : <Tag>Sin plan</Tag>,
+    },
+    {
       title: t("actions"),
       key: "actions",
       width: 160,
