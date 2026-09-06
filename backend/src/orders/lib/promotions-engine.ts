@@ -112,7 +112,9 @@ function applyBuyXGetY(items: DiscountedItem[], promo: Promotion) {
   for (const rule of promo.promotion_rules) {
     if (!rule.variant_id || !rule.buy_qty || !rule.get_qty) continue;
 
-    const item = items.find((i) => i.variant_id === rule.variant_id);
+    // Only items explicitly added via the POS "Promociones" tab for this promo are eligible —
+    // adding the same product from the regular catalog never triggers the discount.
+    const item = items.find((i) => i.variant_id === rule.variant_id && i.promo_id === promo.id);
     if (!item) continue;
 
     const paid = item.qty;
@@ -153,7 +155,10 @@ function applyPercentage(items: DiscountedItem[], promo: Promotion) {
   }
 }
 
-function ruleMatchesItem(rule: PromotionRule, item: DiscountedItem): boolean {
+function ruleMatchesItem(rule: PromotionRule, item: DiscountedItem, promoId: string): boolean {
+  // Only items explicitly added via the POS "Promociones" tab for this promo are eligible —
+  // adding the same product from the regular catalog never triggers the discount.
+  if (item.promo_id !== promoId) return false;
   if (rule.variant_id) return item.variant_id === rule.variant_id;
   const categoryMatch = !rule.category || item.category === rule.category;
   const sizeMatch = !rule.variant_size || item.variant_name === rule.variant_size;
@@ -174,7 +179,7 @@ function applyCombo(items: DiscountedItem[], promo: Promotion): DiscountedItem[]
   for (const rule of promo.promotion_rules) {
     let found = false;
     for (let i = 0; i < items.length; i++) {
-      if (!ruleMatchesItem(rule, items[i])) continue;
+      if (!ruleMatchesItem(rule, items[i], promo.id)) continue;
       if (items[i].promo_label) continue;
       const claimed = claimedPerIndex.get(i) ?? 0;
       if (items[i].qty - claimed < 1) continue;

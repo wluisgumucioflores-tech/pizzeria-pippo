@@ -24,7 +24,7 @@ interface Props {
   onOpenPayment: () => void;
   activePromotions: Promotion[];
   onAddItems: (items: CartItem[]) => void;
-  onAddSingleVariant: (variantId: string, qty: number) => void;
+  onAddSingleVariant: (variantId: string, qty: number, promoId: string) => void;
 }
 
 export function PosMainArea({

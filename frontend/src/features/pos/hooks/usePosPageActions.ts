@@ -61,11 +61,11 @@ export function usePosPageActions({
     if (isMobile) { setActiveTab("sale"); setMobileView("cart"); }
   };
 
-  const handlePromoSingleVariant = (variantId: string, qty: number) => {
+  const handlePromoSingleVariant = (variantId: string, qty: number, promoId: string) => {
     for (const p of products) {
       const v = p.product_variants.find((pv) => pv.id === variantId);
       if (v) {
-        for (let i = 0; i < qty; i++) cart.addToCart(p, v, getVariantPrice(v, branchId));
+        for (let i = 0; i < qty; i++) cart.addToCart(p, v, getVariantPrice(v, branchId), undefined, promoId);
         if (isMobile) { setActiveTab("sale"); setMobileView("cart"); }
         return;
       }

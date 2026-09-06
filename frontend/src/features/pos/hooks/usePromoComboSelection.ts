@@ -76,6 +76,7 @@ export function usePromoComboSelection(
         variant_name: sel.variantName,
         category: sel.category,
         ...(flavors ? { flavors } : {}),
+        ...(promo ? { promo_id: promo.id } : {}),
       };
     });
     return items.filter(Boolean);

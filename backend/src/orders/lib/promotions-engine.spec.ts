@@ -83,7 +83,7 @@ describe('applyPromotions — BUY_X_GET_Y', () => {
   });
 
   it('2x1: paying 1 unit sends 2 to the kitchen and discounts one', () => {
-    const [item] = applyPromotions([makeItem({ qty: 1, unit_price: 70 })], [promo2x1]);
+    const [item] = applyPromotions([makeItem({ qty: 1, unit_price: 70, promo_id: promo2x1.id })], [promo2x1]);
     expect(item.qty_physical).toBe(2);
     expect(item.discount_applied).toBe(70);
     expect(item.promo_label).toContain('2x1');
@@ -91,7 +91,7 @@ describe('applyPromotions — BUY_X_GET_Y', () => {
   });
 
   it('2x1 with qty 2 doubles the free units', () => {
-    const [item] = applyPromotions([makeItem({ qty: 2, unit_price: 70 })], [promo2x1]);
+    const [item] = applyPromotions([makeItem({ qty: 2, unit_price: 70, promo_id: promo2x1.id })], [promo2x1]);
     expect(item.qty_physical).toBe(4);
     expect(item.discount_applied).toBe(140);
     expect(getCartTotal([item])).toBe(140);
@@ -102,15 +102,22 @@ describe('applyPromotions — BUY_X_GET_Y', () => {
       type: 'BUY_X_GET_Y',
       promotion_rules: [makeRule({ variant_id: 'v-pizza', buy_qty: 2, get_qty: 1 })],
     });
-    const [item] = applyPromotions([makeItem({ qty: 1 })], [promo3x2]);
+    const [item] = applyPromotions([makeItem({ qty: 1, promo_id: promo3x2.id })], [promo3x2]);
     expect(item.qty_physical).toBe(1);
     expect(item.discount_applied).toBe(0);
     expect(item.promo_label).toBeNull();
   });
 
   it('ignores items not targeted by the rule', () => {
-    const [drink] = applyPromotions([makeItem({ variant_id: 'v-coca', category: 'bebida' })], [promo2x1]);
+    const [drink] = applyPromotions([makeItem({ variant_id: 'v-coca', category: 'bebida', promo_id: promo2x1.id })], [promo2x1]);
     expect(drink.discount_applied).toBe(0);
+  });
+
+  it('does NOT discount a matching item added without going through the promo (Ventas tab)', () => {
+    const [item] = applyPromotions([makeItem({ qty: 2, unit_price: 70 })], [promo2x1]);
+    expect(item.qty_physical).toBe(2);
+    expect(item.discount_applied).toBe(0);
+    expect(item.promo_label).toBeNull();
   });
 });
 
@@ -174,11 +181,15 @@ describe('applyPromotions — COMBO', () => {
     makeRule({ id: 'r1', variant_id: 'v-pizza', combo_price: 60 }),
     makeRule({ id: 'r2', variant_id: 'v-coca' }),
   ];
+  const comboPromo = makePromo({ type: 'COMBO', promotion_rules: comboRules });
 
   it('applies combo price split proportionally between items', () => {
     const items = applyPromotions(
-      [makeItem({ unit_price: 70 }), makeItem({ variant_id: 'v-coca', unit_price: 10, category: 'bebida' })],
-      [makePromo({ type: 'COMBO', promotion_rules: comboRules })],
+      [
+        makeItem({ unit_price: 70, promo_id: comboPromo.id }),
+        makeItem({ variant_id: 'v-coca', unit_price: 10, category: 'bebida', promo_id: comboPromo.id }),
+      ],
+      [comboPromo],
     );
     expect(items[0].discount_applied).toBeCloseTo(17.5);
     expect(items[1].discount_applied).toBeCloseTo(2.5);
@@ -187,7 +198,7 @@ describe('applyPromotions — COMBO', () => {
   });
 
   it('does nothing when the combo is incomplete', () => {
-    const items = applyPromotions([makeItem({ unit_price: 70 })], [makePromo({ type: 'COMBO', promotion_rules: comboRules })]);
+    const items = applyPromotions([makeItem({ unit_price: 70, promo_id: comboPromo.id })], [comboPromo]);
     expect(items[0].discount_applied).toBe(0);
     expect(items[0].promo_label).toBeNull();
   });
@@ -197,17 +208,24 @@ describe('applyPromotions — COMBO', () => {
       makeRule({ variant_id: 'v-pizza', combo_price: 100 }),
       makeRule({ variant_id: 'v-coca' }),
     ];
+    const expensivePromo = makePromo({ type: 'COMBO', promotion_rules: expensiveCombo });
     const items = applyPromotions(
-      [makeItem({ unit_price: 70 }), makeItem({ variant_id: 'v-coca', unit_price: 10, category: 'bebida' })],
-      [makePromo({ type: 'COMBO', promotion_rules: expensiveCombo })],
+      [
+        makeItem({ unit_price: 70, promo_id: expensivePromo.id }),
+        makeItem({ variant_id: 'v-coca', unit_price: 10, category: 'bebida', promo_id: expensivePromo.id }),
+      ],
+      [expensivePromo],
     );
     expect(getTotalDiscount(items)).toBe(0);
   });
 
   it('splits an item when only part of its qty joins the combo', () => {
     const items = applyPromotions(
-      [makeItem({ qty: 2, unit_price: 70 }), makeItem({ variant_id: 'v-coca', unit_price: 10, category: 'bebida' })],
-      [makePromo({ type: 'COMBO', promotion_rules: comboRules })],
+      [
+        makeItem({ qty: 2, unit_price: 70, promo_id: comboPromo.id }),
+        makeItem({ variant_id: 'v-coca', unit_price: 10, category: 'bebida', promo_id: comboPromo.id }),
+      ],
+      [comboPromo],
     );
     expect(items).toHaveLength(3);
     const comboSlice = items.find((i) => i.variant_id === 'v-pizza' && i.promo_label);
@@ -223,12 +241,13 @@ describe('applyPromotions — COMBO', () => {
       makeRule({ category: 'pizza', variant_size: 'Familiar', combo_price: 60 }),
       makeRule({ category: 'bebida' }),
     ];
+    const flexiblePromo = makePromo({ type: 'COMBO', promotion_rules: flexibleRules });
     const items = applyPromotions(
       [
-        makeItem({ unit_price: 70, variant_name: 'Familiar' }),
-        makeItem({ variant_id: 'v-coca', unit_price: 10, category: 'bebida', variant_name: '2L' }),
+        makeItem({ unit_price: 70, variant_name: 'Familiar', promo_id: flexiblePromo.id }),
+        makeItem({ variant_id: 'v-coca', unit_price: 10, category: 'bebida', variant_name: '2L', promo_id: flexiblePromo.id }),
       ],
-      [makePromo({ type: 'COMBO', promotion_rules: flexibleRules })],
+      [flexiblePromo],
     );
     expect(getTotalDiscount(items)).toBeCloseTo(20);
   });
@@ -238,12 +257,21 @@ describe('applyPromotions — COMBO', () => {
       makeRule({ category: 'pizza', variant_size: 'Familiar', combo_price: 60 }),
       makeRule({ category: 'bebida' }),
     ];
+    const flexiblePromo = makePromo({ type: 'COMBO', promotion_rules: flexibleRules });
     const items = applyPromotions(
       [
-        makeItem({ unit_price: 40, variant_name: 'Personal' }),
-        makeItem({ variant_id: 'v-coca', unit_price: 10, category: 'bebida' }),
+        makeItem({ unit_price: 40, variant_name: 'Personal', promo_id: flexiblePromo.id }),
+        makeItem({ variant_id: 'v-coca', unit_price: 10, category: 'bebida', promo_id: flexiblePromo.id }),
       ],
-      [makePromo({ type: 'COMBO', promotion_rules: flexibleRules })],
+      [flexiblePromo],
+    );
+    expect(getTotalDiscount(items)).toBe(0);
+  });
+
+  it('does NOT apply the combo to matching items added without going through the promo (Ventas tab)', () => {
+    const items = applyPromotions(
+      [makeItem({ unit_price: 70 }), makeItem({ variant_id: 'v-coca', unit_price: 10, category: 'bebida' })],
+      [comboPromo],
     );
     expect(getTotalDiscount(items)).toBe(0);
   });

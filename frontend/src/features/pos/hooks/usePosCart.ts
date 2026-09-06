@@ -33,7 +33,7 @@ export function usePosCart(
     broadcast("CART_UPDATE", { items: result, total: getCartTotal(result), orderType });
   }, [cart, promotions, branchId, broadcast, orderType]);
 
-  const addToCart = (product: Product, variant: Product["product_variants"][0], price: number, flavors?: FlavorItem[]) => {
+  const addToCart = (product: Product, variant: Product["product_variants"][0], price: number, flavors?: FlavorItem[], promoId?: string) => {
     setCart((prev) => {
       // Mixed pizzas are never merged with existing items — each is a separate line
       if (flavors && flavors.length > 0) {
@@ -45,13 +45,15 @@ export function usePosCart(
           variant_name: variant.name,
           category: product.category,
           flavors,
+          ...(promoId ? { promo_id: promoId } : {}),
         }];
       }
-      const existing = prev.find((i) => i.variant_id === variant.id && !i.flavors && !i.promo_id);
+      const sameOrigin = (i: CartItem) => (i.promo_id ?? null) === (promoId ?? null);
+      const existing = prev.find((i) => i.variant_id === variant.id && !i.flavors && sameOrigin(i));
       const maxQty = getStockQty?.(variant.id) ?? null;
       const currentQty = existing?.qty ?? 0;
       if (maxQty !== null && currentQty >= maxQty) return prev;
-      if (existing) return prev.map((i) => i.variant_id === variant.id && !i.flavors && !i.promo_id ? { ...i, qty: i.qty + 1 } : i);
+      if (existing) return prev.map((i) => i.variant_id === variant.id && !i.flavors && sameOrigin(i) ? { ...i, qty: i.qty + 1 } : i);
       return [...prev, {
         variant_id: variant.id,
         qty: 1,
@@ -59,6 +61,7 @@ export function usePosCart(
         product_name: product.name,
         variant_name: variant.name,
         category: product.category,
+        ...(promoId ? { promo_id: promoId } : {}),
       }];
     });
   };

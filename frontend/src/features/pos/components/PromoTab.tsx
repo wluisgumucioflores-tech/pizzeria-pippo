@@ -20,7 +20,7 @@ interface Props {
   branchId: string;
   getVariantPrice: (variant: Variant, branchId: string) => number;
   onAddItems: (items: CartItem[]) => void;
-  onAddSingleVariant: (variantId: string, qty: number) => void;
+  onAddSingleVariant: (variantId: string, qty: number, promoId: string) => void;
 }
 
 function buyXGetYDescription(promo: Promotion, products: Product[], t: PosTranslator): string {
@@ -80,7 +80,7 @@ export function PromoTab({ promotions, products, branchId, getVariantPrice, onAd
       // Add buy_qty units of each variant — engine applies the get_qty discount automatically
       for (const rule of promo.promotion_rules) {
         if (rule.variant_id && rule.buy_qty) {
-          onAddSingleVariant(rule.variant_id, rule.buy_qty);
+          onAddSingleVariant(rule.variant_id, rule.buy_qty, promo.id);
         }
       }
       return;
