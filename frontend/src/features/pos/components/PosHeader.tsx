@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Button, Tag, Typography } from "antd";
-import { LogoutOutlined, ReloadOutlined, ShoppingCartOutlined, UnorderedListOutlined, BarChartOutlined, GiftOutlined, KeyOutlined } from "@ant-design/icons";
+import { Button, Dropdown, Tag, Typography } from "antd";
+import { LogoutOutlined, ReloadOutlined, ShoppingCartOutlined, UnorderedListOutlined, BarChartOutlined, GiftOutlined, KeyOutlined, UserOutlined } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
 import { formatTimeBolivia } from "@/lib/timezone";
 import { useIsMobile } from "@/lib/useIsMobile";
@@ -61,6 +61,14 @@ export function PosHeader({ identity, branches, activeTab, pendingCount, promoCo
     return () => { mounted = false; };
   }, []);
 
+  const userMenu = {
+    items: [
+      { key: "change-password", label: ta("changePassword"), icon: <KeyOutlined /> },
+      { key: "logout", label: t("header.logout"), icon: <LogoutOutlined /> },
+    ],
+    onClick: ({ key }: { key: string }) => (key === "change-password" ? onChangePassword() : onLogout()),
+  };
+
   const tabBtn = (tab: PosTab, label: string, icon: React.ReactNode, badge?: number) => (
     <button
       onClick={() => onTabChange(tab)}
@@ -114,18 +122,9 @@ export function PosHeader({ identity, branches, activeTab, pendingCount, promoCo
             style={{ flexShrink: 0, padding: "0 8px" }}
           />
           <LocaleSwitcher />
-          <Button
-            size="small"
-            icon={<KeyOutlined />}
-            onClick={onChangePassword}
-            style={{ flexShrink: 0, padding: "0 8px" }}
-          />
-          <Button
-            size="small"
-            icon={<LogoutOutlined />}
-            onClick={onLogout}
-            style={{ flexShrink: 0, padding: "0 8px" }}
-          />
+          <Dropdown trigger={["click"]} menu={userMenu}>
+            <Button size="small" icon={<UserOutlined />} style={{ flexShrink: 0, padding: "0 8px" }} />
+          </Dropdown>
         </div>
         {/* Mobile tabs row */}
         <div style={{ display: "flex", borderTop: "1px solid #f3f4f6" }}>
@@ -156,8 +155,9 @@ export function PosHeader({ identity, branches, activeTab, pendingCount, promoCo
           {printerSlot}
           <Button icon={<ReloadOutlined spin={refreshing} />} onClick={onRefresh} disabled={refreshing} />
           <LocaleSwitcher />
-          <Button icon={<KeyOutlined />} onClick={onChangePassword}>{ta("changePassword")}</Button>
-          <Button icon={<LogoutOutlined />} onClick={onLogout}>{t("header.logout")}</Button>
+          <Dropdown trigger={["click"]} menu={userMenu}>
+            <Button icon={<UserOutlined />} />
+          </Dropdown>
         </div>
       </div>
 

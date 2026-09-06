@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { Dropdown, Button } from "antd";
+import { UserOutlined, KeyOutlined, LogoutOutlined } from "@ant-design/icons";
 import { LocaleSwitcher } from "@/features/i18n/components/LocaleSwitcher";
 
 export function KitchenHeader({
@@ -26,6 +28,7 @@ export function KitchenHeader({
   onLogout: () => void;
 }) {
   const t = useTranslations("account");
+  const ta = useTranslations("auth");
   return (
     <div className="bg-gray-950 border-b border-gray-800 px-6 py-3 flex justify-between items-center">
       <div className="flex items-center gap-3">
@@ -69,18 +72,18 @@ export function KitchenHeader({
         >
           <span className={refreshing ? "inline-block animate-spin" : "inline-block"}>🔄</span> Actualizar
         </button>
-        <button
-          onClick={onChangePassword}
-          className="text-gray-300 hover:text-white text-sm font-semibold px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-colors whitespace-nowrap"
+        <Dropdown
+          trigger={["click"]}
+          menu={{
+            items: [
+              { key: "change-password", label: t("changePassword"), icon: <KeyOutlined /> },
+              { key: "logout", label: ta("logout"), icon: <LogoutOutlined /> },
+            ],
+            onClick: ({ key }) => (key === "change-password" ? onChangePassword() : onLogout()),
+          }}
         >
-          🔑 {t("changePassword")}
-        </button>
-        <button
-          onClick={onLogout}
-          className="text-gray-300 hover:text-white text-sm font-semibold px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-colors whitespace-nowrap"
-        >
-          🚪 Salir
-        </button>
+          <Button type="text" icon={<UserOutlined />} style={{ color: "#fff" }} />
+        </Dropdown>
       </div>
     </div>
   );
