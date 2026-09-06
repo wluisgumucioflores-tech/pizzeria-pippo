@@ -26,6 +26,10 @@ export class UpdateSettingsDto {
   telegram_enabled?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  chat_ia_enabled?: boolean;
+
+  @IsOptional()
   @IsInt()
   @Min(1)
   kitchen_stage_warning_minutes?: number;

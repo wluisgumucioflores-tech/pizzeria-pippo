@@ -20,6 +20,7 @@ import { StorageModule } from './storage/storage.module';
 import { DevicesModule } from './devices/devices.module';
 import { PaymentValidationModule } from './payment-validation/payment-validation.module';
 import { TelegramModule } from './telegram/telegram.module';
+import { TelegramChatIaModule } from './telegram-chat-ia/telegram-chat-ia.module';
 import { PublicMenuModule } from './public-menu/public-menu.module';
 import { EmployeesModule } from './employees/employees.module';
 import { AttendanceModule } from './attendance/attendance.module';
@@ -51,6 +52,7 @@ import { AiChatUsageModule } from './ai-chat-usage/ai-chat-usage.module';
     DevicesModule,
     PaymentValidationModule,
     TelegramModule,
+    TelegramChatIaModule,
     PublicMenuModule,
     EmployeesModule,
     AttendanceModule,

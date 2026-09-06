@@ -134,8 +134,36 @@ model Business {
   promotions                Promotion[]
   promotionRules            PromotionRule[]
   categories                Category[]
+  telegramBotConfig         TelegramBotConfig?
 
   @@map("businesses")
+}
+
+// Config unificada del bot de Telegram de un negocio — un solo bot/chat
+// registrado, con dos switches independientes (ver
+// docs/features/chat-ia-backend/plan-integracion-telegram.md):
+// notificationsEnabled (avisos salientes de pedidos, ya existía antes como
+// app_settings.telegram_enabled) y chatIaEnabled (responde por Telegram
+// usando el mismo ai-orchestrator que el widget web). webhookToken/
+// webhookSecret solo se completan cuando chatIaEnabled se activa por
+// primera vez — notificaciones nunca necesita recibir un webhook.
+model TelegramBotConfig {
+  id                   String   @id @default(uuid()) @db.Uuid
+  businessId           String   @unique @map("business_id") @db.Uuid
+  botToken             String   @map("bot_token")
+  chatId               String   @map("chat_id")
+  chatType             String   @default("group") @map("chat_type")
+  notificationsEnabled Boolean  @default(false) @map("notifications_enabled")
+  chatIaEnabled        Boolean  @default(false) @map("chat_ia_enabled")
+  webhookToken         String?  @unique @map("webhook_token")
+  webhookSecret        String?  @map("webhook_secret")
+  isActive             Boolean  @default(true) @map("is_active")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @default(now()) @map("updated_at")
+
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@map("telegram_bot_config")
 }
 
 // Catálogo de planes del Chat IA (administrable por superadmin desde

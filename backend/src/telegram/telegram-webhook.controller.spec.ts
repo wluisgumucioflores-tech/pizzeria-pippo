@@ -7,7 +7,7 @@ import { TelegramSenderService } from './telegram-sender.service';
 import type { TelegramUpdatePayload } from './types/telegram-update-payload.types';
 
 describe('TelegramWebhookController', () => {
-  let settingsService: { getRawSettingsForFirstBusiness: jest.Mock };
+  let settingsService: { getRawSettingsForFirstBusiness: jest.Mock; getFirstBusinessBotToken: jest.Mock };
   let telegramChatsService: { findByChatId: jest.Mock };
   let telegramQuotaService: { checkAndIncrement: jest.Mock };
   let telegramAiService: { processMessage: jest.Mock };
@@ -19,7 +19,10 @@ describe('TelegramWebhookController', () => {
   });
 
   beforeEach(() => {
-    settingsService = { getRawSettingsForFirstBusiness: jest.fn() };
+    settingsService = {
+      getRawSettingsForFirstBusiness: jest.fn(),
+      getFirstBusinessBotToken: jest.fn().mockResolvedValue('tok'),
+    };
     telegramChatsService = { findByChatId: jest.fn() };
     telegramQuotaService = { checkAndIncrement: jest.fn() };
     telegramAiService = { processMessage: jest.fn() };
@@ -83,7 +86,8 @@ describe('TelegramWebhookController', () => {
   });
 
   it('ignora si no hay bot token configurado', async () => {
-    settingsService.getRawSettingsForFirstBusiness.mockResolvedValue({ telegram_ai_enabled: 'true', telegram_bot_token: '' });
+    settingsService.getRawSettingsForFirstBusiness.mockResolvedValue({ telegram_ai_enabled: 'true' });
+    settingsService.getFirstBusinessBotToken.mockResolvedValue('');
     telegramChatsService.findByChatId.mockResolvedValue({ isActive: true, plan: 'basic', type: 'personal' });
 
     const result = await controller.handleWebhook(textUpdate('hola'));
@@ -93,7 +97,7 @@ describe('TelegramWebhookController', () => {
   });
 
   it('avisa por Telegram cuando se alcanza la cuota, sin llamar a la IA', async () => {
-    settingsService.getRawSettingsForFirstBusiness.mockResolvedValue({ telegram_ai_enabled: 'true', telegram_bot_token: 'tok' });
+    settingsService.getRawSettingsForFirstBusiness.mockResolvedValue({ telegram_ai_enabled: 'true' });
     telegramChatsService.findByChatId.mockResolvedValue({ isActive: true, plan: 'pro', type: 'personal' });
     telegramQuotaService.checkAndIncrement.mockResolvedValue({ allowed: false, limit: 50, used: 50 });
 
@@ -109,7 +113,7 @@ describe('TelegramWebhookController', () => {
   });
 
   it('procesa el mensaje con la IA y responde con texto', async () => {
-    settingsService.getRawSettingsForFirstBusiness.mockResolvedValue({ telegram_ai_enabled: 'true', telegram_bot_token: 'tok' });
+    settingsService.getRawSettingsForFirstBusiness.mockResolvedValue({ telegram_ai_enabled: 'true' });
     telegramChatsService.findByChatId.mockResolvedValue({ isActive: true, plan: 'basic', type: 'personal' });
     telegramQuotaService.checkAndIncrement.mockResolvedValue({ allowed: true, limit: 10, used: 1 });
     telegramAiService.processMessage.mockResolvedValue({ type: 'text', content: '💰 Ventas de hoy: Bs 100' });
@@ -122,7 +126,7 @@ describe('TelegramWebhookController', () => {
   });
 
   it('responde con documento cuando la IA devuelve un archivo', async () => {
-    settingsService.getRawSettingsForFirstBusiness.mockResolvedValue({ telegram_ai_enabled: 'true', telegram_bot_token: 'tok' });
+    settingsService.getRawSettingsForFirstBusiness.mockResolvedValue({ telegram_ai_enabled: 'true' });
     telegramChatsService.findByChatId.mockResolvedValue({ isActive: true, plan: 'basic', type: 'personal' });
     telegramQuotaService.checkAndIncrement.mockResolvedValue({ allowed: true, limit: 10, used: 1 });
     const buffer = Buffer.from('excel');
@@ -135,7 +139,7 @@ describe('TelegramWebhookController', () => {
   });
 
   it('permite mensajes de grupo cuando el chat autorizado sí es de tipo group', async () => {
-    settingsService.getRawSettingsForFirstBusiness.mockResolvedValue({ telegram_ai_enabled: 'true', telegram_bot_token: 'tok' });
+    settingsService.getRawSettingsForFirstBusiness.mockResolvedValue({ telegram_ai_enabled: 'true' });
     telegramChatsService.findByChatId.mockResolvedValue({ isActive: true, plan: 'basic', type: 'group' });
     telegramQuotaService.checkAndIncrement.mockResolvedValue({ allowed: true, limit: 10, used: 1 });
     telegramAiService.processMessage.mockResolvedValue({ type: 'text', content: 'ok' });

@@ -2,6 +2,7 @@ export interface AppSettings {
   telegram_bot_token: string;
   telegram_chat_id: string;
   telegram_enabled: boolean;
+  chat_ia_enabled: boolean;
   kitchen_stage_warning_minutes: number;
   kitchen_late_threshold_minutes: number;
   kitchen_visible_category_ids: string[];

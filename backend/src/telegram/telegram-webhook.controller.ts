@@ -7,7 +7,7 @@ import { TelegramSenderService } from './telegram-sender.service';
 import { TelegramWebhookGuard } from './telegram-webhook.guard';
 import type { TelegramUpdatePayload } from './types/telegram-update-payload.types';
 
-const WEBHOOK_SETTINGS_KEYS = ['telegram_ai_enabled', 'telegram_bot_token'];
+const WEBHOOK_SETTINGS_KEYS = ['telegram_ai_enabled'];
 
 @Controller('telegram')
 export class TelegramWebhookController {
@@ -24,7 +24,10 @@ export class TelegramWebhookController {
   @UseGuards(TelegramWebhookGuard)
   @Post('webhook')
   async handleWebhook(@Body() body: TelegramUpdatePayload): Promise<{ ok: boolean }> {
-    const settings = await this.settingsService.getRawSettingsForFirstBusiness(WEBHOOK_SETTINGS_KEYS);
+    const [settings, botToken] = await Promise.all([
+      this.settingsService.getRawSettingsForFirstBusiness(WEBHOOK_SETTINGS_KEYS),
+      this.settingsService.getFirstBusinessBotToken(),
+    ]);
 
     if (settings['telegram_ai_enabled'] !== 'true') {
       return { ok: true }; // bot disabled — silently ignore
@@ -51,7 +54,6 @@ export class TelegramWebhookController {
       return { ok: true };
     }
 
-    const botToken = settings['telegram_bot_token'] ?? '';
     if (!botToken) {
       return { ok: true };
     }

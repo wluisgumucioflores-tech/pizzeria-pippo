@@ -89,6 +89,12 @@ export class AiChatProxyService {
     return visibleBranches.find((b) => b.id === requestedBranchId) ?? null;
   }
 
+  // 30s covers a few LLM tool-calling round-trips (Spring AI's ChatClient
+  // loop) — long enough for a real answer, short enough that a hung
+  // orchestrator doesn't leave a caller (widget or Telegram webhook) waiting
+  // forever. Any failure here (timeout, connection refused, non-2xx) becomes
+  // the same user-facing ForbiddenException — safe to show as-is to whoever
+  // is chatting, instead of leaking a raw network error.
   private async callOrchestrator(
     businessId: string,
     userId: string,
@@ -98,22 +104,32 @@ export class AiChatProxyService {
     branch: EffectiveBranch | null,
   ): Promise<AgentChatResponse> {
     const baseUrl = process.env.AI_ORCHESTRATOR_URL ?? 'http://localhost:8090';
-    const res = await fetch(`${baseUrl}/chat/tools`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message,
-        businessId,
-        locale,
-        role,
-        conversationId: `${businessId}:${userId}`,
-        branchId: branch?.id,
-        branchName: branch?.name,
-      }),
-    });
-    if (!res.ok) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+    try {
+      const res = await fetch(`${baseUrl}/chat/tools`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          businessId,
+          locale,
+          role,
+          conversationId: `${businessId}:${userId}`,
+          branchId: branch?.id,
+          branchName: branch?.name,
+        }),
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        throw new ForbiddenException('El asistente IA no está disponible en este momento.');
+      }
+      return await res.json();
+    } catch (err) {
+      if (err instanceof ForbiddenException) throw err;
       throw new ForbiddenException('El asistente IA no está disponible en este momento.');
+    } finally {
+      clearTimeout(timeout);
     }
-    return res.json();
   }
 }

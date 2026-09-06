@@ -15,6 +15,10 @@ describe('SettingsService', () => {
       findUnique: jest.Mock;
       upsert: jest.Mock;
     };
+    telegramBotConfig: {
+      findUnique: jest.Mock;
+      upsert: jest.Mock;
+    };
     business: { findFirst: jest.Mock };
   };
 
@@ -42,6 +46,10 @@ describe('SettingsService', () => {
         findUnique: jest.fn(),
         upsert: jest.fn(),
       },
+      telegramBotConfig: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        upsert: jest.fn(),
+      },
       business: { findFirst: jest.fn() },
     };
 
@@ -56,33 +64,46 @@ describe('SettingsService', () => {
   });
 
   describe('getSettings', () => {
-    it('aplica defaults cuando no hay filas y enmascara el token', async () => {
-      prisma.appSetting.findMany.mockResolvedValue([
-        { key: 'telegram_bot_token', value: '123456789abcdef' },
-      ]);
+    it('aplica defaults cuando no hay fila de telegram y enmascara el token', async () => {
+      prisma.appSetting.findMany.mockResolvedValue([]);
+      prisma.telegramBotConfig.findUnique.mockResolvedValue({
+        botToken: '123456789abcdef',
+        chatId: '',
+        notificationsEnabled: false,
+      });
 
       const result = await service.getSettings(admin);
 
-      expect(prisma.appSetting.findMany).toHaveBeenCalledWith({
-        where: {
-          businessId: 'biz1',
-          key: { in: expect.arrayContaining(['telegram_bot_token']) },
-        },
+      expect(prisma.telegramBotConfig.findUnique).toHaveBeenCalledWith({
+        where: { businessId: 'biz1' },
       });
       expect(result).toEqual({
         telegram_bot_token: '123456***def',
         telegram_chat_id: '',
         telegram_enabled: false,
+        chat_ia_enabled: false,
         kitchen_stage_warning_minutes: 7,
         kitchen_late_threshold_minutes: 10,
-        kitchen_display_mode: 'full',
+        kitchen_visible_category_ids: [],
         kitchen_color_fresh: '#16a34a',
         kitchen_color_warning: '#d97706',
         kitchen_color_late: '#dc2626',
         printer_paper_width: 58,
         printer_business_name: 'GU PIZZA',
         use_stock: true,
+        pos_enable_table_number: false,
       });
+    });
+
+    it('devuelve telegram vacío/deshabilitado si el negocio nunca configuró un bot', async () => {
+      prisma.appSetting.findMany.mockResolvedValue([]);
+      prisma.telegramBotConfig.findUnique.mockResolvedValue(null);
+
+      const result = await service.getSettings(admin);
+
+      expect(result.telegram_bot_token).toBe('');
+      expect(result.telegram_chat_id).toBe('');
+      expect(result.telegram_enabled).toBe(false);
     });
 
     it('lanza si el usuario no tiene business_id', async () => {
@@ -93,7 +114,14 @@ describe('SettingsService', () => {
   });
 
   describe('updateSettings', () => {
-    it('no sobreescribe el token si viene enmascarado', async () => {
+    it('no sobreescribe el token si viene enmascarado, pero sí actualiza chat_id/enabled', async () => {
+      prisma.telegramBotConfig.findUnique.mockResolvedValue({
+        businessId: 'biz1',
+        botToken: 'token-existente',
+        chatId: 'chat-viejo',
+        notificationsEnabled: false,
+      });
+
       await service.updateSettings(admin, {
         telegram_bot_token: '123456***def',
         telegram_chat_id: 'chat1',
@@ -106,18 +134,32 @@ describe('SettingsService', () => {
         (call) => call[0].where.businessId_key.key,
       );
       expect(keysUpserted).not.toContain('telegram_bot_token');
+      expect(keysUpserted).not.toContain('telegram_chat_id');
       expect(keysUpserted).toEqual(
         expect.arrayContaining([
-          'telegram_chat_id',
-          'telegram_enabled',
           'kitchen_late_threshold_minutes',
           'printer_paper_width',
           'printer_business_name',
         ]),
       );
+      expect(prisma.telegramBotConfig.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { businessId: 'biz1' },
+          update: expect.objectContaining({ chatId: 'chat1', notificationsEnabled: true }),
+        }),
+      );
+      const updateArg = prisma.telegramBotConfig.upsert.mock.calls[0][0].update;
+      expect(updateArg.botToken).toBeUndefined();
     });
 
     it('sí actualiza el token si viene un valor nuevo sin enmascarar', async () => {
+      prisma.telegramBotConfig.findUnique.mockResolvedValue({
+        businessId: 'biz1',
+        botToken: 'token-viejo',
+        chatId: 'chat1',
+        notificationsEnabled: true,
+      });
+
       await service.updateSettings(admin, {
         telegram_bot_token: 'nuevo-token-real',
         telegram_chat_id: 'chat1',
@@ -126,10 +168,105 @@ describe('SettingsService', () => {
         printer_paper_width: 58,
       });
 
-      const tokenCall = prisma.appSetting.upsert.mock.calls.find(
-        (call) => call[0].where.businessId_key.key === 'telegram_bot_token',
+      const upsertCall = prisma.telegramBotConfig.upsert.mock.calls[0][0];
+      expect(upsertCall.update.botToken).toBe('nuevo-token-real');
+    });
+
+    it('no crea una fila de telegram si el negocio nunca configuró un bot y guarda otra pestaña', async () => {
+      prisma.telegramBotConfig.findUnique.mockResolvedValue(null);
+
+      await service.updateSettings(admin, {
+        telegram_chat_id: '',
+        telegram_enabled: false,
+        kitchen_late_threshold_minutes: 15,
+        printer_paper_width: 58,
+      });
+
+      expect(prisma.telegramBotConfig.upsert).not.toHaveBeenCalled();
+    });
+
+    it('crea la fila de telegram cuando llega un token real por primera vez', async () => {
+      prisma.telegramBotConfig.findUnique.mockResolvedValue(null);
+
+      await service.updateSettings(admin, {
+        telegram_bot_token: 'primer-token',
+        telegram_chat_id: 'chat-nuevo',
+        telegram_enabled: true,
+        kitchen_late_threshold_minutes: 15,
+        printer_paper_width: 58,
+      });
+
+      expect(prisma.telegramBotConfig.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { businessId: 'biz1' },
+          create: expect.objectContaining({
+            businessId: 'biz1',
+            botToken: 'primer-token',
+            chatId: 'chat-nuevo',
+            notificationsEnabled: true,
+            chatIaEnabled: false,
+          }),
+        }),
       );
-      expect(tokenCall[0].create.value).toBe('nuevo-token-real');
+    });
+
+    describe('chat_ia_enabled — activación de webhook', () => {
+      const originalEnv = process.env.BACKEND_PUBLIC_URL;
+
+      beforeEach(() => {
+        process.env.BACKEND_PUBLIC_URL = 'https://backend.example.com';
+        prisma.telegramBotConfig.findUnique.mockResolvedValue({
+          businessId: 'biz1',
+          botToken: 'token-real',
+          chatId: 'chat1',
+          notificationsEnabled: true,
+          chatIaEnabled: false,
+          webhookToken: null,
+          webhookSecret: null,
+        });
+      });
+
+      afterEach(() => {
+        process.env.BACKEND_PUBLIC_URL = originalEnv;
+      });
+
+      it('NO persiste chat_ia_enabled si Telegram rechaza el webhook (bug: quedaba "prendido" en la BD sin webhook real)', async () => {
+        global.fetch = jest
+          .fn()
+          .mockResolvedValue({ json: () => Promise.resolve({ ok: false, description: 'Bad Request' }) }) as unknown as typeof fetch;
+
+        await expect(
+          service.updateSettings(admin, {
+            telegram_chat_id: 'chat1',
+            telegram_enabled: true,
+            chat_ia_enabled: true,
+            kitchen_late_threshold_minutes: 15,
+            printer_paper_width: 58,
+          }),
+        ).rejects.toThrow(BadRequestException);
+
+        expect(prisma.telegramBotConfig.upsert).not.toHaveBeenCalled();
+      });
+
+      it('persiste chat_ia_enabled solo después de que Telegram confirma el webhook', async () => {
+        global.fetch = jest.fn().mockResolvedValue({ json: () => Promise.resolve({ ok: true }) }) as unknown as typeof fetch;
+
+        await service.updateSettings(admin, {
+          telegram_chat_id: 'chat1',
+          telegram_enabled: true,
+          chat_ia_enabled: true,
+          kitchen_late_threshold_minutes: 15,
+          printer_paper_width: 58,
+        });
+
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/setWebhook'),
+          expect.anything(),
+        );
+        expect(prisma.telegramBotConfig.upsert).toHaveBeenCalledWith(
+          expect.objectContaining({ update: expect.objectContaining({ chatIaEnabled: true }) }),
+        );
+      });
     });
 
     it('normaliza printer_paper_width a 58 si no es 80', async () => {
@@ -217,6 +354,55 @@ describe('SettingsService', () => {
     });
   });
 
+  describe('testTelegramConnection', () => {
+    let fetchMock: jest.Mock;
+
+    beforeEach(() => {
+      fetchMock = jest.fn().mockResolvedValue({ json: () => Promise.resolve({ ok: true }) });
+      global.fetch = fetchMock as unknown as typeof fetch;
+    });
+
+    it('resuelve el token real guardado si el que llega viene enmascarado (bug: Probar conexión tras recargar la página)', async () => {
+      prisma.telegramBotConfig.findUnique.mockResolvedValue({ botToken: 'token-real-guardado' });
+
+      await service.testTelegramConnection(admin, {
+        telegram_bot_token: '123456***def',
+        telegram_chat_id: 'chat1',
+      });
+
+      expect(prisma.telegramBotConfig.findUnique).toHaveBeenCalledWith({ where: { businessId: 'biz1' } });
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://api.telegram.org/bottoken-real-guardado/sendMessage',
+        expect.anything(),
+      );
+    });
+
+    it('usa el token tal cual si no viene enmascarado', async () => {
+      await service.testTelegramConnection(admin, {
+        telegram_bot_token: 'token-nuevo-sin-guardar',
+        telegram_chat_id: 'chat1',
+      });
+
+      expect(prisma.telegramBotConfig.findUnique).not.toHaveBeenCalled();
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://api.telegram.org/bottoken-nuevo-sin-guardar/sendMessage',
+        expect.anything(),
+      );
+    });
+
+    it('devuelve un error legible si el token viene enmascarado y no hay ninguno guardado', async () => {
+      prisma.telegramBotConfig.findUnique.mockResolvedValue(null);
+
+      const result = await service.testTelegramConnection(admin, {
+        telegram_bot_token: '123456***def',
+        telegram_chat_id: 'chat1',
+      });
+
+      expect(result).toEqual({ ok: false, error: expect.stringContaining('No hay un token guardado') });
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
   describe('saveRawSettings', () => {
     it('hace upsert de cada entrada bajo el business_id del usuario', async () => {
       await service.saveRawSettings(admin, [
@@ -268,7 +454,7 @@ describe('SettingsService', () => {
         kitchen_color_fresh: '#16a34a',
         kitchen_color_warning: '#d97706',
         kitchen_color_late: '#dc2626',
-        kitchen_display_mode: 'full',
+        kitchen_visible_category_ids: [],
       });
     });
   });

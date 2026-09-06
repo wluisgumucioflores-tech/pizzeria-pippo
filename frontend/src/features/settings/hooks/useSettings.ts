@@ -12,6 +12,7 @@ export function useSettings() {
     telegram_bot_token: "",
     telegram_chat_id: "",
     telegram_enabled: false,
+    chat_ia_enabled: false,
     kitchen_stage_warning_minutes: 7,
     kitchen_late_threshold_minutes: 10,
     kitchen_visible_category_ids: [],
@@ -74,8 +75,10 @@ export function useSettings() {
       await saveSettings(settings);
       message.success(t("saved"));
       await load();
-    } catch {
-      message.error(t("saveSettings"));
+    } catch (err) {
+      // activating chat_ia_enabled can fail with a specific reason (bad
+      // token, webhook rejected) — show that instead of a generic message.
+      message.error(err instanceof Error && err.message ? err.message : t("saveSettings"));
     } finally {
       setSaving(false);
     }

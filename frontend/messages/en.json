@@ -878,13 +878,15 @@
       "width80": "80 mm (48 characters)"
     },
     "telegram": {
-      "title": "Telegram notifications",
-      "description": "Get automatic Telegram alerts when an ingredient's stock drops below the minimum.",
+      "title": "Telegram bot",
+      "description": "Register your Telegram bot to receive stock alerts and/or chat with your business's AI assistant.",
       "botTokenLabel": "Bot Token",
       "botTokenExtra": "Get it by creating a bot with @BotFather on Telegram.",
       "chatIdLabel": "Chat ID",
       "chatIdExtra": "Numeric ID of the chat or group. For multiple admins to receive alerts, create a group, add the bot, and use the group's ID.",
-      "enabledLabel": "Notifications enabled"
+      "enabledLabel": "Notifications enabled",
+      "chatIaLabel": "AI chat enabled",
+      "chatIaExtra": "Message the bot in the chat/group above and it replies with the same data as the admin panel's AI chat (sales, stock, promotions)."
     },
     "errors": {
       "loadSettings": "Error loading settings",

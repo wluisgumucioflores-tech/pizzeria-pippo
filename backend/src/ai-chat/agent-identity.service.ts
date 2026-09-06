@@ -33,6 +33,14 @@ export class AgentIdentityService {
     };
   }
 
+  // Same synthetic profile as issueAgentToken, but returned raw (no JWT) —
+  // for callers that are already inside the NestJS process and can call
+  // AiChatProxyService directly (e.g. the Telegram chat-ia webhook), instead
+  // of round-tripping through a signed token they'd immediately decode back.
+  async getOrCreateAgentProfile(businessId: string, role: string) {
+    return this.findOrCreateAgentProfile(businessId, role);
+  }
+
   // A real Profile, not a synthetic object — JwtStrategy.validate() resolves
   // ALL of the context (role, business_id, branch_id) by looking up `payload.sub` in
   // `profiles`. One synthetic profile per (businessId, role) pair — no branch,

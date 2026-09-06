@@ -73,8 +73,11 @@ export class SettingsController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Post('test')
-  testTelegram(@Body() dto: TestTelegramDto) {
-    return this.settingsService.testTelegramConnection(dto);
+  testTelegram(
+    @CurrentUser() user: CurrentUserPayload,
+    @Body() dto: TestTelegramDto,
+  ) {
+    return this.settingsService.testTelegramConnection(user, dto);
   }
 
   // Telegram AI bot config (provider, model, per-plan limits) — doesn't

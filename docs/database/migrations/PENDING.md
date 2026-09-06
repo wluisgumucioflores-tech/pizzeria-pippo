@@ -15,6 +15,16 @@
 | ⏳ | `056_mcp_api_keys.sql` | Crea tabla `mcp_api_keys` con RLS — API keys self-serve por negocio para el servidor MCP (`services/mcp-saas`) |
 | ⏳ | `057_business_enabled_modules_mcp_saas.sql` | Agrega el flag `mcpSaas` (default `false`) a `businesses.enabled_modules` |
 
+### Feature chat-ia por Telegram — `067`, independiente del rango anterior
+
+> Ver `docs/features/chat-ia-backend/plan-integracion-telegram.md` (Fase 1). Requiere que `app_settings` (`024`) y `businesses` (`034`) ya estén aplicados — ambos lo están en producción.
+
+| # | Archivo | Qué hace |
+|---|---------|----------|
+| ⏳ | `067_telegram_bot_config.sql` | Crea tabla `telegram_bot_config` (bot/chat único por negocio, switches `notifications_enabled`/`chat_ia_enabled`) + backfill desde los negocios que ya tienen `telegram_bot_token`/`telegram_chat_id` en `app_settings` |
+
+**Verificar:** los negocios que ya usaban notificaciones por Telegram aparecen con su fila en `telegram_bot_config` y `notifications_enabled` en el mismo estado que tenían antes (comparar contra `app_settings.telegram_enabled`). No se toca ningún dato de `app_settings` todavía.
+
 ## Aplicadas en producción
 
 > Confirmado el 2026-06-10: las migraciones `023`–`032` ya están aplicadas en producción

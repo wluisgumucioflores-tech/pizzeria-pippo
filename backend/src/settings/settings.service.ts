@@ -3,16 +3,18 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import type { SettingsResult } from './types/settings-result.types';
 import type { UpdateSettingsDto } from './dto/update-settings.dto';
 import type { TestTelegramDto } from './dto/test-telegram.dto';
 
+// telegram_bot_token/telegram_chat_id/telegram_enabled used to live here —
+// moved to the TelegramBotConfig table (see
+// docs/features/chat-ia-backend/plan-integracion-telegram.md, Fase 2) so a
+// single row can also carry chat_ia_enabled + webhook secrets.
 const SETTINGS_KEYS = [
-  'telegram_bot_token',
-  'telegram_chat_id',
-  'telegram_enabled',
   'kitchen_stage_warning_minutes',
   'kitchen_late_threshold_minutes',
   'kitchen_visible_category_ids',
@@ -57,18 +59,20 @@ export class SettingsService {
 
   async getSettings(user: CurrentUserPayload): Promise<SettingsResult> {
     const businessId = this.resolveBusinessId(user);
-    const rows = await this.prisma.appSetting.findMany({
-      where: { businessId, key: { in: SETTINGS_KEYS } },
-    });
+    const [rows, telegramBotConfig] = await Promise.all([
+      this.prisma.appSetting.findMany({
+        where: { businessId, key: { in: SETTINGS_KEYS } },
+      }),
+      this.prisma.telegramBotConfig.findUnique({ where: { businessId } }),
+    ]);
     const config = new Map(rows.map((r) => [r.key, r.value]));
     const kitchenVisibleCategoryIds = await this.resolveVisibleCategoryIds(businessId, config);
 
     return {
-      telegram_bot_token: this.maskToken(
-        config.get('telegram_bot_token') ?? '',
-      ),
-      telegram_chat_id: config.get('telegram_chat_id') ?? '',
-      telegram_enabled: config.get('telegram_enabled') === 'true',
+      telegram_bot_token: this.maskToken(telegramBotConfig?.botToken ?? ''),
+      telegram_chat_id: telegramBotConfig?.chatId ?? '',
+      telegram_enabled: telegramBotConfig?.notificationsEnabled ?? false,
+      chat_ia_enabled: telegramBotConfig?.chatIaEnabled ?? false,
       kitchen_stage_warning_minutes: parseInt(
         config.get('kitchen_stage_warning_minutes') ??
           String(KITCHEN_STAGE_DEFAULTS.kitchen_stage_warning_minutes),
@@ -125,8 +129,6 @@ export class SettingsService {
     }
 
     const entries: Array<[string, string]> = [
-      ['telegram_chat_id', dto.telegram_chat_id ?? ''],
-      ['telegram_enabled', String(dto.telegram_enabled ?? false)],
       ['kitchen_stage_warning_minutes', String(warningMinutes)],
       ['kitchen_late_threshold_minutes', String(lateMinutes)],
       [
@@ -158,19 +160,121 @@ export class SettingsService {
       ],
     ];
 
-    if (dto.telegram_bot_token && !dto.telegram_bot_token.includes('***')) {
-      entries.push(['telegram_bot_token', dto.telegram_bot_token]);
-    }
-
-    await Promise.all(
-      entries.map(([key, value]) =>
+    await Promise.all([
+      ...entries.map(([key, value]) =>
         this.prisma.appSetting.upsert({
           where: { businessId_key: { businessId, key } },
           create: { businessId, key, value },
           update: { value, updatedAt: new Date() },
         }),
       ),
-    );
+      this.upsertTelegramBotConfig(businessId, dto),
+    ]);
+  }
+
+  // telegram_bot_token/telegram_chat_id/telegram_enabled/chat_ia_enabled from
+  // this same form all live in TelegramBotConfig (see
+  // docs/features/chat-ia-backend/plan-integracion-telegram.md). bot_token is
+  // NOT NULL there, so a business that never configured Telegram and saves
+  // some other tab (kitchen/printer/etc., which still round-trips empty
+  // telegram_* fields through this same DTO) must not create a bogus row —
+  // only create one when a real, unmasked token is actually provided; once a
+  // row exists, just update the other fields on it.
+  private async upsertTelegramBotConfig(
+    businessId: string,
+    dto: UpdateSettingsDto,
+  ): Promise<void> {
+    const existing = await this.prisma.telegramBotConfig.findUnique({
+      where: { businessId },
+    });
+    const hasRealToken =
+      !!dto.telegram_bot_token && !dto.telegram_bot_token.includes('***');
+
+    if (!existing && !hasRealToken) return;
+
+    const botToken = hasRealToken ? dto.telegram_bot_token! : existing!.botToken;
+    const chatId = dto.telegram_chat_id ?? existing?.chatId ?? '';
+    const notificationsEnabled = dto.telegram_enabled ?? existing?.notificationsEnabled ?? false;
+    const chatIaEnabled = dto.chat_ia_enabled ?? existing?.chatIaEnabled ?? false;
+    const wasChatIaEnabled = existing?.chatIaEnabled ?? false;
+
+    // Generated once, the first time chat-ia gets activated — reused on every
+    // later toggle so the webhook URL/secret don't change under a business
+    // that's already registered on Telegram's side.
+    let webhookToken = existing?.webhookToken ?? null;
+    let webhookSecret = existing?.webhookSecret ?? null;
+    if (chatIaEnabled && (!webhookToken || !webhookSecret)) {
+      webhookToken = randomBytes(24).toString('hex');
+      webhookSecret = randomBytes(32).toString('hex');
+    }
+
+    // Talk to Telegram BEFORE writing chat_ia_enabled=true to the DB. If this
+    // throws (BACKEND_PUBLIC_URL missing, bad token, Telegram rejects it),
+    // the whole save fails and the row keeps chat_ia_enabled=false — so the
+    // next save attempt still sees a false→true transition and retries
+    // registration, instead of silently believing it's already active
+    // forever (this was the actual bug: DB said "on", Telegram never got the
+    // webhook, and no later save ever tried setWebhook again).
+    if (chatIaEnabled && !wasChatIaEnabled) {
+      await this.registerTelegramWebhook(botToken, webhookToken!, webhookSecret!);
+    } else if (!chatIaEnabled && wasChatIaEnabled) {
+      await this.deleteTelegramWebhook(botToken);
+    }
+
+    await this.prisma.telegramBotConfig.upsert({
+      where: { businessId },
+      create: { businessId, botToken, chatId, notificationsEnabled, chatIaEnabled, webhookToken, webhookSecret },
+      update: {
+        ...(hasRealToken ? { botToken: dto.telegram_bot_token } : {}),
+        chatId,
+        notificationsEnabled,
+        chatIaEnabled,
+        webhookToken,
+        webhookSecret,
+        updatedAt: new Date(),
+      },
+    });
+  }
+
+  // Enabling is a deliberate admin action — if Telegram rejects the webhook
+  // (bad token, unreachable URL), the admin needs to see it fail now, not
+  // discover later that the switch was on but silently doing nothing.
+  private async registerTelegramWebhook(
+    botToken: string,
+    webhookToken: string,
+    webhookSecret: string,
+  ): Promise<void> {
+    const publicUrl = process.env.BACKEND_PUBLIC_URL;
+    if (!publicUrl) {
+      throw new BadRequestException(
+        'El servidor no tiene configurada una URL pública (BACKEND_PUBLIC_URL) — no se puede activar el chat IA por Telegram.',
+      );
+    }
+    const res = await fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: `${publicUrl}/telegram-chat-ia/webhook/${webhookToken}`,
+        secret_token: webhookSecret,
+      }),
+    });
+    const data = (await res.json()) as { ok: boolean; description?: string };
+    if (!data.ok) {
+      throw new BadRequestException(
+        `No se pudo activar el webhook de Telegram: ${data.description ?? 'error desconocido'}`,
+      );
+    }
+  }
+
+  // Disabling is best-effort — the webhook controller already no-ops once
+  // chat_ia_enabled is false, so a failed deleteWebhook here (network blip,
+  // bot deleted on Telegram's side) shouldn't block turning the switch off.
+  private async deleteTelegramWebhook(botToken: string): Promise<void> {
+    try {
+      await fetch(`https://api.telegram.org/bot${botToken}/deleteWebhook`, { method: 'POST' });
+    } catch (err) {
+      console.error('[SettingsService] Error desactivando webhook de Telegram chat-ia:', err);
+    }
   }
 
   async getPrinterSettings(
@@ -287,6 +391,19 @@ export class SettingsService {
     return Object.fromEntries(rows.map((r) => [r.key, r.value]));
   }
 
+  // Same "first business" pattern as getRawSettingsForFirstBusiness, but for
+  // the bot token — that field moved out of app_settings into
+  // TelegramBotConfig (Fase 2, plan-integracion-telegram.md), which
+  // getRawSettingsForFirstBusiness can no longer see.
+  async getFirstBusinessBotToken(): Promise<string> {
+    const business = await this.prisma.business.findFirst();
+    if (!business) return '';
+    const config = await this.prisma.telegramBotConfig.findUnique({
+      where: { businessId: business.id },
+    });
+    return config?.botToken ?? '';
+  }
+
   async saveRawSettings(
     user: CurrentUserPayload,
     updates: { key: string; value: string }[],
@@ -304,11 +421,27 @@ export class SettingsService {
   }
 
   async testTelegramConnection(
+    user: CurrentUserPayload,
     dto: TestTelegramDto,
   ): Promise<{ ok: boolean; message?: string; error?: string }> {
+    // GET /settings returns the token masked (e.g. "123456***def") — if the
+    // admin never edited the field before hitting "Probar conexión", dto
+    // carries that masked placeholder, not a real token. Resolve the actual
+    // stored token in that case instead of sending the placeholder to
+    // Telegram's API (which always rejects it).
+    let botToken = dto.telegram_bot_token;
+    if (botToken.includes('***')) {
+      const businessId = this.resolveBusinessId(user);
+      const existing = await this.prisma.telegramBotConfig.findUnique({ where: { businessId } });
+      botToken = existing?.botToken ?? '';
+    }
+    if (!botToken) {
+      return { ok: false, error: 'No hay un token guardado para probar — ingresá uno nuevo.' };
+    }
+
     try {
       const res = await fetch(
-        `https://api.telegram.org/bot${dto.telegram_bot_token}/sendMessage`,
+        `https://api.telegram.org/bot${botToken}/sendMessage`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

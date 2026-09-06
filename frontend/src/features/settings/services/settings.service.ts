@@ -10,7 +10,13 @@ export async function getSettings(): Promise<AppSettings> {
 
 export async function saveSettings(settings: AppSettings): Promise<void> {
   const res = await nestFetch(API_ENDPOINTS.settings.base, { method: "PUT", body: JSON.stringify(settings) });
-  if (!res.ok) throw new Error("Error al guardar la configuración");
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    // Surface the backend's actual message (e.g. "no se pudo activar el
+    // webhook de Telegram: ...") instead of a generic fallback — activating
+    // chat_ia_enabled can fail for reasons the admin needs to see and act on.
+    throw new Error(data.message ?? data.error ?? "Error al guardar la configuración");
+  }
 }
 
 export async function testConnection(

@@ -3,14 +3,22 @@
 import { Card, Form, Input, Switch, Button, Space, Divider, Typography, Skeleton } from "antd";
 import { SaveOutlined } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
+import { useGetIdentity } from "@refinedev/core";
+import { DEFAULT_ENABLED_MODULES, type EnabledModules } from "@pippo/shared";
 import { TestConnectionButton } from "./TestConnectionButton";
 import { useSettings } from "@/features/settings/hooks/useSettings";
 
 const { Title, Text } = Typography;
 
+interface Identity {
+  enabled_modules?: EnabledModules;
+}
+
 export function TelegramSettingsForm() {
   const t = useTranslations("settings.telegram");
   const tc = useTranslations("common");
+  const { data: identity } = useGetIdentity<Identity>();
+  const enabledModules = identity?.enabled_modules ?? DEFAULT_ENABLED_MODULES;
   const {
     settings,
     loading,
@@ -65,6 +73,15 @@ export function TelegramSettingsForm() {
             onChange={(checked) => handleChange("telegram_enabled", checked)}
           />
         </Form.Item>
+
+        {enabledModules.aiChat && (
+          <Form.Item label={t("chatIaLabel")} extra={t("chatIaExtra")}>
+            <Switch
+              checked={settings.chat_ia_enabled}
+              onChange={(checked) => handleChange("chat_ia_enabled", checked)}
+            />
+          </Form.Item>
+        )}
 
         <Divider />
 

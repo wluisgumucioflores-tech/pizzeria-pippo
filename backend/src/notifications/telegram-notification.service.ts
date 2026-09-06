@@ -10,14 +10,13 @@ export class TelegramNotificationService implements NotificationPort {
   // (matches the old sendTelegramAlert behavior, which swallowed all errors).
   async send(businessId: string, message: string): Promise<void> {
     try {
-      const rows = await this.prisma.appSetting.findMany({
-        where: { businessId, key: { in: ['telegram_bot_token', 'telegram_chat_id', 'telegram_enabled'] } },
+      const config = await this.prisma.telegramBotConfig.findUnique({
+        where: { businessId },
       });
-      const config = new Map(rows.map((r) => [r.key, r.value]));
 
-      if (config.get('telegram_enabled') !== 'true') return;
-      const token = config.get('telegram_bot_token');
-      const chatId = config.get('telegram_chat_id');
+      if (!config?.isActive || !config.notificationsEnabled) return;
+      const token = config.botToken;
+      const chatId = config.chatId;
       if (!token || !chatId) return;
 
       await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {

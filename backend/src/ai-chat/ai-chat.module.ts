@@ -21,5 +21,9 @@ import { AiChatProxyService } from './ai-chat-proxy.service';
   imports: [AuthModule, PasswordModule, AiChatUsageModule, BranchesModule],
   controllers: [AiChatController, AiModelsController],
   providers: [AiModelsService, AiPromptsService, AgentIdentityService, AiChatProxyService],
+  // Exported for the Telegram chat-ia webhook (backend/src/telegram-chat-ia),
+  // which calls both in-process — same agent identity + proxy the admin
+  // panel widget uses, no HTTP round-trip since it's the same Nest process.
+  exports: [AgentIdentityService, AiChatProxyService],
 })
 export class AiChatModule {}

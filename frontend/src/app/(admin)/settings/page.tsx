@@ -40,7 +40,11 @@ export default function SettingsPage() {
       key: "bot",
       label: <span><RobotOutlined /> {t("bot")}</span>,
       children: <BotTab />,
-      hidden: !enabledModules.telegram,
+      // Oculto por ahora: era la UI del bot de reportes viejo (single-tenant,
+      // sin tools), superado por el chat-ia por Telegram nuevo (pestaña
+      // "Notificaciones" — ver docs/features/chat-ia-backend/plan-integracion-telegram.md).
+      // Pendiente decidir si se deprecia del todo.
+      hidden: true,
     },
     {
       key: "printer",

@@ -878,13 +878,15 @@
       "width80": "80 mm (48 caracteres)"
     },
     "telegram": {
-      "title": "Notificaciones Telegram",
-      "description": "Recibe alertas automáticas en Telegram cuando el stock de un insumo baje del mínimo.",
+      "title": "Bot de Telegram",
+      "description": "Registrá tu bot de Telegram para recibir alertas de stock y/o hablar con el chat IA de tu negocio.",
       "botTokenLabel": "Bot Token",
       "botTokenExtra": "Obtenlo creando un bot con @BotFather en Telegram.",
       "chatIdLabel": "Chat ID",
       "chatIdExtra": "ID numérico del chat o grupo. Para que varios admins reciban alertas, crea un grupo, agregá el bot y usá el ID del grupo.",
-      "enabledLabel": "Notificaciones habilitadas"
+      "enabledLabel": "Notificaciones habilitadas",
+      "chatIaLabel": "Chat IA habilitado",
+      "chatIaExtra": "Escribile al bot en el chat/grupo de arriba y respondé con los mismos datos que el chat IA del panel (ventas, stock, promociones)."
     },
     "errors": {
       "loadSettings": "Error al cargar la configuración",
