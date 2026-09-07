@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Refine, Authenticated, useGetIdentity } from "@refinedev/core";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
-import { Layout as AntdLayout, Typography, Avatar, Space, theme, Skeleton, Dropdown } from "antd";
+import { Layout as AntdLayout, Typography, Avatar, Space, theme, Skeleton, Dropdown, Button, Tooltip } from "antd";
+import { ReloadOutlined } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import {
   ThemedLayout,
@@ -25,6 +26,7 @@ import { LocaleSwitcher } from "@/features/i18n/components/LocaleSwitcher";
 import { ChangePasswordModal } from "@/features/account/components/ChangePasswordModal";
 import { useChangePassword } from "@/features/account/hooks/useChangePassword";
 import { AiChatWidget } from "@/features/ai-chat/components/AiChatWidget";
+import { RefreshProvider, useTriggerRefresh } from "@/lib/refresh-context";
 import Image from "next/image";
 import { buildAdminResources } from "./admin-resources";
 
@@ -49,7 +51,9 @@ function AdminHeader() {
   const { data: user } = useGetIdentity<Identity & { name?: string; avatar?: string | null }>();
   const { token } = theme.useToken();
   const t = useTranslations("account");
+  const tCommon = useTranslations("common");
   const { open, saving, form, openModal, closeModal, handleSubmit } = useChangePassword();
+  const triggerRefresh = useTriggerRefresh();
 
   const menuItems: MenuProps["items"] = [
     { key: "change-password", label: t("changePassword"), onClick: openModal },
@@ -67,6 +71,9 @@ function AdminHeader() {
       }}
     >
       <Space size="middle">
+        <Tooltip title={tCommon("refresh")}>
+          <Button type="text" icon={<ReloadOutlined />} onClick={triggerRefresh} />
+        </Tooltip>
         <LocaleSwitcher />
         {(user?.name || user?.avatar) && (
           <Dropdown menu={{ items: menuItems }} trigger={["click"]}>
@@ -150,10 +157,12 @@ export default function AdminLayout({
           }}
         >
           <Authenticated key="admin-auth">
-            <ThemedLayout Sider={() => <ThemedSider fixed Title={SiderTitle} />} Header={AdminHeader} Footer={AppFooter}>
-              {children}
-            </ThemedLayout>
-            {(enabledModules ?? DEFAULT_ENABLED_MODULES).aiChat && <AiChatWidget />}
+            <RefreshProvider>
+              <ThemedLayout Sider={() => <ThemedSider fixed Title={SiderTitle} />} Header={AdminHeader} Footer={AppFooter}>
+                {children}
+              </ThemedLayout>
+              {(enabledModules ?? DEFAULT_ENABLED_MODULES).aiChat && <AiChatWidget />}
+            </RefreshProvider>
           </Authenticated>
           <RefineKbar />
         </Refine>

@@ -98,5 +98,6 @@ export function useIngredients() {
     modalOpen, editing, form,
     openCreate, openEdit, closeModal,
     handleSubmit, handleToggleActive,
+    refetch: mutate,
   };
 }

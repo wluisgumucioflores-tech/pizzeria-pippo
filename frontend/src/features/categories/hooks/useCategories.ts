@@ -55,5 +55,6 @@ export function useCategories() {
     modalOpen, editing,
     openCreate, openEdit, closeModal,
     handleSubmit, handleDelete,
+    refetch: load,
   };
 }

@@ -3,9 +3,11 @@
 import { CategoriesTable } from "@/features/categories/components/CategoriesTable";
 import { CategoryModal } from "@/features/categories/components/CategoryModal";
 import { useCategories } from "@/features/categories/hooks/useCategories";
+import { useRegisterRefresh } from "@/lib/refresh-context";
 
 export default function CategoriesPage() {
-  const { categories, loading, saving, modalOpen, editing, openCreate, openEdit, closeModal, handleSubmit, handleDelete } = useCategories();
+  const { categories, loading, saving, modalOpen, editing, openCreate, openEdit, closeModal, handleSubmit, handleDelete, refetch } = useCategories();
+  useRegisterRefresh(refetch);
 
   return (
     <div className="p-6">

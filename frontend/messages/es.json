@@ -11,7 +11,8 @@
     "back": "Volver",
     "actions": "Acciones",
     "yes": "Sí",
-    "no": "No"
+    "no": "No",
+    "refresh": "Actualizar"
   },
   "auth": {
     "login": "Iniciar sesión",
