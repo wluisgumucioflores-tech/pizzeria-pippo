@@ -14,7 +14,11 @@ ALTER TABLE profiles
 
 -- RLS: política para que el cocinero pueda actualizar kitchen_status en orders de su sucursal
 -- Requiere que get_user_role() y get_user_branch_id() ya existan (creadas en 001_schema.sql)
-CREATE POLICY IF NOT EXISTS "orders_kitchen_update" ON orders
+-- Nota: "CREATE POLICY IF NOT EXISTS" no existe en PostgreSQL — nunca fue
+-- sintaxis válida. Se corrige acá al DROP+CREATE (mismo patrón idempotente
+-- usado en el resto de las migraciones), sin cambiar el efecto original.
+DROP POLICY IF EXISTS "orders_kitchen_update" ON orders;
+CREATE POLICY "orders_kitchen_update" ON orders
   FOR UPDATE
   USING (get_user_role() = 'cocinero' AND branch_id = get_user_branch_id())
   WITH CHECK (get_user_role() = 'cocinero' AND branch_id = get_user_branch_id());

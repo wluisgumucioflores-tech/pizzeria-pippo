@@ -25,6 +25,19 @@
 
 **Verificar:** los negocios que ya usaban notificaciones por Telegram aparecen con su fila en `telegram_bot_config` y `notifications_enabled` en el mismo estado que tenían antes (comparar contra `app_settings.telegram_enabled`). No se toca ningún dato de `app_settings` todavía.
 
+### Rol superadmin — `068`, verificar antes de aplicar
+
+> `backend/prisma/schema.prisma` y varios controllers (`@Roles('superadmin')`) ya asumen que el rol existe, pero la secuencia numerada nunca lo agregó formalmente — viene de `docs/database/migrations/multitenant/002_superadmin_role.sql` (reset de un Supabase de dev, no de esta carpeta). Puede que ya esté aplicado en producción con otro nombre de constraint. **Antes de correr `068`**, verificar con:
+> ```sql
+> SELECT pg_get_constraintdef(oid) FROM pg_constraint
+> WHERE conrelid = 'public.profiles'::regclass AND conname = 'profiles_role_check';
+> ```
+> Si el resultado ya incluye `'superadmin'`, marcar `068` como ✅ sin correrla (el `DROP CONSTRAINT` de la migración asume el nombre exacto `profiles_role_check`).
+
+| # | Archivo | Qué hace |
+|---|---------|----------|
+| ⏳ | `068_superadmin_role.sql` | Agrega `'superadmin'` a `profiles_role_check`, vuelve `business_id` nullable para ese rol + CHECK `profiles_business_id_required_unless_superadmin` |
+
 ## Aplicadas en producción
 
 > Confirmado el 2026-06-10: las migraciones `023`–`032` ya están aplicadas en producción

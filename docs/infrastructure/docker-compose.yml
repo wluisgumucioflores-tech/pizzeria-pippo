@@ -1,11 +1,23 @@
 version: "3.8"
 
 # Supabase local — Pizzería Pippo
+# Único docker-compose del proyecto (reemplaza cualquier otro que hayas visto
+# antes bajo docker/ — esa carpeta ya no existe).
 # Servicios incluidos: PostgreSQL, Auth, Storage, Studio, Kong (API gateway)
 # NO incluye: Realtime, Edge Functions (no se usan en el proyecto)
 #
+# La base de datos se auto-inicializa con el schema real y actualizado:
+# el servicio db-init aplica docs/database/schema-base.sql (pg_dump
+# --schema-only del `public` de producción, ver docs/database/README.md)
+# apenas el volumen de datos es nuevo, y siembra un superadmin por defecto
+# (superadmin@pippo.dev / superadmin-dev-2026 — ver
+# docs/database/setup/03_seed_superadmin.sql). Si el volumen ya tiene
+# datos, no reaplica el schema (ver apply-schema.sh).
+# Backend/frontend/ai-orchestrator siguen corriendo aparte (npm run dev /
+# gradle bootRun) — este compose es solo la infraestructura de datos.
+#
 # Uso:
-#   docker compose up -d
+#   docker compose -f docs/infrastructure/docker-compose.yml up -d
 #   Acceder al Studio: http://localhost:54323
 #   API URL:          http://localhost:54321
 #
@@ -24,7 +36,9 @@ services:
 
   # ─── Base de datos ────────────────────────────────────────────────────────
   db:
-    image: supabase/postgres:15.8.1.060
+    # 17.6.1 para calzar exacto con la versión real de producción (17.6) —
+    # schema-base.sql es un pg_dump de esa versión.
+    image: supabase/postgres:17.6.1.005
     container_name: pippo_db
     restart: unless-stopped
     ports:
@@ -40,6 +54,23 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  # ─── Bootstrap del schema de negocio (branches, orders, products, etc.) ───
+  db-init:
+    # postgres:17 porque schema-base.sql (pg_dump 17 contra producción) usa
+    # \restrict/\unrestrict, meta-comandos de psql que un cliente 15 no entiende.
+    image: postgres:17-alpine
+    container_name: pippo_db_init
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      POSTGRES_PASSWORD: *pg_pass
+    volumes:
+      - ../../docs/database/schema-base.sql:/sql/000-base/schema-base.sql:ro
+      - ../../docs/database/setup/03_seed_superadmin.sql:/sql/002-seed/03_seed_superadmin.sql:ro
+      - ./apply-schema.sh:/apply-schema.sh:ro
+    entrypoint: ["sh", "/apply-schema.sh"]
 
   # ─── Auth ─────────────────────────────────────────────────────────────────
   auth:

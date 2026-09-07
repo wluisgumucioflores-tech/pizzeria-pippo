@@ -10,6 +10,7 @@
 # backend (NestJS)
 backend/dist
 backend/.env
+backend/.env.production
 backend/.env.docker
 backend/logs
 packages/*/dist
@@ -64,9 +65,6 @@ frontend/playwright/.auth/
 CLAUDE.local.md
 # production dumps / data for local analysis only
 docs/database/local-dumps/
-
-# local docker volumes (postgres data dir, etc.) — never version raw DB files
-docker/volumes/
 
 # mobile (Android/Gradle) — build artifacts and machine-specific SDK path
 mobile/**/.gradle/
