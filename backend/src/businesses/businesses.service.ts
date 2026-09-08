@@ -74,6 +74,16 @@ export class BusinessesService {
       // Real categories for every new business, no flag condition —
       // there's no longer a hardcoded fallback path if this fails.
       await this.categoriesService.seedDefaults(business.id);
+      // Explicit false for brand-new businesses — a business with no
+      // app_settings row falls back to `use_stock: true` (see
+      // settings.service.ts), which is intentional for businesses that
+      // predate this toggle, but wrong here: a new business hasn't loaded
+      // any inventory yet, so resale products it creates would silently
+      // disappear from the POS (product_variants filtered out when
+      // stock_quantity is null and use_stock is true).
+      await this.prisma.appSetting.create({
+        data: { businessId: business.id, key: 'use_stock', value: 'false' },
+      });
       return this.toResult(business);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
