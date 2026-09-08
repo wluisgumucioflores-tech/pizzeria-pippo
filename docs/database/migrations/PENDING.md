@@ -15,6 +15,24 @@
 | ⏳ | `056_mcp_api_keys.sql` | Crea tabla `mcp_api_keys` con RLS — API keys self-serve por negocio para el servidor MCP (`services/mcp-saas`) |
 | ⏳ | `057_business_enabled_modules_mcp_saas.sql` | Agrega el flag `mcpSaas` (default `false`) a `businesses.enabled_modules` |
 
+### Feature chat-ia-backend — aplicar 058 a 066, en orden y en la misma sesión
+
+> Rango completo de la rama `feature/chat-ia-backend` (ver `docs/features/chat-ia-backend/catalogo-tools.md`). Ninguno de estos 9 archivos está aplicado en producción todavía. **Requisito previo**: confirmar que `053_business_enabled_modules.sql` (columna `enabled_modules` en `businesses`) ya está aplicado — `060` y `064` dependen de que esa columna/tabla exista. No se puede saltar ninguno ni aplicarlos salteados: `061` crea `ai_chat_plans`, que `062`/`064`/`066` modifican después.
+
+| # | Archivo | Qué hace |
+|---|---------|----------|
+| ⏳ | `058_ai_models.sql` | Crea tabla `ai_models` — catálogo global de modelos de IA gestionado por el superadmin |
+| ⏳ | `059_ai_prompts.sql` | Crea tabla `ai_prompts` — system prompts del agente (ES/EN), editables por el superadmin |
+| ⏳ | `060_business_enabled_modules_ai_chat.sql` | Agrega el flag `aiChat` (default `false`) a `businesses.enabled_modules` |
+| ⏳ | `061_ai_chat_plans_and_usage.sql` | Crea tablas `ai_chat_plans` y `ai_chat_usage` + columna `businesses.ai_chat_plan_id` |
+| ⏳ | `062_ai_chat_plans_model_id.sql` | Sin DDL — documenta/backfillea la key `model_id` dentro de `ai_chat_plans.limits` |
+| ⏳ | `063_ai_models_api_key.sql` | Agrega `api_key` (encriptada) a `ai_models`, para providers cloud |
+| ⏳ | `064_business_ai_chat_plan_nullable.sql` | Vuelve nullable `businesses.ai_chat_plan_id` (aiChat es opt-in, no todo negocio tiene plan) |
+| ⏳ | `065_ai_prompts_enable_write_actions.sql` | `UPDATE` sobre `ai_prompts` — corrige el system prompt para permitir tools de escritura (ya no dice "solo lectura") |
+| ⏳ | `066_ai_chat_plans_allowed_write_domains.sql` | Sin DDL — documenta la key `allowed_write_domains` dentro de `ai_chat_plans.limits` |
+
+**Verificar después de aplicar todo el rango:** `/ai-models` y `/ai-chat-plans` en el superadmin cargan sin error; un negocio con `enabledModules.aiChat=true` puede usar el widget de chat en `/admin`.
+
 ### Feature chat-ia por Telegram — `067`, independiente del rango anterior
 
 > Ver `docs/features/chat-ia-backend/plan-integracion-telegram.md` (Fase 1). Requiere que `app_settings` (`024`) y `businesses` (`034`) ya estén aplicados — ambos lo están en producción.
