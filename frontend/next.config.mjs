@@ -9,6 +9,10 @@ const isDev = process.env.NODE_ENV !== "production";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    // Product photos rarely change once uploaded — a long TTL cuts repeat
+    // Vercel Image Optimization transformations/cache-writes, and keeps the
+    // POS/kitchen tablets serving images from browser cache during a shift.
+    minimumCacheTTL: 2678400, // 31 days
     // Wildcard covers any Supabase project (the project ID varies per env)
     // Don't use a fixed hostname — the project ID from .env isn't available at build time
     remotePatterns: [
