@@ -23,7 +23,7 @@ class AgentControllerTest {
 
     @Test
     void delegatesToChatOrchestrationServiceAndReturnsItsResult() {
-        ToolChatRequest request = new ToolChatRequest("hola", "business-1", "es", "conv-1", "admin", null, null);
+        ToolChatRequest request = new ToolChatRequest("hola", "business-1", "es", "conv-1", "admin", null, null, null);
         ToolChatResponse expected = new ToolChatResponse("qwen3:8b", null, "respuesta", 10, 20);
         when(chatOrchestrationService.chatWithTools(request)).thenReturn(expected);
 

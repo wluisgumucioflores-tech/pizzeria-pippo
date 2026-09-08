@@ -103,4 +103,25 @@ class ChatOrchestrationServiceTest {
 
         assertThat(context).contains("Centro").contains("branch-1").doesNotContain("{0}").doesNotContain("{1}");
     }
+
+    @Test
+    void buildBusinessContextReturnsEmptyWhenBusinessNameIsNull() {
+        String context = serviceWithRealMessageSource().buildBusinessContext(null, "es");
+
+        assertThat(context).isEmpty();
+    }
+
+    @Test
+    void buildBusinessContextInSpanishIncludesBusinessName() {
+        String context = serviceWithRealMessageSource().buildBusinessContext("Pizzería Don Mario", "es");
+
+        assertThat(context).contains("Pizzería Don Mario").doesNotContain("{0}");
+    }
+
+    @Test
+    void buildBusinessContextInEnglishIncludesBusinessName() {
+        String context = serviceWithRealMessageSource().buildBusinessContext("Pizzería Don Mario", "en");
+
+        assertThat(context).contains("Pizzería Don Mario").doesNotContain("{0}");
+    }
 }

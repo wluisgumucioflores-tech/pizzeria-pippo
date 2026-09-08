@@ -36,7 +36,7 @@ export class AiChatProxyService {
 
     const business = await this.prisma.business.findUniqueOrThrow({
       where: { id: businessId },
-      select: { enabledModules: true },
+      select: { name: true, enabledModules: true },
     });
     const enabledModules = { ...DEFAULT_ENABLED_MODULES, ...(business.enabledModules as Partial<EnabledModules>) };
     if (!enabledModules.aiChat) {
@@ -65,6 +65,7 @@ export class AiChatProxyService {
       lastUserMessage.content,
       dto.locale,
       branch,
+      business.name,
     );
     await this.quotaService.addTokenUsage(businessId, agentResponse.promptTokens, agentResponse.completionTokens);
 
@@ -102,6 +103,7 @@ export class AiChatProxyService {
     message: string,
     locale: string | undefined,
     branch: EffectiveBranch | null,
+    businessName: string,
   ): Promise<AgentChatResponse> {
     const baseUrl = process.env.AI_ORCHESTRATOR_URL ?? 'http://localhost:8090';
     const controller = new AbortController();
@@ -118,6 +120,7 @@ export class AiChatProxyService {
           conversationId: `${businessId}:${userId}`,
           branchId: branch?.id,
           branchName: branch?.name,
+          businessName,
         }),
         signal: controller.signal,
       });

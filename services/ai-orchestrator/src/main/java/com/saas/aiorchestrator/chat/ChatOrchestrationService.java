@@ -66,7 +66,8 @@ public class ChatOrchestrationService {
                 request.businessId(), cfg.provider(), cfg.model(), cfg.baseURL());
         String locale = resolveLocale(request.locale());
         String systemPrompt = systemPromptClient.fetch(locale) + buildDateContext(locale)
-                + buildBranchContext(request.branchId(), request.branchName(), locale);
+                + buildBranchContext(request.branchId(), request.branchName(), locale)
+                + buildBusinessContext(request.businessName(), locale);
 
         // Falls back to one conversation per business only for manual/smoke-test calls.
         String conversationId = resolveConversationId(request.conversationId(), request.businessId());
@@ -140,5 +141,16 @@ public class ChatOrchestrationService {
         }
         return messageSource.getMessage(
                 "chat.branch-context", new Object[] { branchName, branchId }, Locale.forLanguageTag(locale));
+    }
+
+    // businessName is pre-resolved by NestJS (AiChatProxyService) from businesses.name — this is a
+    // multi-tenant SaaS, so the system prompt (ai_prompts, shared across all tenants) can't hardcode
+    // a single business name. null only for the pure smoke-test /chat endpoint, which has no tenant.
+    String buildBusinessContext(String businessName, String locale) {
+        if (businessName == null) {
+            return "";
+        }
+        return messageSource.getMessage(
+                "chat.business-context", new Object[] { businessName }, Locale.forLanguageTag(locale));
     }
 }
