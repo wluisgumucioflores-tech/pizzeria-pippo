@@ -19,8 +19,11 @@ import { TransferWarehouseProductStockDto } from './dto/transfer-warehouse-produ
 
 // Central ingredient warehouse (warehouse_stock/warehouse_movements): real RLS is
 // admin-only for EVERYTHING (select included) — see docker exec pippo_db psql.
-// Resale warehouse (warehouse_product_stock/warehouse_product_movements): real RLS
-// is "any authenticated user" with no restriction, same as branch_product_stock.
+// Resale/finished-goods warehouse (warehouse_product_stock/warehouse_product_movements):
+// DB-level RLS is still "any authenticated user" (same as branch_product_stock), but
+// the product-* endpoints below now enforce @Roles('admin', 'produccion') at the app
+// level — jefe de producción needs them for Fase 10 (transfer to a branch), and this
+// closes a gap where any authenticated role could previously call them.
 @UseGuards(JwtAuthGuard)
 @Controller('warehouse')
 export class WarehouseController {
@@ -78,26 +81,42 @@ export class WarehouseController {
     return this.warehouseService.transfer(dto, user);
   }
 
+  // @Roles('admin', 'produccion') added for Fase 10 (docs/features/jefe-produccion/):
+  // the jefe de producción needs to list warehouse balances and execute
+  // transfers to a branch from their own panel. Before this, these 5
+  // product-* endpoints had no role restriction at all — any authenticated
+  // role (cajero/cocinero/mesero included) could already call them; this
+  // closes that gap rather than opening a new one.
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'produccion')
   @Get('product-stock')
-  listProductStock(@CurrentUser() user: CurrentUserPayload) {
-    return this.warehouseProductService.list(user);
+  listProductStock(@Query('productType') productType: string | undefined, @CurrentUser() user: CurrentUserPayload) {
+    return this.warehouseProductService.list(user, productType);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'produccion')
   @Get('product-movements')
   getProductMovements(@Query() query: ListWarehouseProductMovementsQueryDto, @CurrentUser() user: CurrentUserPayload) {
     return this.warehouseProductService.getMovements(query, user);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'produccion')
   @Post('product-purchase')
   productPurchase(@Body() dto: PurchaseWarehouseProductStockDto, @CurrentUser() user: CurrentUserPayload) {
     return this.warehouseProductService.purchase(dto, user);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'produccion')
   @Post('product-adjust')
   productAdjust(@Body() dto: AdjustWarehouseProductStockDto, @CurrentUser() user: CurrentUserPayload) {
     return this.warehouseProductService.adjust(dto, user);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'produccion')
   @Post('product-transfer')
   productTransfer(@Body() dto: TransferWarehouseProductStockDto, @CurrentUser() user: CurrentUserPayload) {
     return this.warehouseProductService.transfer(dto, user);

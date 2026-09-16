@@ -54,6 +54,7 @@ export const authProvider: AuthProvider = {
       branch_id: profile.branch_id,
       business_name: profile.business_name,
       enabled_modules: profile.enabled_modules,
+      announcement: profile.announcement,
       avatar: null,
     };
   },

@@ -4,6 +4,7 @@ import { VariantTypesService } from './variant-types.service';
 import { VariantTypeInUseException } from '../common/exceptions/variant-type-in-use.exception';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
+import { DEFAULT_ENABLED_MODULES } from '@pippo/shared';
 
 describe('VariantTypesService', () => {
   let service: VariantTypesService;
@@ -19,6 +20,7 @@ describe('VariantTypesService', () => {
     branch_id: null,
     full_name: 'Admin',
     business_id: 'biz1',
+    enabled_modules: DEFAULT_ENABLED_MODULES,
   };
 
   beforeEach(async () => {

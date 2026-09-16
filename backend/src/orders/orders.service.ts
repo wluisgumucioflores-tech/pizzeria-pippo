@@ -24,7 +24,7 @@ import {
   todayInBolivia,
 } from '../common/utils/timezone';
 import type { CartItem, Promotion } from './lib/promotions-engine';
-import type { RecipeRow, StockItem } from './lib/order-stock';
+import type { RecipeRow, StockItem, StockControlFlags } from './lib/order-stock';
 import type { CreateOrderDto } from './dto/create-order.dto';
 import type { CancelOrderDto } from './dto/cancel-order.dto';
 import type { PayOrderDto } from './dto/pay-order.dto';
@@ -225,6 +225,7 @@ export class OrdersService {
 
     let deductions: ReturnType<typeof computeStockDeductions> = emptyDeductions;
     if (useStock) {
+      const flags = await this.settingsService.getStockControlFlags(user);
       const recipesByVariant: Record<string, RecipeRow[]> = {};
       for (const v of variants) {
         recipesByVariant[v.id] = v.recipes.map((r) => ({
@@ -235,20 +236,24 @@ export class OrdersService {
         }));
       }
 
-      const stockItems: StockItem[] = discounted.map((d) => ({
-        variant_id: d.variant_id,
-        qty_physical: d.qty_physical,
-        product_type:
-          variantById.get(d.variant_id)?.product.productType ?? 'made',
-        flavors: d.flavors?.map((f) => ({
-          variant_id: f.variant_id,
-          proportion: f.proportion,
-        })),
-      }));
+      const stockItems: StockItem[] = discounted.map((d) => {
+        const product = variantById.get(d.variant_id)?.product;
+        const productType = product?.productType ?? 'made';
+        return {
+          variant_id: d.variant_id,
+          qty_physical: d.qty_physical,
+          product_type: productType,
+          flavors: d.flavors?.map((f) => ({
+            variant_id: f.variant_id,
+            proportion: f.proportion,
+          })),
+        };
+      });
       deductions = computeStockDeductions(
         stockItems,
         recipesByVariant,
         dto.order_type,
+        flags,
       );
       if (deductions.incomplete_recipe_variant_ids.length > 0) {
         this.logger.warn(
@@ -460,6 +465,7 @@ export class OrdersService {
     };
     let deductions: ReturnType<typeof computeStockDeductions> = emptyDeductions;
     if (useStock) {
+      const flags = await this.settingsService.getStockControlFlags(user);
       const recipesByVariant: Record<string, RecipeRow[]> = {};
       for (const v of variants) {
         recipesByVariant[v.id] = v.recipes.map((r) => ({
@@ -469,20 +475,24 @@ export class OrdersService {
           is_shared_use: r.ingredient.isSharedUse,
         }));
       }
-      const stockItems: StockItem[] = discounted.map((d) => ({
-        variant_id: d.variant_id,
-        qty_physical: d.qty_physical,
-        product_type:
-          variantById.get(d.variant_id)?.product.productType ?? 'made',
-        flavors: d.flavors?.map((f) => ({
-          variant_id: f.variant_id,
-          proportion: f.proportion,
-        })),
-      }));
+      const stockItems: StockItem[] = discounted.map((d) => {
+        const product = variantById.get(d.variant_id)?.product;
+        const productType = product?.productType ?? 'made';
+        return {
+          variant_id: d.variant_id,
+          qty_physical: d.qty_physical,
+          product_type: productType,
+          flavors: d.flavors?.map((f) => ({
+            variant_id: f.variant_id,
+            proportion: f.proportion,
+          })),
+        };
+      });
       deductions = computeStockDeductions(
         stockItems,
         recipesByVariant,
         order.orderType as OrderType,
+        flags,
       );
     }
 
@@ -816,7 +826,10 @@ export class OrdersService {
     // revertir igual sumaría stock que jamás se restó (ver isStockTrackingEnabled).
     const useStock = await this.settingsService.isStockTrackingEnabled(user);
     const deductions = useStock
-      ? await this.computeReversalDeductions(order)
+      ? await this.computeReversalDeductions(
+          order,
+          await this.settingsService.getStockControlFlags(user),
+        )
       : {
           ingredient_deductions: [],
           resale_deductions: [],
@@ -892,10 +905,13 @@ export class OrdersService {
   }
 
   // Reconstructs the same StockItem[] shape used at sale time, to reuse
-  // computeStockDeductions (pure, unit-tested) with the recipes as they are
-  // configured today. Includes flavor variants (mixed pizzas), which have
-  // their own recipes separate from the base variant.
-  private async computeReversalDeductions(order: CancellableOrder) {
+  // computeStockDeductions (pure, unit-tested) with the recipes and
+  // business-wide flags as they are configured today (not as they were at
+  // sale time — an admin toggling "Insumos"/"Elaboración por unidad"
+  // between sale and cancellation reverts using today's rules). Includes
+  // flavor variants (mixed pizzas), which have their own recipes separate
+  // from the base variant.
+  private async computeReversalDeductions(order: CancellableOrder, flags: StockControlFlags) {
     const flavorVariantIds = order.items.flatMap((i) =>
       i.flavors.map((f) => f.variantId),
     );
@@ -918,21 +934,25 @@ export class OrdersService {
       }));
     }
 
-    const stockItems: StockItem[] = order.items.map((item) => ({
-      variant_id: item.variantId,
-      qty_physical: item.qtyPhysical,
-      product_type:
-        variantById.get(item.variantId)?.product.productType ?? 'made',
-      flavors: item.flavors.map((f) => ({
-        variant_id: f.variantId,
-        proportion: f.proportion.toNumber(),
-      })),
-    }));
+    const stockItems: StockItem[] = order.items.map((item) => {
+      const product = variantById.get(item.variantId)?.product;
+      const productType = product?.productType ?? 'made';
+      return {
+        variant_id: item.variantId,
+        qty_physical: item.qtyPhysical,
+        product_type: productType,
+        flavors: item.flavors.map((f) => ({
+          variant_id: f.variantId,
+          proportion: f.proportion.toNumber(),
+        })),
+      };
+    });
 
     return computeStockDeductions(
       stockItems,
       recipesByVariant,
       order.orderType as OrderType,
+      flags,
     );
   }
 

@@ -10,6 +10,7 @@ import type { AiCompletionConfig } from './ai-providers/ai-completion-config.typ
 import { buildSystemPrompt } from './lib/build-system-prompt';
 import { todayInBolivia } from '../common/utils/timezone';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
+import { DEFAULT_ENABLED_MODULES, type EnabledModules } from '@pippo/shared';
 import type { TelegramAiParams, TelegramAiResult, TelegramResponse } from './types/telegram-ai.types';
 
 const SETTINGS_KEYS = [
@@ -99,6 +100,10 @@ export class TelegramAiService {
       branch_id: null,
       full_name: null,
       business_id: business?.id ?? null,
+      enabled_modules: {
+        ...DEFAULT_ENABLED_MODULES,
+        ...(business?.enabledModules as Partial<EnabledModules> | undefined),
+      },
     };
   }
 

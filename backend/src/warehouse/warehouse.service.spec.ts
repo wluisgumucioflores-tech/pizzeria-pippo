@@ -4,6 +4,7 @@ import { WarehouseService } from './warehouse.service';
 import { InsufficientStockException } from '../common/exceptions/insufficient-stock.exception';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
+import { DEFAULT_ENABLED_MODULES } from '@pippo/shared';
 
 function decimal(value: number) {
   return { toNumber: () => value };
@@ -16,6 +17,7 @@ const admin: CurrentUserPayload = {
   branch_id: null,
   full_name: 'Admin',
   business_id: 'biz1',
+  enabled_modules: DEFAULT_ENABLED_MODULES,
 };
 
 describe('WarehouseService', () => {

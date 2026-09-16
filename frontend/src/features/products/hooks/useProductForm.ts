@@ -10,12 +10,14 @@ import { VariantTypesService } from "@/features/variant-types/services/variant-t
 import { useProductVariants } from "./useProductVariants";
 import type { Product, Step1Data, VariantTypeOption, Branch, Variant } from "../types/product.types";
 
+const EMPTY_STEP1: Step1Data = { name: "", category_id: null, description: "", product_type: "made" };
+
 export function useProductForm(onSuccess: () => void) {
   const [currentStep, setCurrentStep] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [imageUrl, setImageUrl] = useState<string>("");
-  const [step1Data, setStep1Data] = useState<Step1Data>({ name: "", category_id: null, description: "", product_type: "made" });
+  const [step1Data, setStep1Data] = useState<Step1Data>(EMPTY_STEP1);
   const [variantTypeOptions, setVariantTypeOptions] = useState<VariantTypeOption[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [formStep1] = Form.useForm();
@@ -36,7 +38,7 @@ export function useProductForm(onSuccess: () => void) {
   const resetForm = () => {
     setCurrentStep(0);
     setImageUrl("");
-    setStep1Data({ name: "", category_id: null, description: "", product_type: "made" });
+    setStep1Data(EMPTY_STEP1);
     formStep1.resetFields();
     productVariants.resetVariants();
   };

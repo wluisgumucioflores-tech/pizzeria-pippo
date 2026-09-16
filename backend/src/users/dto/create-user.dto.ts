@@ -11,7 +11,7 @@ export class CreateUserDto {
   @IsString()
   full_name!: string;
 
-  @IsIn(['admin', 'cajero', 'cocinero', 'mesero'])
+  @IsIn(['admin', 'cajero', 'cocinero', 'mesero', 'produccion'])
   role!: string;
 
   @IsOptional()

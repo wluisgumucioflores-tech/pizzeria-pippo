@@ -3,6 +3,7 @@ import { ProductsService } from './products.service';
 import { ProductHasSalesException } from '../common/exceptions/product-has-sales.exception';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
+import { DEFAULT_ENABLED_MODULES } from '@pippo/shared';
 
 function decimal(value: number) {
   return { toNumber: () => value };
@@ -15,6 +16,7 @@ const admin: CurrentUserPayload = {
   branch_id: null,
   full_name: 'Admin',
   business_id: 'biz1',
+  enabled_modules: DEFAULT_ENABLED_MODULES,
 };
 
 describe('ProductsService', () => {
@@ -32,6 +34,7 @@ describe('ProductsService', () => {
     orderItemFlavor: { findFirst: jest.Mock };
     promotionRule: { findFirst: jest.Mock };
     branch: { findMany: jest.Mock; findUnique: jest.Mock };
+    category: { findUnique: jest.Mock };
     $transaction: jest.Mock;
   };
 
@@ -63,6 +66,7 @@ describe('ProductsService', () => {
       orderItemFlavor: { findFirst: jest.fn().mockResolvedValue(null) },
       promotionRule: { findFirst: jest.fn().mockResolvedValue(null) },
       branch: { findMany: jest.fn(), findUnique: jest.fn().mockResolvedValue({ businessId: 'biz1' }) },
+      category: { findUnique: jest.fn().mockResolvedValue({ businessId: 'biz1', isPizza: true }) },
       $transaction: jest.fn(async (cb: (tx: unknown) => Promise<void>) => cb(prisma)),
     };
 
@@ -200,6 +204,7 @@ describe('ProductsService', () => {
         data: [{ variantId: 'v1', ingredientId: 'i1', quantity: 1, applyCondition: 'always' }],
       });
     });
+
   });
 
   describe('duplicate', () => {
@@ -360,6 +365,7 @@ describe('ProductsService', () => {
       ).rejects.toThrow('Producto no encontrado');
       expect(prisma.product.update).not.toHaveBeenCalled();
     });
+
   });
 
   describe('setActive', () => {
@@ -445,6 +451,16 @@ describe('ProductsService', () => {
         { id: 'v1', name: 'Familiar', product_name: 'Hawaiana' },
         { id: 'v2', name: 'Mediana', product_name: '' },
       ]);
+    });
+
+    it('filtra por product_type cuando se pasa productType', async () => {
+      prisma.productVariant.findMany.mockResolvedValue([]);
+
+      await service.listAllVariants(admin, 'made');
+
+      expect(prisma.productVariant.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { businessId: 'biz1', product: { productType: 'made' } } }),
+      );
     });
   });
 

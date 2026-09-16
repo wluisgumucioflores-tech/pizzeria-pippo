@@ -23,6 +23,9 @@ export function useSettings() {
     printer_business_name: "GU PIZZA",
     use_stock: true,
     pos_enable_table_number: false,
+    stock_deduct_resale: true,
+    stock_deduct_insumos: true,
+    stock_deduct_made_unit: false,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

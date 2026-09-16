@@ -7,6 +7,7 @@ import { TelegramSenderService } from '../telegram/telegram-sender.service';
 import { TelegramChatIaWebhookGuard } from './telegram-chat-ia-webhook.guard';
 import type { TelegramUpdatePayload } from '../telegram/types/telegram-update-payload.types';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
+import { DEFAULT_ENABLED_MODULES } from '@pippo/shared';
 
 interface RequestWithBotConfig extends Request {
   telegramBotConfig: TelegramBotConfig;
@@ -67,6 +68,9 @@ export class TelegramChatIaWebhookController {
         branch_id: null,
         full_name: profile.fullName,
         business_id: profile.businessId,
+        // Chat-ia doesn't branch on enabled_modules — default is enough here,
+        // no need to fetch the business row just for this synthetic user.
+        enabled_modules: DEFAULT_ENABLED_MODULES,
       };
       const { content } = await this.aiChatProxyService.sendMessage(user, {
         messages: [{ role: 'user', content: text }],

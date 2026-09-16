@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { Tabs, Space } from "antd";
-import { UnorderedListOutlined, UserOutlined } from "@ant-design/icons";
+import { UnorderedListOutlined, UserOutlined, ShoppingOutlined } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
 
 import { ReportFilters } from "@/features/reports/components/ReportFilters";
@@ -14,10 +14,17 @@ import { useReportsPage } from "@/features/reports/hooks/useReportsPage";
 const CashierReportTable = dynamic(() =>
   import("@/features/reports/components/CashierReportTable").then(m => m.CashierReportTable)
 );
+const CashierStatsCards = dynamic(() =>
+  import("@/features/reports/components/CashierStatsCards").then(m => m.CashierStatsCards)
+);
+const ProductionReportTable = dynamic(() =>
+  import("@/features/reports/components/ProductionReportTable").then(m => m.ProductionReportTable)
+);
 
 export default function ReportsPage() {
   const t = useTranslations("reports");
-  const { filters, sales, cashier, ordersReport, cancellation } = useReportsPage();
+  const { filters, sales, cashier, production, ordersReport, cancellation } = useReportsPage();
+  const selectedBranchLabel = filters.branches.find((b) => b.id === filters.selectedBranch)?.name;
 
   return (
     <div style={{ padding: 24 }}>
@@ -53,8 +60,28 @@ export default function ReportsPage() {
           {
             key: "cajeros",
             label: <Space><UserOutlined />{t("tabs.cashiers")}</Space>,
-            children: <CashierReportTable cashierReports={cashier.cashierReports} loading={cashier.loading} />,
+            children: (
+              <>
+                <CashierStatsCards cashierReports={cashier.cashierReports} branchStock={cashier.branchStock} loading={cashier.loading} />
+                <CashierReportTable
+                  cashierReports={cashier.cashierReports}
+                  branchStock={cashier.branchStock}
+                  loading={cashier.loading}
+                  branchLabel={selectedBranchLabel}
+                  lastUpdatedAt={cashier.lastUpdatedAt}
+                />
+              </>
+            ),
           },
+          ...(filters.enabledModules.produccion
+            ? [
+                {
+                  key: "produccion",
+                  label: <Space><ShoppingOutlined />{t("tabs.production")}</Space>,
+                  children: <ProductionReportTable productionReport={production.productionReport} loading={production.loading} />,
+                },
+              ]
+            : []),
         ]}
       />
       <CancelOrderModal

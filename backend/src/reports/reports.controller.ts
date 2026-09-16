@@ -32,6 +32,11 @@ export class ReportsController {
     return this.reportsService.getCashiers(query, user);
   }
 
+  @Get('production')
+  getProduction(@Query() query: ReportQueryDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.reportsService.getProduction(query, user);
+  }
+
   @Get('orders')
   getOrders(@Query() query: OrdersReportQueryDto, @CurrentUser() user: CurrentUserPayload) {
     return this.reportsService.getOrders(query, user);

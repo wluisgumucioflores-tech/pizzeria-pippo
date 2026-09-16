@@ -4,6 +4,7 @@ import { AttendanceService } from './attendance.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmployeesService } from '../employees/employees.service';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
+import { DEFAULT_ENABLED_MODULES } from '@pippo/shared';
 
 describe('AttendanceService', () => {
   let service: AttendanceService;
@@ -19,6 +20,7 @@ describe('AttendanceService', () => {
     branch_id: null,
     full_name: 'Admin',
     business_id: 'biz1',
+    enabled_modules: DEFAULT_ENABLED_MODULES,
   };
 
   beforeEach(async () => {

@@ -135,8 +135,29 @@ model Business {
   promotionRules            PromotionRule[]
   categories                Category[]
   telegramBotConfig         TelegramBotConfig?
+  productionIngredientLogs  ProductionIngredientLog[]
+  productionOutputLogs      ProductionOutputLog[]
+  announcement              BusinessAnnouncement?
 
   @@map("businesses")
+}
+
+// Banner the superadmin sets up for ONE business at a time (see
+// docs/features/superadmin-banner/). One record per business
+// (businessId unique) — creating a new one for a business that already
+// has one replaces the previous message, no history is kept.
+model BusinessAnnouncement {
+  id         String   @id @default(uuid()) @db.Uuid
+  businessId String   @unique @map("business_id") @db.Uuid
+  message    String
+  isActive   Boolean  @default(true) @map("is_active")
+  updatedBy  String?  @map("updated_by") @db.Uuid
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("business_announcements")
 }
 
 // Config unificada del bot de Telegram de un negocio — un solo bot/chat
@@ -229,10 +250,12 @@ model Profile {
   // docs/database/migrations/multitenant/002_superadmin_role.sql).
   businessId   String?  @map("business_id") @db.Uuid
 
-  branch     Branch?   @relation(fields: [branchId], references: [id])
-  business   Business? @relation(fields: [businessId], references: [id])
-  orders     Order[]   @relation("OrderCashier")
-  paidOrders Order[]   @relation("OrderPaidBy")
+  branch                   Branch?                   @relation(fields: [branchId], references: [id])
+  business                 Business?                 @relation(fields: [businessId], references: [id])
+  orders                   Order[]                   @relation("OrderCashier")
+  paidOrders               Order[]                   @relation("OrderPaidBy")
+  productionIngredientLogs ProductionIngredientLog[]
+  productionOutputLogs     ProductionOutputLog[]
 
   @@map("profiles")
 }
@@ -319,12 +342,13 @@ model Ingredient {
   isActive    Boolean  @default(true) @map("is_active")
   isSharedUse Boolean  @default(false) @map("is_shared_use")
 
-  business           Business            @relation(fields: [businessId], references: [id])
+  business           Business                  @relation(fields: [businessId], references: [id])
   recipes            Recipe[]
   branchStock        BranchStock[]
   warehouseStock     WarehouseStock?
   stockMovements     StockMovement[]
   warehouseMovements WarehouseMovement[]
+  productionLogs     ProductionIngredientLog[]
 
   @@map("ingredients")
 }
@@ -385,6 +409,7 @@ model ProductVariant {
   stockMovements     ProductStockMovement[]
   warehouseStock     WarehouseProductStock?
   warehouseMovements WarehouseProductMovement[]
+  productionLogs     ProductionOutputLog[]
 
   @@map("product_variants")
 }
@@ -400,6 +425,44 @@ model BranchPrice {
   variant ProductVariant @relation(fields: [variantId], references: [id])
 
   @@map("branch_prices")
+}
+
+// Log for the `produccion` role — NO branch yet (see
+// docs/features/jefe-produccion/feature.md): doesn't touch branch_stock,
+// it's just a record of "which ingredient was used" for reporting. How
+// this translates into real branch stock is a future phase.
+model ProductionIngredientLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  businessId   String   @map("business_id") @db.Uuid
+  ingredientId String   @map("ingredient_id") @db.Uuid
+  quantity     Decimal
+  notes        String?
+  createdBy    String   @map("created_by") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  business   Business   @relation(fields: [businessId], references: [id])
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+  creator    Profile    @relation(fields: [createdBy], references: [id])
+
+  @@map("production_ingredient_logs")
+}
+
+// Mirror of ProductionIngredientLog for "how much was produced" — also
+// doesn't touch branch_product_stock yet, same criteria.
+model ProductionOutputLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  businessId String   @map("business_id") @db.Uuid
+  variantId  String   @map("variant_id") @db.Uuid
+  quantity   Decimal
+  notes      String?
+  createdBy  String   @map("created_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  business Business       @relation(fields: [businessId], references: [id])
+  variant  ProductVariant @relation(fields: [variantId], references: [id])
+  creator  Profile        @relation(fields: [createdBy], references: [id])
+
+  @@map("production_output_logs")
 }
 
 model Recipe {

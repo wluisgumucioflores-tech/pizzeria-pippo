@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { IngredientsService } from './ingredients.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
+import { DEFAULT_ENABLED_MODULES } from '@pippo/shared';
 
 describe('IngredientsService', () => {
   let service: IngredientsService;
@@ -18,6 +19,7 @@ describe('IngredientsService', () => {
     branch_id: null,
     full_name: 'Admin',
     business_id: 'biz1',
+    enabled_modules: DEFAULT_ENABLED_MODULES,
   };
 
   beforeEach(async () => {

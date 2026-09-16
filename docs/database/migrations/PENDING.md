@@ -56,6 +56,32 @@
 |---|---------|----------|
 | ⏳ | `068_superadmin_role.sql` | Agrega `'superadmin'` a `profiles_role_check`, vuelve `business_id` nullable para ese rol + CHECK `profiles_business_id_required_unless_superadmin` |
 
+### Rol Jefe de Producción — `069`-`070`, Fases 1-2 de `docs/features/jefe-produccion/`
+
+> Ver `docs/features/jefe-produccion/roadmap-fases.md`. `069` agrega el rol al CHECK constraint (ya aplicada en el Postgres LOCAL de desarrollo, `docs/infrastructure/docker-compose.yml`, no en Supabase). `070` crea las tablas de bitácora (`production_ingredient_logs`/`production_output_logs`), sin sucursal todavía. Requiere que `068` ya esté aplicada porque `069` hace `DROP CONSTRAINT profiles_role_check` sobre el mismo constraint. `070` requiere `069` (FK implícita vía el rol, no vía schema, pero van en orden). Las claves `admin`/`cajero` nuevas en `businesses.enabled_modules` NO requieren migración — es una columna JSON, los defaults se aplican en código (`packages/shared/src/constants/business-modules.ts`).
+
+| # | Archivo | Qué hace |
+|---|---------|----------|
+| ⏳ | `069_production_role.sql` | Agrega `'produccion'` a `profiles_role_check` — usuario sin sucursal obligatoria, habilitado por negocio vía `enabled_modules.produccion` (panel superadmin) |
+| ⏳ | `070_production_logs.sql` | Crea `production_ingredient_logs` y `production_output_logs` — bitácora de insumos usados y producción reportada por el rol `produccion`, a nivel de negocio (sin sucursal) |
+
+### Banner de anuncios — `071`, independiente de las anteriores
+
+> El superadmin escribe un mensaje y lo asigna a un negocio puntual; se muestra como banner en el panel admin y en el POS de ese negocio hasta que se cierra (vuelve a aparecer en cada login). Solo aplicada en el Postgres **LOCAL** de desarrollo hasta ahora — no en Supabase.
+
+| # | Archivo | Qué hace |
+|---|---------|----------|
+| ⏳ | `071_business_announcements.sql` | Crea `business_announcements` (un registro por negocio, `business_id UNIQUE`) — mensaje + `is_active`, gestionado por el superadmin |
+
+### Control de inventario — `072` + `073`, superseded por 3 switches generales
+
+> Ver `docs/features/jefe-produccion/roadmap-fases.md`, Fase 8. `072` (switch por producto) quedó descartada tras aclarar el requerimiento con el cliente — el control final es 3 switches **generales del negocio** (reventa/insumos/elaboración por unidad), guardados como filas `app_settings` normales (sin migración de schema para esas 3 claves). `073` revierte la columna que agregó `072`. Ninguna de las dos llegó a aplicarse en Supabase — solo en el Postgres **LOCAL**, donde ambas ya corrieron en orden.
+
+| # | Archivo | Qué hace |
+|---|---------|----------|
+| ✅ (local) | `072_product_deduct_stock_on_sale.sql` | *(superseded)* Agregaba `products.deduct_stock_on_sale` por producto — nunca se aplicó a Supabase |
+| ✅ (local) | `073_drop_product_deduct_stock_on_sale.sql` | Revierte la columna de `072` — el control pasa a ser 3 claves `app_settings` a nivel de negocio |
+
 ## Aplicadas en producción
 
 > Confirmado el 2026-06-10: las migraciones `023`–`032` ya están aplicadas en producción

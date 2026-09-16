@@ -1,5 +1,6 @@
-import { ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { ROLE_MODULE_MAP } from '@pippo/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { PasswordHasherService } from '../auth/password/password-hasher.service';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
@@ -44,6 +45,7 @@ export class UsersService {
   }
 
   async create(dto: CreateUserDto, user: CurrentUserPayload): Promise<{ id: string }> {
+    this.assertRoleAllowed(dto.role, user);
     const passwordHash = await this.passwordHasher.hash(dto.password);
 
     try {
@@ -66,6 +68,19 @@ export class UsersService {
     }
   }
 
+  // Every user role is tied to an enabled_modules key (see ROLE_MODULE_MAP
+  // in @pippo/shared) that the superadmin configures per business in the
+  // businesses panel — admin and cajero go through this too, not just the
+  // new operational roles.
+  private assertRoleAllowed(role: string, user: CurrentUserPayload): void {
+    const moduleKey = ROLE_MODULE_MAP[role];
+    if (moduleKey && !user.enabled_modules[moduleKey]) {
+      throw new BadRequestException(
+        `Tu negocio no tiene habilitado el rol "${role}". Contactá a soporte para activarlo.`,
+      );
+    }
+  }
+
   private resolveBusinessId(user: CurrentUserPayload): string {
     if (!user.business_id) {
       throw new InternalServerErrorException('El usuario no tiene un negocio asociado');
@@ -74,6 +89,7 @@ export class UsersService {
   }
 
   async update(id: string, dto: UpdateUserDto, user: CurrentUserPayload): Promise<void> {
+    this.assertRoleAllowed(dto.role, user);
     await this.assertOwnership(id, user);
     const passwordHash = dto.password ? await this.passwordHasher.hash(dto.password) : undefined;
 

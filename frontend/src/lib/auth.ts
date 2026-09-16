@@ -1,6 +1,6 @@
 import type { EnabledModules } from "@pippo/shared";
 
-export type UserRole = "admin" | "cajero" | "cocinero" | "superadmin" | "mesero";
+export type UserRole = "admin" | "cajero" | "cocinero" | "superadmin" | "mesero" | "produccion";
 
 const TOKEN_STORAGE_KEY = "pippo_auth_token";
 const NEST_API_URL = process.env.NEXT_PUBLIC_NEST_API_URL;
@@ -13,7 +13,10 @@ export interface UserProfile {
   full_name: string | null;
   business_name: string | null;
   enabled_modules: EnabledModules;
+  announcement: { id: string; message: string } | null;
 }
+
+export const BANNER_DISMISSED_PREFIX = "pippo_banner_dismissed_";
 
 function decodeJwtExpiry(token: string): number | null {
   try {
@@ -65,7 +68,19 @@ export async function signIn(email: string, password: string): Promise<{ user: U
 
   const data = await res.json();
   localStorage.setItem(TOKEN_STORAGE_KEY, data.access_token);
+  clearDismissedBanners();
   return { user: data.user };
+}
+
+// The superadmin banner can be dismissed, but must reappear on every
+// login — sessionStorage alone isn't enough (it survives a logout/login
+// within the same tab), so it's cleared here by hand.
+function clearDismissedBanners(): void {
+  if (typeof window === "undefined") return;
+  for (let i = sessionStorage.length - 1; i >= 0; i--) {
+    const key = sessionStorage.key(i);
+    if (key?.startsWith(BANNER_DISMISSED_PREFIX)) sessionStorage.removeItem(key);
+  }
 }
 
 export async function signOut(): Promise<void> {

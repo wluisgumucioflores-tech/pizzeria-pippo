@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import dayjs, { type Dayjs } from "dayjs";
+import { DEFAULT_ENABLED_MODULES, type EnabledModules } from "@pippo/shared";
+import { getUserProfile } from "@/lib/auth";
 import { ReportsService } from "../services/reports.service";
 import type { Branch } from "../types/reports.types";
 
@@ -20,9 +22,11 @@ export function useReportFilters() {
   const [selectedBranch, setSelectedBranch] = useState<string>("all");
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([dayjs().startOf("month"), dayjs()]);
   const [activeTab, setActiveTab] = useState("general");
+  const [enabledModules, setEnabledModules] = useState<EnabledModules>(DEFAULT_ENABLED_MODULES);
 
   useEffect(() => {
     ReportsService.getBranches().then(setBranches);
+    getUserProfile().then((profile) => setEnabledModules(profile?.enabled_modules ?? DEFAULT_ENABLED_MODULES));
   }, []);
 
   const buildParams = () =>
@@ -37,6 +41,7 @@ export function useReportFilters() {
     selectedBranch, setSelectedBranch,
     dateRange, setDateRange,
     activeTab, setActiveTab,
+    enabledModules,
     buildParams,
   };
 }

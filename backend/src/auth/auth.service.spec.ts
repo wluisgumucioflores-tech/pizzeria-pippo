@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PasswordHasherService } from './password/password-hasher.service';
+import { DEFAULT_ENABLED_MODULES } from '@pippo/shared';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -61,6 +62,7 @@ describe('AuthService', () => {
           branch_id: 'b1',
           full_name: 'Cajero',
           business_id: 'biz1',
+          enabled_modules: DEFAULT_ENABLED_MODULES,
         },
       });
     });
@@ -115,6 +117,7 @@ describe('AuthService', () => {
         branch_id: 'b1',
         full_name: 'Cajero',
         business_id: 'biz1',
+        enabled_modules: DEFAULT_ENABLED_MODULES,
       });
     });
 

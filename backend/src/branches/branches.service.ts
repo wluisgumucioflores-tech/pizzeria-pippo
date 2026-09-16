@@ -15,11 +15,16 @@ export class BranchesService {
   async list(query: ListBranchesQueryDto, user: CurrentUserPayload): Promise<Branch[]> {
     const showInactive = query.showInactive === 'true';
 
+    // Replicates the real RLS: admin sees all of their business, everyone
+    // else only their own branch. 'produccion' is the one exception — that
+    // role has no branch of its own (same as admin) and needs the full list
+    // to pick a destination branch when transferring stock (Fase 10 —
+    // docs/features/jefe-produccion/).
+    const seesAllBranches = user.role === 'admin' || user.role === 'produccion';
     const where = {
       businessId: this.resolveBusinessId(user),
       ...(showInactive ? {} : { isActive: true }),
-      // Replicates the real RLS: admin sees all of their business, everyone else only their own branch
-      ...(user.role === 'admin' ? {} : { id: user.branch_id ?? '' }),
+      ...(seesAllBranches ? {} : { id: user.branch_id ?? '' }),
     };
 
     const rows = await this.prisma.branch.findMany({ where, orderBy: { createdAt: 'asc' } });

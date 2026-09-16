@@ -60,7 +60,7 @@ export function ProductStepGeneral({ form, uploading, imageUrl, onImageUpload, o
                   <button
                     key={opt.value}
                     type="button"
-                    onClick={() => form.setFieldValue("product_type", opt.value)}
+                    onClick={() => form.setFieldsValue({ product_type: opt.value })}
                     style={{
                       flex: 1, padding: "12px 10px", borderRadius: 10, cursor: "pointer",
                       border: `2px solid ${selected ? "#ea580c" : "#e5e7eb"}`,

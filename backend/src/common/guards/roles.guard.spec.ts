@@ -2,6 +2,7 @@ import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { RolesGuard } from './roles.guard';
 import type { CurrentUserPayload } from '../../auth/types/jwt.types';
+import { DEFAULT_ENABLED_MODULES } from '@pippo/shared';
 
 describe('RolesGuard', () => {
   let guard: RolesGuard;
@@ -22,6 +23,7 @@ describe('RolesGuard', () => {
     branch_id: null,
     full_name: 'Test',
     business_id: null,
+    enabled_modules: DEFAULT_ENABLED_MODULES,
   });
 
   beforeEach(() => {

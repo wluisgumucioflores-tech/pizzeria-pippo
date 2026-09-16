@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { Form, notification } from "antd";
 import { useTranslations } from "next-intl";
+import { DEFAULT_ENABLED_MODULES, type EnabledModules } from "@pippo/shared";
+import { getUserProfile } from "@/lib/auth";
 import { UsersService } from "../services/users.service";
 import type { User, Branch, UserRole } from "../types/user.types";
 
@@ -10,6 +12,10 @@ export function useUsers() {
   const t = useTranslations("users.toasts");
   const [users, setUsers] = useState<User[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
+  // Starts with the defaults (admin/cajero/cocinero visible, mesero/produccion
+  // not) instead of null, so we don't briefly show roles the business
+  // doesn't have enabled while getUserProfile() hasn't resolved yet.
+  const [enabledModules, setEnabledModules] = useState<EnabledModules>(DEFAULT_ENABLED_MODULES);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -35,6 +41,7 @@ export function useUsers() {
   useEffect(() => {
     fetchUsers();
     fetchBranches();
+    getUserProfile().then((profile) => setEnabledModules(profile?.enabled_modules ?? DEFAULT_ENABLED_MODULES));
   }, [fetchUsers, fetchBranches]);
 
   const openCreate = () => {
@@ -60,7 +67,7 @@ export function useUsers() {
 
   const handleRoleChange = (role: UserRole) => {
     setSelectedRole(role);
-    if (role === "admin") form.setFieldValue("branch_id", null);
+    if (role === "admin" || role === "produccion") form.setFieldValue("branch_id", null);
   };
 
   const handleSubmit = async (values: {
@@ -143,6 +150,7 @@ export function useUsers() {
   return {
     users,
     branches,
+    enabledModules,
     loading,
     saving,
     modalOpen,

@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ProductStockService } from './product-stock.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
+import { DEFAULT_ENABLED_MODULES } from '@pippo/shared';
 
 function decimal(value: number) {
   return { toNumber: () => value };
@@ -15,6 +16,7 @@ const admin: CurrentUserPayload = {
   branch_id: null,
   full_name: 'Admin',
   business_id: 'biz1',
+  enabled_modules: DEFAULT_ENABLED_MODULES,
 };
 
 describe('ProductStockService', () => {

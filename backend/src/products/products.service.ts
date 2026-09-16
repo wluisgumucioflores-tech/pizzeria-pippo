@@ -162,9 +162,12 @@ export class ProductsService {
   // Flat list of variants across all products (name + product), used by the
   // promotions combo builder to pick which variant each rule applies to —
   // doesn't need prices or recipes, just id/name.
-  async listAllVariants(user: CurrentUserPayload): Promise<VariantOption[]> {
+  async listAllVariants(user: CurrentUserPayload, productType?: string): Promise<VariantOption[]> {
     const variants = await this.prisma.productVariant.findMany({
-      where: { businessId: this.resolveBusinessId(user) },
+      where: {
+        businessId: this.resolveBusinessId(user),
+        ...(productType ? { product: { productType } } : {}),
+      },
       orderBy: { name: 'asc' },
       include: { product: true },
     });
@@ -345,6 +348,10 @@ export class ProductsService {
       throw new NotFoundException('Producto no encontrado');
     }
 
+    // dto.product_type isn't always sent — fall back to the row's current
+    // value so a partial update can't accidentally let stale recipes through.
+    const productType = dto.product_type ?? existingProduct.productType;
+
     const category = await this.resolveCategory(dto.category_id, businessId);
     await this.prisma.product.update({
       where: { id },
@@ -357,10 +364,6 @@ export class ProductsService {
         ...(dto.product_type ? { productType: dto.product_type } : {}),
       },
     });
-
-    // dto.product_type isn't always sent — fall back to the row's current
-    // value so a partial update can't accidentally let stale recipes through.
-    const productType = dto.product_type ?? existingProduct.productType;
 
     const existingVariants = await this.prisma.productVariant.findMany({
       where: { productId: id },

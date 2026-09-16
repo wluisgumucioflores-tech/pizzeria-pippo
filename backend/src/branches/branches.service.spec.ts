@@ -5,6 +5,7 @@ import { BranchHasCashiersException } from '../common/exceptions/branch-has-cash
 import { BranchHasDependenciesException } from '../common/exceptions/branch-has-dependencies.exception';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
+import { DEFAULT_ENABLED_MODULES } from '@pippo/shared';
 
 describe('BranchesService', () => {
   let service: BranchesService;
@@ -21,8 +22,9 @@ describe('BranchesService', () => {
     device: { findFirst: jest.Mock };
   };
 
-  const admin: CurrentUserPayload = { id: 'u1', email: 'admin@pippo.local', role: 'admin', branch_id: null, full_name: 'Admin', business_id: 'biz1' };
-  const cajero: CurrentUserPayload = { id: 'u2', email: 'cajero@pippo.local', role: 'cajero', branch_id: 'b1', full_name: 'Cajero', business_id: 'biz1' };
+  const admin: CurrentUserPayload = { id: 'u1', email: 'admin@pippo.local', role: 'admin', branch_id: null, full_name: 'Admin', business_id: 'biz1', enabled_modules: DEFAULT_ENABLED_MODULES };
+  const cajero: CurrentUserPayload = { id: 'u2', email: 'cajero@pippo.local', role: 'cajero', branch_id: 'b1', full_name: 'Cajero', business_id: 'biz1', enabled_modules: DEFAULT_ENABLED_MODULES };
+  const jefeProduccion: CurrentUserPayload = { id: 'u3', email: 'jefe@pippo.local', role: 'produccion', branch_id: null, full_name: 'Jefe', business_id: 'biz1', enabled_modules: { ...DEFAULT_ENABLED_MODULES, produccion: true } };
 
   beforeEach(async () => {
     prisma = {
@@ -69,6 +71,16 @@ describe('BranchesService', () => {
 
       expect(prisma.branch.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ where: { businessId: 'biz1', isActive: true, id: 'b1' } }),
+      );
+    });
+
+    it('el jefe de producción ve todas las sucursales de su negocio (sin sucursal propia, igual que admin)', async () => {
+      prisma.branch.findMany.mockResolvedValue([]);
+
+      await service.list({}, jefeProduccion);
+
+      expect(prisma.branch.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { businessId: 'biz1', isActive: true } }),
       );
     });
 

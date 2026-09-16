@@ -1,7 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReportsService } from './reports.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
+import { DEFAULT_ENABLED_MODULES } from '@pippo/shared';
 
 const decimal = (value: number) => ({ toNumber: () => value }) as never;
 
@@ -12,6 +14,7 @@ const admin: CurrentUserPayload = {
   branch_id: null,
   full_name: 'Admin',
   business_id: 'biz1',
+  enabled_modules: DEFAULT_ENABLED_MODULES,
 };
 
 describe('ReportsService', () => {
@@ -20,19 +23,33 @@ describe('ReportsService', () => {
     order: { findMany: jest.Mock; count: jest.Mock };
     orderItem: { findMany: jest.Mock; groupBy: jest.Mock };
     orderPayment: { findMany: jest.Mock };
+    productionIngredientLog: { findMany: jest.Mock };
+    productionOutputLog: { findMany: jest.Mock };
+    branchProductStock: { findMany: jest.Mock };
     $transaction: jest.Mock;
   };
+  let settingsService: { getStockControlFlags: jest.Mock };
 
   beforeEach(async () => {
     prisma = {
       order: { findMany: jest.fn(), count: jest.fn() },
       orderItem: { findMany: jest.fn(), groupBy: jest.fn() },
       orderPayment: { findMany: jest.fn() },
+      productionIngredientLog: { findMany: jest.fn() },
+      productionOutputLog: { findMany: jest.fn() },
+      branchProductStock: { findMany: jest.fn() },
       $transaction: jest.fn((ops: Promise<unknown>[]) => Promise.all(ops)),
+    };
+    settingsService = {
+      getStockControlFlags: jest.fn().mockResolvedValue({ resale: true, insumos: true, madeUnit: false }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ReportsService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        ReportsService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: SettingsService, useValue: settingsService },
+      ],
     }).compile();
 
     service = module.get(ReportsService);
@@ -202,7 +219,7 @@ describe('ReportsService', () => {
 
       const result = await service.getCashiers({}, admin);
 
-      expect(result).toEqual([
+      expect(result.cashiers).toEqual([
         {
           cashier_id: 'c1',
           cashier_name: 'Ana',
@@ -211,6 +228,107 @@ describe('ReportsService', () => {
           items: [{ variant_id: 'v1', product_name: 'Napolitana', variant_name: 'Familiar', category: 'pizza', qty: 2, revenue: 100 }],
         },
       ]);
+    });
+
+    it('sin branchId ("todas las sucursales"), branch_stock viene vacío aunque el switch esté activo', async () => {
+      prisma.order.findMany.mockResolvedValue([]);
+      settingsService.getStockControlFlags.mockResolvedValue({ resale: true, insumos: true, madeUnit: true });
+
+      const result = await service.getCashiers({}, admin);
+
+      expect(result.branch_stock).toEqual([]);
+      expect(prisma.branchProductStock.findMany).not.toHaveBeenCalled();
+    });
+
+    it('con branchId puntual pero el switch "elaboración por unidad" apagado, branch_stock viene vacío', async () => {
+      prisma.order.findMany.mockResolvedValue([]);
+
+      const result = await service.getCashiers({ branchId: 'b1' }, admin);
+
+      expect(result.branch_stock).toEqual([]);
+      expect(prisma.branchProductStock.findMany).not.toHaveBeenCalled();
+    });
+
+    it('con branchId puntual y el switch activo, devuelve el stock restante y sold_quantity=0 sin ventas en el período', async () => {
+      prisma.order.findMany.mockResolvedValue([]);
+      settingsService.getStockControlFlags.mockResolvedValue({ resale: true, insumos: true, madeUnit: true });
+      prisma.branchProductStock.findMany.mockResolvedValue([
+        { variantId: 'v1', quantity: decimal(14), variant: { name: 'Chico', product: { name: 'Alfajor' } } },
+      ]);
+
+      const result = await service.getCashiers({ branchId: 'b1' }, admin);
+
+      expect(prisma.branchProductStock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { branchId: 'b1', variant: { product: { productType: 'made' } } } }),
+      );
+      expect(result.branch_stock).toEqual([
+        { variant_id: 'v1', product_name: 'Alfajor', variant_name: 'Chico', quantity: 14, sold_quantity: 0 },
+      ]);
+    });
+
+    it('sold_quantity refleja lo vendido en el período/sucursal filtrados (de todos los cajeros, no solo uno)', async () => {
+      const variant = { id: 'v1', name: 'Chico', product: { name: 'Alfajor', category: null, categoryId: null } };
+      prisma.order.findMany.mockResolvedValue([
+        {
+          paidById: 'c1',
+          paidBy: { fullName: 'Ana' },
+          total: decimal(20),
+          items: [{ qty: 3, unitPrice: decimal(10), discountApplied: decimal(0), variant }],
+        },
+        {
+          paidById: 'c2',
+          paidBy: { fullName: 'Luis' },
+          total: decimal(20),
+          items: [{ qty: 2, unitPrice: decimal(10), discountApplied: decimal(0), variant }],
+        },
+      ]);
+      settingsService.getStockControlFlags.mockResolvedValue({ resale: true, insumos: true, madeUnit: true });
+      prisma.branchProductStock.findMany.mockResolvedValue([
+        { variantId: 'v1', quantity: decimal(14), variant: { name: 'Chico', product: { name: 'Alfajor' } } },
+      ]);
+
+      const result = await service.getCashiers({ branchId: 'b1' }, admin);
+
+      expect(result.branch_stock).toEqual([
+        { variant_id: 'v1', product_name: 'Alfajor', variant_name: 'Chico', quantity: 14, sold_quantity: 5 },
+      ]);
+    });
+  });
+
+  describe('getProduction', () => {
+    it('aggregates ingredient usage and output logs by ingredient/variant, ignoring branchId', async () => {
+      prisma.productionIngredientLog.findMany.mockResolvedValue([
+        { ingredientId: 'ing1', quantity: decimal(3), ingredient: { name: 'Harina', unit: 'kg' } },
+        { ingredientId: 'ing1', quantity: decimal(2), ingredient: { name: 'Harina', unit: 'kg' } },
+        { ingredientId: 'ing2', quantity: decimal(1), ingredient: { name: 'Azúcar', unit: 'kg' } },
+      ]);
+      prisma.productionOutputLog.findMany.mockResolvedValue([
+        { variantId: 'v1', quantity: decimal(40), variant: { name: 'Única', product: { name: 'Alfajor' } } },
+        { variantId: 'v1', quantity: decimal(10), variant: { name: 'Única', product: { name: 'Alfajor' } } },
+      ]);
+
+      const result = await service.getProduction({ branchId: 'b1' } as never, admin);
+
+      expect(result.ingredients).toEqual([
+        { ingredient_id: 'ing1', ingredient_name: 'Harina', unit: 'kg', total_quantity: 5 },
+        { ingredient_id: 'ing2', ingredient_name: 'Azúcar', unit: 'kg', total_quantity: 1 },
+      ]);
+      expect(result.outputs).toEqual([
+        { variant_id: 'v1', product_name: 'Alfajor', variant_name: 'Única', total_quantity: 50 },
+      ]);
+      expect(prisma.productionIngredientLog.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ businessId: 'biz1' }) }),
+      );
+      expect(prisma.productionIngredientLog.findMany.mock.calls[0][0].where).not.toHaveProperty('branchId');
+    });
+
+    it('returns empty arrays when there is no production in the period', async () => {
+      prisma.productionIngredientLog.findMany.mockResolvedValue([]);
+      prisma.productionOutputLog.findMany.mockResolvedValue([]);
+
+      const result = await service.getProduction({}, admin);
+
+      expect(result).toEqual({ ingredients: [], outputs: [] });
     });
   });
 

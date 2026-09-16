@@ -30,6 +30,7 @@ import { McpModule } from './mcp/mcp.module';
 import { AiChatModule } from './ai-chat/ai-chat.module';
 import { AiChatPlansModule } from './ai-chat-plans/ai-chat-plans.module';
 import { AiChatUsageModule } from './ai-chat-usage/ai-chat-usage.module';
+import { ProductionModule } from './production/production.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { AiChatUsageModule } from './ai-chat-usage/ai-chat-usage.module';
     PrismaModule,
     AuthModule,
     ReportsModule,
+    ProductionModule,
     IngredientsModule,
     ProductsModule,
     StockModule,

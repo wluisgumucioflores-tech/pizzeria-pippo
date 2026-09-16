@@ -3,6 +3,7 @@ import { DevicesService } from './devices.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PasswordHasherService } from '../auth/password/password-hasher.service';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
+import { DEFAULT_ENABLED_MODULES } from '@pippo/shared';
 
 describe('DevicesService', () => {
   let service: DevicesService;
@@ -16,6 +17,7 @@ describe('DevicesService', () => {
     branch_id: null,
     full_name: 'Admin',
     business_id: 'biz1',
+    enabled_modules: DEFAULT_ENABLED_MODULES,
   };
 
   const device = (overrides: Partial<Record<string, unknown>> = {}) => ({

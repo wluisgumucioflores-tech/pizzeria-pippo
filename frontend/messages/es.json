@@ -12,7 +12,8 @@
     "actions": "Acciones",
     "yes": "Sí",
     "no": "No",
-    "refresh": "Actualizar"
+    "refresh": "Actualizar",
+    "close": "Cerrar"
   },
   "auth": {
     "login": "Iniciar sesión",
@@ -646,7 +647,8 @@
     "tabs": {
       "general": "General",
       "sales": "Historial de ventas",
-      "cashiers": "Por cajero"
+      "cashiers": "Por cajero",
+      "production": "Producción"
     },
     "summary": {
       "dineIn": "🍽️ Comer aquí ({count})",
@@ -654,10 +656,43 @@
       "noDataPeriod": "Sin datos para el período",
       "noSalesPeriod": "Sin ventas para el período seleccionado"
     },
+    "production": {
+      "branchNote": "Se filtra por fecha, no por sucursal (negocio completo)",
+      "ingredientsTitle": "Insumos usados",
+      "outputsTitle": "Producción",
+      "columns": {
+        "ingredient": "Insumo",
+        "product": "Producto",
+        "variant": "Variante",
+        "quantity": "Cantidad"
+      }
+    },
     "cashier": {
       "sales": "Ventas",
       "orders": "Órdenes",
-      "ordersCount": "{count} órdenes"
+      "ordersCount": "{count} órdenes",
+      "role": "Cajero",
+      "totalSales": "Total ventas",
+      "ordersAttended": "Órdenes atendidas",
+      "ordersRegistered": "{count} órdenes registradas"
+    },
+    "branchStock": {
+      "title": "Stock de elaborados en esta sucursal",
+      "sold": "Vendido",
+      "remaining": "Restante",
+      "unitType": "Unidad / Tipo",
+      "unit": "Unidad",
+      "inStock": "{count} unidades en existencia",
+      "updatedJustNow": "Actualizado justo ahora",
+      "updatedAgo": "Actualizado hace {count} min"
+    },
+    "stats": {
+      "totalRevenue": "Ingresos totales",
+      "selectedPeriod": "Período seleccionado",
+      "totalOrders": "Órdenes realizadas",
+      "avgTicket": "Ticket promedio",
+      "avgTicketSubtitle": "Promedio por orden",
+      "unitsSold": "Productos vendidos"
     },
     "columns": {
       "product": "Producto",
@@ -860,7 +895,13 @@
       "description": "Si tu negocio no maneja stock (solo creás el producto y lo vendés), podés desactivar el control acá.",
       "enabledLabel": "Controlar stock e insumos",
       "enabledExtra": "Activado: el POS bloquea productos de reventa sin stock cargado y las ventas descuentan insumos/stock automáticamente. Desactivado: se vende libremente, sin validar ni descontar nada.",
-      "disabledWarning": "Con el control de stock desactivado, el POS no va a bloquear ningún producto por falta de stock y las ventas no van a descontar insumos ni stock."
+      "disabledWarning": "Con el control de stock desactivado, el POS no va a bloquear ningún producto por falta de stock y las ventas no van a descontar insumos ni stock.",
+      "deductResaleLabel": "Descontar stock al vender reventa",
+      "deductResaleExtra": "Activado (por defecto): la venta de productos de reventa descuenta stock por sucursal.",
+      "deductInsumosLabel": "Descontar insumos al vender elaborados",
+      "deductInsumosExtra": "Activado (por defecto): la venta de un producto de elaboración propia con receta cargada descuenta esos insumos.",
+      "deductMadeUnitLabel": "Elaboración propia por unidad transferida",
+      "deductMadeUnitExtra": "El jefe de producción transfiere unidades ya elaboradas a una sucursal, y la venta descuenta 1 unidad de ese stock en vez de la receta de insumos. Tiene prioridad sobre \"Descontar insumos al vender elaborados\"."
     },
     "pos": {
       "title": "Cajero",
@@ -1187,6 +1228,68 @@
       "welcomeMessage": "¡Bienvenido {name}! {type} registrada a las {time}"
     }
   },
+  "production": {
+    "menu": {
+      "insumos": "Insumos",
+      "elaboracion": "Producción",
+      "transferencia": "Transferir",
+      "logout": "Cerrar sesión"
+    },
+    "required": "Este campo es obligatorio",
+    "quantity": "Cantidad",
+    "quantityMin": "La cantidad debe ser mayor a 0",
+    "quantityPlaceholder": "Ej: 5",
+    "deleteConfirm": {
+      "title": "¿Eliminar este registro?"
+    },
+    "ingredientUsage": {
+      "title": "Insumos usados",
+      "new": "Registrar",
+      "modalTitle": "Registrar insumo usado",
+      "modalEditTitle": "Editar insumo usado",
+      "ingredientLabel": "Insumo",
+      "ingredientPlaceholder": "Elegí un insumo",
+      "submit": "Registrar",
+      "saveChanges": "Guardar cambios"
+    },
+    "output": {
+      "title": "Producción registrada",
+      "new": "Registrar",
+      "modalTitle": "Registrar producción",
+      "modalEditTitle": "Editar producción",
+      "variantLabel": "Producto",
+      "variantPlaceholder": "Elegí un producto",
+      "submit": "Registrar",
+      "saveChanges": "Guardar cambios"
+    },
+    "table": {
+      "ingredient": "Insumo",
+      "product": "Producto",
+      "quantity": "Cantidad",
+      "when": "Fecha creación"
+    },
+    "transfer": {
+      "title": "Transferir a sucursal",
+      "description": "Enviá unidades ya elaboradas desde la bodega del negocio a una sucursal puntual, para que los cajeros puedan venderlas.",
+      "emptyStock": "Todavía no hay producción disponible para transferir. Registrá producción en \"Producción\" primero.",
+      "productLabel": "Producto",
+      "productPlaceholder": "Elegí un producto elaborado",
+      "availableLabel": "Disponible en bodega: {quantity}",
+      "branchLabel": "Sucursal destino",
+      "branchPlaceholder": "Elegí una sucursal",
+      "submit": "Transferir"
+    },
+    "toasts": {
+      "updated": "Registro actualizado",
+      "ingredientCreated": "Insumo registrado",
+      "outputCreated": "Producción registrada",
+      "saveError": "No se pudo guardar el registro",
+      "deleted": "Registro eliminado",
+      "deleteError": "No se pudo eliminar",
+      "transferDone": "Transferencia realizada",
+      "transferError": "No se pudo realizar la transferencia"
+    }
+  },
   "users": {
     "title": "Usuarios",
     "new": "Nuevo usuario",
@@ -1241,7 +1344,8 @@
       "cajero": "Cajero",
       "cocinero": "Cocinero",
       "mesero": "Mesero",
-      "admin": "Admin"
+      "admin": "Admin",
+      "produccion": "Jefe de Producción"
     },
     "toasts": {
       "updated": "Usuario actualizado",

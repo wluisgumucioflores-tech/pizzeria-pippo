@@ -3,6 +3,7 @@
 import { Modal, Form, Input, Select, Button } from "antd";
 import type { FormInstance } from "antd";
 import { useTranslations } from "next-intl";
+import type { EnabledModules } from "@pippo/shared";
 import { getRoleOptions } from "../constants/user.constants";
 import type { User, Branch, UserRole } from "../types/user.types";
 
@@ -12,6 +13,7 @@ interface Props {
   saving: boolean;
   selectedRole: UserRole;
   branches: Branch[];
+  enabledModules?: EnabledModules | null;
   form: FormInstance;
   onClose: () => void;
   onSubmit: (values: {
@@ -24,10 +26,10 @@ interface Props {
   onRoleChange: (role: UserRole) => void;
 }
 
-export function UserModal({ open, editing, saving, selectedRole, branches, form, onClose, onSubmit, onRoleChange }: Props) {
+export function UserModal({ open, editing, saving, selectedRole, branches, enabledModules, form, onClose, onSubmit, onRoleChange }: Props) {
   const t = useTranslations("users");
   const tc = useTranslations("common");
-  const roleOptions = getRoleOptions(t);
+  const roleOptions = getRoleOptions(t, enabledModules);
   return (
     <Modal
       title={editing ? t("editTitle") : t("createTitle")}
@@ -87,7 +89,7 @@ export function UserModal({ open, editing, saving, selectedRole, branches, form,
           }]}
         >
           <Select
-            disabled={selectedRole === "admin"}
+            disabled={selectedRole === "admin" || selectedRole === "produccion"}
             placeholder={t("branchPlaceholder")}
             allowClear
             options={branches.map((b) => ({ value: b.id, label: b.name }))}

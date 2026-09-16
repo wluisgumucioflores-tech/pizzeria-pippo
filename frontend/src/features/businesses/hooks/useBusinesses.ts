@@ -6,7 +6,7 @@ import { BusinessesService } from "../services/businesses.service";
 import { AiChatPlansService } from "@/features/ai-chat-plans/services/aiChatPlans.service";
 import type { AiChatPlan } from "@/features/ai-chat-plans/types/aiChatPlan.types";
 import type { Business, CreateBusinessInput, UpdateBusinessInput } from "../types/business.types";
-import { BUSINESS_MODULE_KEYS } from "../constants/modules.constants";
+import { ROLE_MODULE_KEYS, FEATURE_MODULE_KEYS } from "../constants/modules.constants";
 
 export function useBusinesses() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
@@ -74,7 +74,8 @@ export function useBusinesses() {
     editForm.resetFields();
     editForm.setFieldsValue({
       name: business.name,
-      enabled_modules_selected: BUSINESS_MODULE_KEYS.filter((key) => business.enabled_modules[key]),
+      role_modules_selected: ROLE_MODULE_KEYS.filter((key) => business.enabled_modules[key]),
+      feature_modules_selected: FEATURE_MODULE_KEYS.filter((key) => business.enabled_modules[key]),
       ai_chat_plan_id: business.ai_chat_plan?.id,
     });
     setEditingBusiness(business);

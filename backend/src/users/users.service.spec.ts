@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { UsersService } from './users.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PasswordHasherService } from '../auth/password/password-hasher.service';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
+import { DEFAULT_ENABLED_MODULES } from '@pippo/shared';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -21,6 +22,7 @@ describe('UsersService', () => {
     branch_id: null,
     full_name: 'Admin',
     business_id: 'biz1',
+    enabled_modules: DEFAULT_ENABLED_MODULES,
   };
 
   beforeEach(async () => {
@@ -137,6 +139,57 @@ describe('UsersService', () => {
         service.create({ email: 'a@a.com', password: 'secret1', full_name: 'A', role: 'cajero' }, admin),
       ).rejects.toThrow(ConflictException);
     });
+
+    it('rechaza crear un usuario rol produccion si el negocio no tiene el módulo habilitado', async () => {
+      await expect(
+        service.create({ email: 'a@a.com', password: 'secret1', full_name: 'A', role: 'produccion' }, admin),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.profile.create).not.toHaveBeenCalled();
+    });
+
+    it('permite crear un usuario rol produccion sin sucursal si el negocio tiene el módulo habilitado', async () => {
+      const adminConProduccion: CurrentUserPayload = {
+        ...admin,
+        enabled_modules: { ...DEFAULT_ENABLED_MODULES, produccion: true },
+      };
+      prisma.profile.create.mockResolvedValue({ id: 'u2' });
+
+      const result = await service.create(
+        { email: 'jefe@a.com', password: 'secret1', full_name: 'Jefe', role: 'produccion' },
+        adminConProduccion,
+      );
+
+      expect(prisma.profile.create).toHaveBeenCalledWith({
+        data: {
+          businessId: 'biz1',
+          email: 'jefe@a.com',
+          passwordHash: 'hashed-password',
+          fullName: 'Jefe',
+          role: 'produccion',
+          branchId: null,
+        },
+      });
+      expect(result).toEqual({ id: 'u2' });
+    });
+
+    it('rechaza crear un usuario rol cocinero si el negocio tiene el módulo kitchen apagado', async () => {
+      const adminSinKitchen: CurrentUserPayload = {
+        ...admin,
+        enabled_modules: { ...DEFAULT_ENABLED_MODULES, kitchen: false },
+      };
+
+      await expect(
+        service.create({ email: 'a@a.com', password: 'secret1', full_name: 'A', role: 'cocinero' }, adminSinKitchen),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.profile.create).not.toHaveBeenCalled();
+    });
+
+    it('rechaza crear un usuario rol mesero si el negocio no tiene el módulo mesero habilitado', async () => {
+      await expect(
+        service.create({ email: 'a@a.com', password: 'secret1', full_name: 'A', role: 'mesero' }, admin),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.profile.create).not.toHaveBeenCalled();
+    });
   });
 
   describe('update', () => {
@@ -162,6 +215,14 @@ describe('UsersService', () => {
         where: { id: 'u1' },
         data: { fullName: 'A', role: 'admin', branchId: null, passwordHash: 'hashed-password' },
       });
+    });
+
+    it('rechaza actualizar a rol produccion si el negocio no tiene el módulo habilitado', async () => {
+      await expect(
+        service.update('u1', { full_name: 'A', role: 'produccion' }, admin),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.profile.findUnique).not.toHaveBeenCalled();
+      expect(prisma.profile.update).not.toHaveBeenCalled();
     });
 
     it('rechaza con 404 si el usuario pertenece a otro negocio', async () => {

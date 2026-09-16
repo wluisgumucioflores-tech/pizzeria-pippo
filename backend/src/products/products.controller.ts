@@ -30,8 +30,8 @@ export class ProductsController {
 
   // Also before ':id' for the same reason.
   @Get('all-variants')
-  listAllVariants(@CurrentUser() user: CurrentUserPayload) {
-    return this.productsService.listAllVariants(user);
+  listAllVariants(@Query('productType') productType: string | undefined, @CurrentUser() user: CurrentUserPayload) {
+    return this.productsService.listAllVariants(user, productType);
   }
 
   @Get(':id')

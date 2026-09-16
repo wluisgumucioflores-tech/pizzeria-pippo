@@ -1,6 +1,7 @@
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { OwnBranchOrAdminGuard } from './own-branch-or-admin.guard';
 import type { CurrentUserPayload } from '../../auth/types/jwt.types';
+import { DEFAULT_ENABLED_MODULES } from '@pippo/shared';
 
 describe('OwnBranchOrAdminGuard', () => {
   let guard: OwnBranchOrAdminGuard;
@@ -18,6 +19,7 @@ describe('OwnBranchOrAdminGuard', () => {
     branch_id: branchId,
     full_name: 'Test',
     business_id: null,
+    enabled_modules: DEFAULT_ENABLED_MODULES,
   });
 
   beforeEach(() => {

@@ -12,6 +12,7 @@ import { LowStockAlertService } from '../notifications/low-stock-alert.service';
 import { SettingsService } from '../settings/settings.service';
 import { OrdersGateway } from './realtime/orders.gateway';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
+import { DEFAULT_ENABLED_MODULES } from '@pippo/shared';
 import type { CreateOrderDto } from './dto/create-order.dto';
 import { todayInBolivia } from '../common/utils/timezone';
 
@@ -41,7 +42,7 @@ describe('OrdersService', () => {
   };
   let promotionsService: { list: jest.Mock };
   let lowStockAlertService: { checkAndNotify: jest.Mock };
-  let settingsService: { isStockTrackingEnabled: jest.Mock };
+  let settingsService: { isStockTrackingEnabled: jest.Mock; getStockControlFlags: jest.Mock };
   let ordersGateway: {
     emitOrderCreated: jest.Mock;
     emitOrderUpdated: jest.Mock;
@@ -54,6 +55,7 @@ describe('OrdersService', () => {
     branch_id: 'b1',
     full_name: 'Cajero',
     business_id: 'biz1',
+    enabled_modules: DEFAULT_ENABLED_MODULES,
   };
 
   const madeVariant = {
@@ -128,6 +130,9 @@ describe('OrdersService', () => {
     lowStockAlertService = { checkAndNotify: jest.fn() };
     settingsService = {
       isStockTrackingEnabled: jest.fn().mockResolvedValue(true),
+      getStockControlFlags: jest
+        .fn()
+        .mockResolvedValue({ resale: true, insumos: true, madeUnit: false }),
     };
     ordersGateway = {
       emitOrderCreated: jest.fn(),
@@ -315,6 +320,48 @@ describe('OrdersService', () => {
       'b1',
       [],
       ['v-coca'],
+    );
+  });
+
+  it('con el switch "elaboración por unidad" activo, un producto elaborado descuenta stock por unidad, no receta', async () => {
+    settingsService.getStockControlFlags.mockResolvedValue({
+      resale: true,
+      insumos: true,
+      madeUnit: true,
+    });
+    prisma.productVariant.findMany.mockResolvedValue([madeVariant]);
+    prisma.$queryRaw.mockResolvedValue([
+      { create_order_atomic: { order_id: 'o5', daily_number: 1, duplicate: false } },
+    ]);
+
+    await service.create(baseDto({ total: 75 }), cashier);
+
+    expect(lowStockAlertService.checkAndNotify).toHaveBeenCalledWith(
+      'biz1',
+      'b1',
+      [],
+      ['v-pizza'],
+    );
+  });
+
+  it('con el switch "elaboración por unidad" apagado (ej. módulo producción deshabilitado), sigue descontando por receta', async () => {
+    settingsService.getStockControlFlags.mockResolvedValue({
+      resale: true,
+      insumos: true,
+      madeUnit: false,
+    });
+    prisma.productVariant.findMany.mockResolvedValue([madeVariant]);
+    prisma.$queryRaw.mockResolvedValue([
+      { create_order_atomic: { order_id: 'o6', daily_number: 1, duplicate: false } },
+    ]);
+
+    await service.create(baseDto({ total: 75 }), cashier);
+
+    expect(lowStockAlertService.checkAndNotify).toHaveBeenCalledWith(
+      'biz1',
+      'b1',
+      ['i-masa'],
+      [],
     );
   });
 

@@ -1,5 +1,5 @@
 import { computeStockDeductions } from './order-stock';
-import type { RecipeRow, StockItem } from './order-stock';
+import type { RecipeRow, StockItem, StockControlFlags } from './order-stock';
 
 const pizzaRecipe: RecipeRow[] = [
   { ingredient_id: 'masa', quantity: 1, apply_condition: 'always', is_shared_use: false },
@@ -7,13 +7,15 @@ const pizzaRecipe: RecipeRow[] = [
   { ingredient_id: 'caja', quantity: 1, apply_condition: 'takeaway', is_shared_use: true },
 ];
 
+const ALL_ON: StockControlFlags = { resale: true, insumos: true, madeUnit: false };
+
 function makeItem(overrides: Partial<StockItem> = {}): StockItem {
   return { variant_id: 'v-haw', qty_physical: 1, product_type: 'made', ...overrides };
 }
 
 describe('computeStockDeductions — made products', () => {
   it('deducts the full recipe multiplied by physical qty', () => {
-    const result = computeStockDeductions([makeItem({ qty_physical: 2 })], { 'v-haw': pizzaRecipe }, 'dine_in');
+    const result = computeStockDeductions([makeItem({ qty_physical: 2 })], { 'v-haw': pizzaRecipe }, 'dine_in', ALL_ON);
     expect(result.ingredient_deductions).toEqual(
       expect.arrayContaining([
         { ingredient_id: 'masa', quantity: 2 },
@@ -24,10 +26,10 @@ describe('computeStockDeductions — made products', () => {
   });
 
   it('respects apply_condition: takeaway-only ingredients skip dine_in orders', () => {
-    const dineIn = computeStockDeductions([makeItem()], { 'v-haw': pizzaRecipe }, 'dine_in');
+    const dineIn = computeStockDeductions([makeItem()], { 'v-haw': pizzaRecipe }, 'dine_in', ALL_ON);
     expect(dineIn.ingredient_deductions.find((d) => d.ingredient_id === 'caja')).toBeUndefined();
 
-    const takeaway = computeStockDeductions([makeItem()], { 'v-haw': pizzaRecipe }, 'takeaway');
+    const takeaway = computeStockDeductions([makeItem()], { 'v-haw': pizzaRecipe }, 'takeaway', ALL_ON);
     expect(takeaway.ingredient_deductions).toContainEqual({ ingredient_id: 'caja', quantity: 1 });
   });
 
@@ -36,6 +38,7 @@ describe('computeStockDeductions — made products', () => {
       [makeItem(), makeItem({ variant_id: 'v-pep' })],
       { 'v-haw': pizzaRecipe, 'v-pep': [{ ingredient_id: 'queso', quantity: 150, apply_condition: 'always', is_shared_use: false }] },
       'dine_in',
+      ALL_ON,
     );
     expect(result.ingredient_deductions).toContainEqual({ ingredient_id: 'queso', quantity: 350 });
   });
@@ -56,13 +59,14 @@ describe('computeStockDeductions — made products', () => {
         'v-pep': [{ ingredient_id: 'pepperoni', quantity: 80, apply_condition: 'always', is_shared_use: false }],
       },
       'dine_in',
+      ALL_ON,
     );
     expect(result.ingredient_deductions).toContainEqual({ ingredient_id: 'pina', quantity: 50 });
     expect(result.ingredient_deductions).toContainEqual({ ingredient_id: 'pepperoni', quantity: 40 });
   });
 
   it('returns nothing for variants without recipes', () => {
-    const result = computeStockDeductions([makeItem()], {}, 'dine_in');
+    const result = computeStockDeductions([makeItem()], {}, 'dine_in', ALL_ON);
     expect(result.ingredient_deductions).toHaveLength(0);
   });
 
@@ -85,6 +89,7 @@ describe('computeStockDeductions — made products', () => {
         'v-familiar-b': [], // sabor huérfano: sin receta cargada, como en producción
       },
       'takeaway',
+      ALL_ON,
     );
     expect(result.ingredient_deductions).toContainEqual({ ingredient_id: 'caja-familiar', quantity: 1 });
   });
@@ -108,6 +113,7 @@ describe('computeStockDeductions — made products', () => {
         'v-familiar-b': [{ ingredient_id: 'queso', quantity: 200, apply_condition: 'always', is_shared_use: false }],
       },
       'takeaway',
+      ALL_ON,
     );
     expect(result.ingredient_deductions).toContainEqual({ ingredient_id: 'caja-familiar', quantity: 1 });
     expect(result.ingredient_deductions).toContainEqual({ ingredient_id: 'queso', quantity: 200 });
@@ -133,6 +139,7 @@ describe('computeStockDeductions — made products', () => {
         'v-familiar-b': [],
       },
       'takeaway',
+      ALL_ON,
     );
     expect(result.ingredient_deductions).toContainEqual({ ingredient_id: 'caja-familiar', quantity: 2 });
   });
@@ -153,6 +160,7 @@ describe('computeStockDeductions — made products', () => {
         'v-familiar-b': [],
       },
       'takeaway',
+      ALL_ON,
     );
     expect(result.incomplete_recipe_variant_ids).toEqual(['v-familiar-b']);
     expect(result.ingredient_deductions).toContainEqual({ ingredient_id: 'caja-familiar', quantity: 1 });
@@ -174,6 +182,7 @@ describe('computeStockDeductions — made products', () => {
         'v-pep': [{ ingredient_id: 'pepperoni', quantity: 80, apply_condition: 'always', is_shared_use: false }],
       },
       'dine_in',
+      ALL_ON,
     );
     expect(result.incomplete_recipe_variant_ids).toEqual([]);
   });
@@ -188,8 +197,61 @@ describe('computeStockDeductions — resale products', () => {
       ],
       {},
       'dine_in',
+      ALL_ON,
     );
     expect(result.resale_deductions).toEqual([{ variant_id: 'v-coca', quantity: 4 }]);
+    expect(result.ingredient_deductions).toHaveLength(0);
+  });
+
+  it('deducts nothing when the "Reventa" switch is off, since resale has no recipe to fall back to', () => {
+    const result = computeStockDeductions(
+      [makeItem({ variant_id: 'v-coca', product_type: 'resale', qty_physical: 3 })],
+      {},
+      'dine_in',
+      { ...ALL_ON, resale: false },
+    );
+    expect(result.resale_deductions).toHaveLength(0);
+    expect(result.ingredient_deductions).toHaveLength(0);
+  });
+});
+
+describe('computeStockDeductions — made products, business-wide inventory switches', () => {
+  it('with "Elaboración propia por unidad" on, deducts a physical unit from branch stock, ignoring any configured recipe', () => {
+    const result = computeStockDeductions(
+      [makeItem({ variant_id: 'v-alfajor', qty_physical: 2 })],
+      { 'v-alfajor': pizzaRecipe },
+      'dine_in',
+      { ...ALL_ON, madeUnit: true },
+    );
+    expect(result.resale_deductions).toEqual([{ variant_id: 'v-alfajor', quantity: 2 }]);
+    expect(result.ingredient_deductions).toHaveLength(0);
+  });
+
+  it('with "Elaboración propia por unidad" off (default) and "Insumos" on, falls back to the ingredient recipe', () => {
+    const result = computeStockDeductions([makeItem({ variant_id: 'v-haw' })], { 'v-haw': pizzaRecipe }, 'dine_in', ALL_ON);
+    expect(result.resale_deductions).toHaveLength(0);
+    expect(result.ingredient_deductions.length).toBeGreaterThan(0);
+  });
+
+  it('with "Insumos" off, deducts nothing for made products (no unit tracking, no recipe)', () => {
+    const result = computeStockDeductions(
+      [makeItem({ variant_id: 'v-haw' })],
+      { 'v-haw': pizzaRecipe },
+      'dine_in',
+      { ...ALL_ON, insumos: false },
+    );
+    expect(result.resale_deductions).toHaveLength(0);
+    expect(result.ingredient_deductions).toHaveLength(0);
+  });
+
+  it('"Elaboración propia por unidad" takes priority over "Insumos" when both are on', () => {
+    const result = computeStockDeductions(
+      [makeItem({ variant_id: 'v-alfajor' })],
+      { 'v-alfajor': pizzaRecipe },
+      'dine_in',
+      { resale: true, insumos: true, madeUnit: true },
+    );
+    expect(result.resale_deductions).toEqual([{ variant_id: 'v-alfajor', quantity: 1 }]);
     expect(result.ingredient_deductions).toHaveLength(0);
   });
 });

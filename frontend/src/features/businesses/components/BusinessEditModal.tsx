@@ -4,7 +4,7 @@ import { Modal, Form, Input, Button, Checkbox, Select } from "antd";
 import type { FormInstance } from "antd";
 import type { AiChatPlan } from "@/features/ai-chat-plans/types/aiChatPlan.types";
 import type { Business, EnabledModules, UpdateBusinessInput } from "../types/business.types";
-import { BUSINESS_MODULE_KEYS, MODULE_LABELS } from "../constants/modules.constants";
+import { MODULE_LABELS, ROLE_MODULE_KEYS, FEATURE_MODULE_KEYS } from "../constants/modules.constants";
 
 interface Props {
   business: Business | null;
@@ -17,17 +17,19 @@ interface Props {
 
 interface FormValues {
   name: string;
-  enabled_modules_selected?: string[];
+  role_modules_selected?: string[];
+  feature_modules_selected?: string[];
   ai_chat_plan_id?: string;
 }
 
 export function BusinessEditModal({ business, plans, saving, form, onClose, onSubmit }: Props) {
-  const selectedModules = Form.useWatch("enabled_modules_selected", form) as string[] | undefined;
-  const aiChatEnabled = (selectedModules ?? []).includes("aiChat");
+  const selectedFeatureModules = Form.useWatch("feature_modules_selected", form) as string[] | undefined;
+  const aiChatEnabled = (selectedFeatureModules ?? []).includes("aiChat");
 
   const handleFinish = (values: FormValues) => {
+    const selected = [...(values.role_modules_selected ?? []), ...(values.feature_modules_selected ?? [])];
     const enabled_modules = Object.fromEntries(
-      BUSINESS_MODULE_KEYS.map((key) => [key, (values.enabled_modules_selected ?? []).includes(key)]),
+      [...ROLE_MODULE_KEYS, ...FEATURE_MODULE_KEYS].map((key) => [key, selected.includes(key)]),
     ) as Partial<EnabledModules>;
     onSubmit({ name: values.name, enabled_modules, ai_chat_plan_id: values.ai_chat_plan_id });
   };
@@ -40,10 +42,17 @@ export function BusinessEditModal({ business, plans, saving, form, onClose, onSu
             <Input placeholder="Ej: Burger House" />
           </Form.Item>
 
-          <Form.Item label="Módulos habilitados" name="enabled_modules_selected">
+          <Form.Item label="Roles disponibles para este negocio" name="role_modules_selected">
             <Checkbox.Group
               className="flex flex-col gap-2"
-              options={BUSINESS_MODULE_KEYS.map((key) => ({ label: MODULE_LABELS[key], value: key }))}
+              options={ROLE_MODULE_KEYS.map((key) => ({ label: MODULE_LABELS[key], value: key }))}
+            />
+          </Form.Item>
+
+          <Form.Item label="Otros módulos habilitados" name="feature_modules_selected">
+            <Checkbox.Group
+              className="flex flex-col gap-2"
+              options={FEATURE_MODULE_KEYS.map((key) => ({ label: MODULE_LABELS[key], value: key }))}
             />
           </Form.Item>
 

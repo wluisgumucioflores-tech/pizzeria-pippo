@@ -61,7 +61,7 @@ export default function SettingsPage() {
     {
       key: "stock",
       label: <span><DatabaseOutlined /> {t("stock")}</span>,
-      children: <StockSettingsForm />,
+      children: <StockSettingsForm enabledModules={enabledModules} />,
       hidden: !enabledModules.stock,
     },
     {

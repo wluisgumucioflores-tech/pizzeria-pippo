@@ -4,6 +4,7 @@ import { EmployeesService } from './employees.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PasswordHasherService } from '../auth/password/password-hasher.service';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
+import { DEFAULT_ENABLED_MODULES } from '@pippo/shared';
 
 describe('EmployeesService', () => {
   let service: EmployeesService;
@@ -19,6 +20,7 @@ describe('EmployeesService', () => {
     branch_id: null,
     full_name: 'Admin',
     business_id: 'biz1',
+    enabled_modules: DEFAULT_ENABLED_MODULES,
   };
 
   const employee = (overrides: Partial<Record<string, unknown>> = {}) => ({

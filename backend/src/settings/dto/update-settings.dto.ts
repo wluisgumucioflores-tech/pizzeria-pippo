@@ -74,4 +74,16 @@ export class UpdateSettingsDto {
   @IsOptional()
   @IsBoolean()
   pos_enable_table_number?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  stock_deduct_resale?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  stock_deduct_insumos?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  stock_deduct_made_unit?: boolean;
 }

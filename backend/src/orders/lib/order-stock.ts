@@ -18,6 +18,17 @@ export interface StockItem {
   flavors?: { variant_id: string; proportion: number }[] | null;
 }
 
+// Business-wide switches (Configuración → Inventario), not per-product —
+// see docs/features/jefe-produccion/feature.md, "Control de inventario".
+// Already resolved by the caller (SettingsService.getStockControlFlags):
+// madeUnit only counts if the business currently has the 'produccion'
+// module enabled.
+export interface StockControlFlags {
+  resale: boolean;
+  insumos: boolean;
+  madeUnit: boolean;
+}
+
 export interface StockDeductions {
   ingredient_deductions: { ingredient_id: string; quantity: number }[];
   resale_deductions: { variant_id: string; quantity: number }[];
@@ -36,6 +47,7 @@ export function computeStockDeductions(
   items: StockItem[],
   recipesByVariant: Record<string, RecipeRow[]>,
   orderType: OrderType,
+  flags: StockControlFlags,
 ): StockDeductions {
   const ingredients: Record<string, number> = {};
   const resale: Record<string, number> = {};
@@ -43,9 +55,23 @@ export function computeStockDeductions(
 
   for (const item of items) {
     if (item.product_type === 'resale') {
+      // "Reventa" off → deducts nothing, there's no recipe to fall back to.
+      if (flags.resale) {
+        resale[item.variant_id] = (resale[item.variant_id] ?? 0) + item.qty_physical;
+      }
+      continue;
+    }
+
+    // "Elaboración propia por unidad" on: deducts 1 unit from the stock
+    // transferred to the branch (branch_product_stock), same as resale —
+    // not the ingredient recipe. Takes priority over "Insumos".
+    if (flags.madeUnit) {
       resale[item.variant_id] = (resale[item.variant_id] ?? 0) + item.qty_physical;
       continue;
     }
+
+    // "Insumos" off → made products deduct nothing (not even the recipe).
+    if (!flags.insumos) continue;
 
     const flavors = item.flavors ?? [];
     if (flavors.length > 0) {

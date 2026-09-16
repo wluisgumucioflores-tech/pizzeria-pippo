@@ -4,6 +4,7 @@ import { memo, useMemo, useCallback } from "react";
 import { Select, DatePicker, Button, Space, Typography } from "antd";
 import { useTranslations } from "next-intl";
 import type { Dayjs } from "dayjs";
+import { useIsMobile } from "@/lib/useIsMobile";
 
 import { getPresetRanges } from "../hooks/useReportFilters";
 import type { Branch } from "../types/reports.types";
@@ -27,6 +28,7 @@ function ReportFiltersComponent({
   onDateRangeChange,
 }: Props) {
   const t = useTranslations("reports");
+  const isMobile = useIsMobile();
 
   const branchOptions = useMemo(() => {
     return [
@@ -53,9 +55,10 @@ function ReportFiltersComponent({
     <div
       style={{
         display: "flex",
+        flexDirection: isMobile ? "column" : "row",
         flexWrap: "wrap",
         justifyContent: "space-between",
-        alignItems: "center",
+        alignItems: isMobile ? "stretch" : "center",
         marginBottom: 24,
         gap: 12,
       }}
@@ -64,34 +67,43 @@ function ReportFiltersComponent({
         {t("title")}
       </Title>
 
-      <Space wrap>
-
-        {presetRanges.map((p) => (
-          <Button
-            key={p.label}
-            size="small"
-            onClick={() => onDateRangeChange(p.range)}
-          >
-            {p.label}
-          </Button>
-        ))}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          flexWrap: "wrap",
+          alignItems: isMobile ? "stretch" : "center",
+          gap: 8,
+        }}
+      >
+        <Space wrap size={8}>
+          {presetRanges.map((p) => (
+            <Button
+              key={p.label}
+              size="small"
+              onClick={() => onDateRangeChange(p.range)}
+            >
+              {p.label}
+            </Button>
+          ))}
+        </Space>
 
         <RangePicker
           value={dateRange}
           onChange={handleRangeChange}
           format="DD/MM/YYYY"
           size="small"
+          style={isMobile ? { width: "100%" } : undefined}
         />
 
         <Select
           value={selectedBranch}
           onChange={onBranchChange}
-          style={{ width: 180 }}
+          style={isMobile ? { width: "100%" } : { width: 180 }}
           size="small"
           options={branchOptions}
         />
-
-      </Space>
+      </div>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { PaymentValidationService } from './payment-validation.service';
 import { OrdersGateway } from '../orders/realtime/orders.gateway';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
+import { DEFAULT_ENABLED_MODULES } from '@pippo/shared';
 
 const cashier1: CurrentUserPayload = {
   id: 'cashier1',
@@ -12,6 +13,7 @@ const cashier1: CurrentUserPayload = {
   branch_id: 'b1',
   full_name: 'Cajero 1',
   business_id: 'biz1',
+  enabled_modules: DEFAULT_ENABLED_MODULES,
 };
 
 const cashier2: CurrentUserPayload = {
@@ -21,6 +23,7 @@ const cashier2: CurrentUserPayload = {
   branch_id: 'b1',
   full_name: 'Cajero 2',
   business_id: 'biz1',
+  enabled_modules: DEFAULT_ENABLED_MODULES,
 };
 
 describe('PaymentValidationService', () => {

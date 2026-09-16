@@ -43,6 +43,13 @@ export interface CashierReport {
   total: number;
   items: TopProduct[];
 }
+export interface BranchElaboratedStock {
+  variant_id: string;
+  product_name: string;
+  variant_name: string;
+  quantity: number;
+  sold_quantity: number;
+}
 export interface OrderItem {
   qty: number;
   unit_price: number;
@@ -79,4 +86,21 @@ export interface Order {
 export interface ReportFilters {
   selectedBranch: string;
   dateRange: [Dayjs, Dayjs];
+}
+
+export interface ProductionIngredientSummary {
+  ingredient_id: string;
+  ingredient_name: string;
+  unit: string;
+  total_quantity: number;
+}
+export interface ProductionOutputSummary {
+  variant_id: string;
+  product_name: string;
+  variant_name: string;
+  total_quantity: number;
+}
+export interface ProductionReport {
+  ingredients: ProductionIngredientSummary[];
+  outputs: ProductionOutputSummary[];
 }

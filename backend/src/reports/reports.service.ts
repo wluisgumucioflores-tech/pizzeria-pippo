@@ -1,16 +1,26 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
 import { dateRangeFrom, dateRangeTo, toBoliviaDate, todayInBolivia } from '../common/utils/timezone';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import type { ReportQueryDto } from './dto/report-query.dto';
 import type { CashierReportQueryDto } from './dto/cashier-report-query.dto';
 import type { OrdersReportQueryDto } from './dto/orders-report-query.dto';
-import type { CashierReportResult, TopProductResult } from './types/report-result.types';
+import type {
+  CashierReportResult,
+  CashierReportListResult,
+  BranchElaboratedStockRow,
+  ProductionReportResult,
+  TopProductResult,
+} from './types/report-result.types';
 import type { OrderReportResult } from './types/order-report-result.types';
 
 @Injectable()
 export class ReportsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly settingsService: SettingsService,
+  ) {}
 
   private buildWhere(query: ReportQueryDto, user: CurrentUserPayload) {
     // Sin from/to el caller (chat IA, Telegram, API directa) no puso rango —
@@ -171,7 +181,7 @@ export class ReportsService {
     return variantIds.map((id) => map[id]).filter(Boolean);
   }
 
-  async getCashiers(query: CashierReportQueryDto, user: CurrentUserPayload): Promise<CashierReportResult[]> {
+  async getCashiers(query: CashierReportQueryDto, user: CurrentUserPayload): Promise<CashierReportListResult> {
     const orders = await this.prisma.order.findMany({
       where: {
         ...this.buildWhere(query, user),
@@ -188,6 +198,10 @@ export class ReportsService {
     });
 
     const cashierMap: Record<string, CashierReportResult> = {};
+    // Fase 11 (arqueo) — how much of each variant sold in the filtered
+    // period/branch, regardless of which cashier collected it. Accumulated
+    // in the same pass as cashierMap to avoid a second orders fetch.
+    const soldByVariant: Record<string, number> = {};
     for (const order of orders) {
       const cid = order.paidById;
       if (!cid) continue;
@@ -206,6 +220,7 @@ export class ReportsService {
       for (const item of order.items) {
         const { variant } = item;
         const revenue = item.unitPrice.toNumber() * item.qty - item.discountApplied.toNumber();
+        soldByVariant[variant.id] = (soldByVariant[variant.id] ?? 0) + item.qty;
         const existing = cashierMap[cid].items.find((i) => i.variant_id === variant.id);
         if (existing) {
           existing.qty += item.qty;
@@ -224,7 +239,109 @@ export class ReportsService {
       }
     }
 
-    return Object.values(cashierMap).sort((a, b) => b.total - a.total);
+    return {
+      cashiers: Object.values(cashierMap).sort((a, b) => b.total - a.total),
+      branch_stock: await this.getBranchElaboratedStock(query, user, soldByVariant),
+    };
+  }
+
+  // Fase 11 ("arqueo") — only makes sense with ONE specific branch selected
+  // (branchId present) and "Elaboración propia por unidad transferida" on
+  // (without it, branch_product_stock never fills in for made products).
+  // "All branches" (no branchId) returns empty on purpose: mixing several
+  // branches' stock into one list has no clear reading for the admin.
+  private async getBranchElaboratedStock(
+    query: CashierReportQueryDto,
+    user: CurrentUserPayload,
+    soldByVariant: Record<string, number>,
+  ): Promise<BranchElaboratedStockRow[]> {
+    if (!query.branchId) return [];
+
+    const flags = await this.settingsService.getStockControlFlags(user);
+    if (!flags.madeUnit) return [];
+
+    const rows = await this.prisma.branchProductStock.findMany({
+      where: {
+        branchId: query.branchId,
+        variant: { product: { productType: 'made' } },
+      },
+      include: { variant: { include: { product: true } } },
+      orderBy: { quantity: 'desc' },
+    });
+
+    return rows.map((row) => ({
+      variant_id: row.variantId,
+      product_name: row.variant.product.name,
+      variant_name: row.variant.name,
+      quantity: row.quantity.toNumber(),
+      // Sold in the filtered period/branch — not a historical running total,
+      // recomputed from the same date range as the rest of the report.
+      sold_quantity: soldByVariant[row.variantId] ?? 0,
+    }));
+  }
+
+  // No branch selector on purpose: production_ingredient_logs/
+  // production_output_logs are business-level logs (see
+  // docs/features/jefe-produccion/feature.md) — a branchId in the query is
+  // ignored here, unlike the rest of the reports.
+  async getProduction(query: ReportQueryDto, user: CurrentUserPayload): Promise<ProductionReportResult> {
+    const businessId = this.resolveBusinessId(user);
+    const hasRange = query.from || query.to;
+    const from = hasRange ? query.from : todayInBolivia();
+    const to = hasRange ? query.to : todayInBolivia();
+    const dateWhere =
+      from || to
+        ? {
+            createdAt: {
+              ...(from && { gte: new Date(dateRangeFrom(from)) }),
+              ...(to && { lte: new Date(dateRangeTo(to)) }),
+            },
+          }
+        : {};
+
+    const [ingredientRows, outputRows] = await Promise.all([
+      this.prisma.productionIngredientLog.findMany({
+        where: { businessId, ...dateWhere },
+        include: { ingredient: true },
+      }),
+      this.prisma.productionOutputLog.findMany({
+        where: { businessId, ...dateWhere },
+        include: { variant: { include: { product: true } } },
+      }),
+    ]);
+
+    const ingredientMap: Record<string, ProductionReportResult['ingredients'][number]> = {};
+    for (const row of ingredientRows) {
+      const key = row.ingredientId;
+      if (!ingredientMap[key]) {
+        ingredientMap[key] = {
+          ingredient_id: key,
+          ingredient_name: row.ingredient.name,
+          unit: row.ingredient.unit,
+          total_quantity: 0,
+        };
+      }
+      ingredientMap[key].total_quantity += row.quantity.toNumber();
+    }
+
+    const outputMap: Record<string, ProductionReportResult['outputs'][number]> = {};
+    for (const row of outputRows) {
+      const key = row.variantId;
+      if (!outputMap[key]) {
+        outputMap[key] = {
+          variant_id: key,
+          product_name: row.variant.product.name,
+          variant_name: row.variant.name,
+          total_quantity: 0,
+        };
+      }
+      outputMap[key].total_quantity += row.quantity.toNumber();
+    }
+
+    return {
+      ingredients: Object.values(ingredientMap).sort((a, b) => b.total_quantity - a.total_quantity),
+      outputs: Object.values(outputMap).sort((a, b) => b.total_quantity - a.total_quantity),
+    };
   }
 
   async getOrders(query: OrdersReportQueryDto, user: CurrentUserPayload): Promise<{ data: OrderReportResult[]; total: number }> {

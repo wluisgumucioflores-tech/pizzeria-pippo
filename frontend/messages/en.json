@@ -12,7 +12,8 @@
     "actions": "Actions",
     "yes": "Yes",
     "no": "No",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "close": "Close"
   },
   "auth": {
     "login": "Login",
@@ -646,7 +647,8 @@
     "tabs": {
       "general": "General",
       "sales": "Sales history",
-      "cashiers": "By cashier"
+      "cashiers": "By cashier",
+      "production": "Production"
     },
     "summary": {
       "dineIn": "🍽️ Dine in ({count})",
@@ -654,10 +656,43 @@
       "noDataPeriod": "No data for this period",
       "noSalesPeriod": "No sales for the selected period"
     },
+    "production": {
+      "branchNote": "Filtered by date, not by branch (business-wide)",
+      "ingredientsTitle": "Ingredients used",
+      "outputsTitle": "Production",
+      "columns": {
+        "ingredient": "Ingredient",
+        "product": "Product",
+        "variant": "Variant",
+        "quantity": "Quantity"
+      }
+    },
     "cashier": {
       "sales": "Sales",
       "orders": "Orders",
-      "ordersCount": "{count} orders"
+      "ordersCount": "{count} orders",
+      "role": "Cashier",
+      "totalSales": "Total sales",
+      "ordersAttended": "Orders attended",
+      "ordersRegistered": "{count} orders registered"
+    },
+    "branchStock": {
+      "title": "Made-in-house stock left at this branch",
+      "sold": "Sold",
+      "remaining": "Remaining",
+      "unitType": "Unit / Type",
+      "unit": "Unit",
+      "inStock": "{count} units in stock",
+      "updatedJustNow": "Updated just now",
+      "updatedAgo": "Updated {count} min ago"
+    },
+    "stats": {
+      "totalRevenue": "Total revenue",
+      "selectedPeriod": "Selected period",
+      "totalOrders": "Orders placed",
+      "avgTicket": "Average ticket",
+      "avgTicketSubtitle": "Average per order",
+      "unitsSold": "Products sold"
     },
     "columns": {
       "product": "Product",
@@ -860,7 +895,13 @@
       "description": "If your business doesn't track stock (you just create the product and sell it), you can turn tracking off here.",
       "enabledLabel": "Track stock and ingredients",
       "enabledExtra": "On: the POS blocks resale products with no stock loaded and sales automatically deduct ingredients/stock. Off: everything sells freely, with no validation or deduction.",
-      "disabledWarning": "With stock tracking off, the POS won't block any product for lack of stock and sales won't deduct ingredients or stock."
+      "disabledWarning": "With stock tracking off, the POS won't block any product for lack of stock and sales won't deduct ingredients or stock.",
+      "deductResaleLabel": "Deduct stock on resale sales",
+      "deductResaleExtra": "On by default: selling a resale product deducts branch stock.",
+      "deductInsumosLabel": "Deduct ingredients on made-product sales",
+      "deductInsumosExtra": "On by default: selling a made-in-house product with a configured recipe deducts those ingredients.",
+      "deductMadeUnitLabel": "Made in-house, tracked by transferred unit",
+      "deductMadeUnitExtra": "The production manager transfers already-made units to a branch, and each sale deducts 1 unit from that stock instead of the ingredient recipe. Takes priority over \"Deduct ingredients on made-product sales\"."
     },
     "pos": {
       "title": "Cashier",
@@ -1187,6 +1228,68 @@
       "welcomeMessage": "Welcome {name}! {type} registered at {time}"
     }
   },
+  "production": {
+    "menu": {
+      "insumos": "Ingredients",
+      "elaboracion": "Production",
+      "transferencia": "Transfer",
+      "logout": "Log out"
+    },
+    "required": "This field is required",
+    "quantity": "Quantity",
+    "quantityMin": "Quantity must be greater than 0",
+    "quantityPlaceholder": "E.g: 5",
+    "deleteConfirm": {
+      "title": "Delete this entry?"
+    },
+    "ingredientUsage": {
+      "title": "Ingredients used",
+      "new": "Log",
+      "modalTitle": "Log ingredient usage",
+      "modalEditTitle": "Edit ingredient usage",
+      "ingredientLabel": "Ingredient",
+      "ingredientPlaceholder": "Pick an ingredient",
+      "submit": "Log",
+      "saveChanges": "Save changes"
+    },
+    "output": {
+      "title": "Production logged",
+      "new": "Log",
+      "modalTitle": "Log production",
+      "modalEditTitle": "Edit production",
+      "variantLabel": "Product",
+      "variantPlaceholder": "Pick a product",
+      "submit": "Log",
+      "saveChanges": "Save changes"
+    },
+    "table": {
+      "ingredient": "Ingredient",
+      "product": "Product",
+      "quantity": "Quantity",
+      "when": "Creation date"
+    },
+    "transfer": {
+      "title": "Transfer to a branch",
+      "description": "Send already-made units from the business warehouse to a specific branch, so cashiers there can sell them.",
+      "emptyStock": "No production available to transfer yet. Log production under \"Production\" first.",
+      "productLabel": "Product",
+      "productPlaceholder": "Pick a made-in-house product",
+      "availableLabel": "Available in warehouse: {quantity}",
+      "branchLabel": "Destination branch",
+      "branchPlaceholder": "Pick a branch",
+      "submit": "Transfer"
+    },
+    "toasts": {
+      "updated": "Record updated",
+      "ingredientCreated": "Ingredient logged",
+      "outputCreated": "Production logged",
+      "saveError": "Could not save the record",
+      "deleted": "Record deleted",
+      "deleteError": "Could not delete the record",
+      "transferDone": "Transfer completed",
+      "transferError": "Could not complete the transfer"
+    }
+  },
   "users": {
     "title": "Users",
     "new": "New user",
@@ -1241,7 +1344,8 @@
       "cajero": "Cashier",
       "cocinero": "Cook",
       "mesero": "Waiter",
-      "admin": "Admin"
+      "admin": "Admin",
+      "produccion": "Production Manager"
     },
     "toasts": {
       "updated": "User updated",

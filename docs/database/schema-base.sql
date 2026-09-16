@@ -380,6 +380,21 @@ CREATE TABLE public.branches (
 
 
 --
+-- Name: business_announcements; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.business_announcements (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    business_id uuid NOT NULL,
+    message text NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
+    updated_by uuid,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: businesses; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -619,6 +634,36 @@ CREATE TABLE public.products (
 
 
 --
+-- Name: production_ingredient_logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.production_ingredient_logs (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    business_id uuid NOT NULL,
+    ingredient_id uuid NOT NULL,
+    quantity numeric NOT NULL,
+    notes text,
+    created_by uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: production_output_logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.production_output_logs (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    business_id uuid NOT NULL,
+    variant_id uuid NOT NULL,
+    quantity numeric NOT NULL,
+    notes text,
+    created_by uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: profiles; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -633,7 +678,7 @@ CREATE TABLE public.profiles (
     is_banned boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT profiles_business_id_required_unless_superadmin CHECK (((role = 'superadmin'::text) OR (business_id IS NOT NULL))),
-    CONSTRAINT profiles_role_check CHECK ((role = ANY (ARRAY['admin'::text, 'cajero'::text, 'cocinero'::text, 'superadmin'::text, 'mesero'::text])))
+    CONSTRAINT profiles_role_check CHECK ((role = ANY (ARRAY['admin'::text, 'cajero'::text, 'cocinero'::text, 'superadmin'::text, 'mesero'::text, 'produccion'::text])))
 );
 
 
@@ -959,6 +1004,22 @@ ALTER TABLE ONLY public.branches
 
 
 --
+-- Name: business_announcements business_announcements_business_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.business_announcements
+    ADD CONSTRAINT business_announcements_business_id_key UNIQUE (business_id);
+
+
+--
+-- Name: business_announcements business_announcements_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.business_announcements
+    ADD CONSTRAINT business_announcements_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: businesses businesses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1068,6 +1129,22 @@ ALTER TABLE ONLY public.product_stock_movements
 
 ALTER TABLE ONLY public.product_variants
     ADD CONSTRAINT product_variants_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: production_ingredient_logs production_ingredient_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.production_ingredient_logs
+    ADD CONSTRAINT production_ingredient_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: production_output_logs production_output_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.production_output_logs
+    ADD CONSTRAINT production_output_logs_pkey PRIMARY KEY (id);
 
 
 --
@@ -1373,6 +1450,34 @@ CREATE INDEX orders_cancelled_at_idx ON public.orders USING btree (cancelled_at)
 
 
 --
+-- Name: production_ingredient_logs_business_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX production_ingredient_logs_business_id_idx ON public.production_ingredient_logs USING btree (business_id);
+
+
+--
+-- Name: production_ingredient_logs_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX production_ingredient_logs_created_at_idx ON public.production_ingredient_logs USING btree (created_at);
+
+
+--
+-- Name: production_output_logs_business_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX production_output_logs_business_id_idx ON public.production_output_logs USING btree (business_id);
+
+
+--
+-- Name: production_output_logs_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX production_output_logs_created_at_idx ON public.production_output_logs USING btree (created_at);
+
+
+--
 -- Name: telegram_bot_config_business_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1465,6 +1570,22 @@ ALTER TABLE ONLY public.branch_stock
 
 ALTER TABLE ONLY public.branches
     ADD CONSTRAINT branches_business_id_fkey FOREIGN KEY (business_id) REFERENCES public.businesses(id);
+
+
+--
+-- Name: business_announcements business_announcements_business_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.business_announcements
+    ADD CONSTRAINT business_announcements_business_id_fkey FOREIGN KEY (business_id) REFERENCES public.businesses(id) ON DELETE CASCADE;
+
+
+--
+-- Name: business_announcements business_announcements_updated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.business_announcements
+    ADD CONSTRAINT business_announcements_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES public.profiles(id) ON DELETE SET NULL;
 
 
 --
@@ -1649,6 +1770,54 @@ ALTER TABLE ONLY public.product_variants
 
 ALTER TABLE ONLY public.product_variants
     ADD CONSTRAINT product_variants_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id);
+
+
+--
+-- Name: production_ingredient_logs production_ingredient_logs_business_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.production_ingredient_logs
+    ADD CONSTRAINT production_ingredient_logs_business_id_fkey FOREIGN KEY (business_id) REFERENCES public.businesses(id);
+
+
+--
+-- Name: production_ingredient_logs production_ingredient_logs_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.production_ingredient_logs
+    ADD CONSTRAINT production_ingredient_logs_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id);
+
+
+--
+-- Name: production_ingredient_logs production_ingredient_logs_ingredient_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.production_ingredient_logs
+    ADD CONSTRAINT production_ingredient_logs_ingredient_id_fkey FOREIGN KEY (ingredient_id) REFERENCES public.ingredients(id);
+
+
+--
+-- Name: production_output_logs production_output_logs_business_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.production_output_logs
+    ADD CONSTRAINT production_output_logs_business_id_fkey FOREIGN KEY (business_id) REFERENCES public.businesses(id);
+
+
+--
+-- Name: production_output_logs production_output_logs_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.production_output_logs
+    ADD CONSTRAINT production_output_logs_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id);
+
+
+--
+-- Name: production_output_logs production_output_logs_variant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.production_output_logs
+    ADD CONSTRAINT production_output_logs_variant_id_fkey FOREIGN KEY (variant_id) REFERENCES public.product_variants(id);
 
 
 --
@@ -2170,6 +2339,40 @@ CREATE POLICY branches_select ON public.branches FOR SELECT USING (((business_id
 
 
 --
+-- Name: business_announcements; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.business_announcements ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: business_announcements superadmin_delete_business_announcements; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY superadmin_delete_business_announcements ON public.business_announcements FOR DELETE TO authenticated USING ((public.get_user_role() = 'superadmin'::text));
+
+
+--
+-- Name: business_announcements superadmin_insert_business_announcements; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY superadmin_insert_business_announcements ON public.business_announcements FOR INSERT TO authenticated WITH CHECK ((public.get_user_role() = 'superadmin'::text));
+
+
+--
+-- Name: business_announcements superadmin_select_business_announcements; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY superadmin_select_business_announcements ON public.business_announcements FOR SELECT TO authenticated USING ((public.get_user_role() = 'superadmin'::text));
+
+
+--
+-- Name: business_announcements superadmin_update_business_announcements; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY superadmin_update_business_announcements ON public.business_announcements FOR UPDATE TO authenticated USING ((public.get_user_role() = 'superadmin'::text));
+
+
+--
 -- Name: businesses; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -2454,6 +2657,74 @@ CREATE POLICY product_variants_admin_update ON public.product_variants FOR UPDAT
 --
 
 CREATE POLICY product_variants_select ON public.product_variants FOR SELECT USING ((business_id = ( SELECT public.get_user_business_id() AS get_user_business_id)));
+
+
+--
+-- Name: production_ingredient_logs; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.production_ingredient_logs ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: production_ingredient_logs admin_delete_production_ingredient_logs; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY admin_delete_production_ingredient_logs ON public.production_ingredient_logs FOR DELETE TO authenticated USING ((public.get_user_role() = 'admin'::text));
+
+
+--
+-- Name: production_ingredient_logs admin_insert_production_ingredient_logs; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY admin_insert_production_ingredient_logs ON public.production_ingredient_logs FOR INSERT TO authenticated WITH CHECK ((public.get_user_role() = 'admin'::text));
+
+
+--
+-- Name: production_ingredient_logs admin_select_production_ingredient_logs; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY admin_select_production_ingredient_logs ON public.production_ingredient_logs FOR SELECT TO authenticated USING ((public.get_user_role() = 'admin'::text));
+
+
+--
+-- Name: production_ingredient_logs admin_update_production_ingredient_logs; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY admin_update_production_ingredient_logs ON public.production_ingredient_logs FOR UPDATE TO authenticated USING ((public.get_user_role() = 'admin'::text));
+
+
+--
+-- Name: production_output_logs; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.production_output_logs ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: production_output_logs admin_delete_production_output_logs; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY admin_delete_production_output_logs ON public.production_output_logs FOR DELETE TO authenticated USING ((public.get_user_role() = 'admin'::text));
+
+
+--
+-- Name: production_output_logs admin_insert_production_output_logs; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY admin_insert_production_output_logs ON public.production_output_logs FOR INSERT TO authenticated WITH CHECK ((public.get_user_role() = 'admin'::text));
+
+
+--
+-- Name: production_output_logs admin_select_production_output_logs; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY admin_select_production_output_logs ON public.production_output_logs FOR SELECT TO authenticated USING ((public.get_user_role() = 'admin'::text));
+
+
+--
+-- Name: production_output_logs admin_update_production_output_logs; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY admin_update_production_output_logs ON public.production_output_logs FOR UPDATE TO authenticated USING ((public.get_user_role() = 'admin'::text));
 
 
 --
@@ -2900,6 +3171,15 @@ GRANT ALL ON TABLE public.branches TO service_role;
 
 
 --
+-- Name: TABLE business_announcements; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.business_announcements TO anon;
+GRANT ALL ON TABLE public.business_announcements TO authenticated;
+GRANT ALL ON TABLE public.business_announcements TO service_role;
+
+
+--
 -- Name: TABLE businesses; Type: ACL; Schema: public; Owner: -
 --
 
@@ -3014,6 +3294,24 @@ GRANT ALL ON TABLE public.product_stock_movements TO service_role;
 GRANT ALL ON TABLE public.product_variants TO anon;
 GRANT ALL ON TABLE public.product_variants TO authenticated;
 GRANT ALL ON TABLE public.product_variants TO service_role;
+
+
+--
+-- Name: TABLE production_ingredient_logs; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.production_ingredient_logs TO anon;
+GRANT ALL ON TABLE public.production_ingredient_logs TO authenticated;
+GRANT ALL ON TABLE public.production_ingredient_logs TO service_role;
+
+
+--
+-- Name: TABLE production_output_logs; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.production_output_logs TO anon;
+GRANT ALL ON TABLE public.production_output_logs TO authenticated;
+GRANT ALL ON TABLE public.production_output_logs TO service_role;
 
 
 --

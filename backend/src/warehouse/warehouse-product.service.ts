@@ -13,9 +13,15 @@ import type { WarehouseProductMovementRow } from './types/warehouse-product-move
 export class WarehouseProductService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async list(user: CurrentUserPayload): Promise<{ data: WarehouseProductStockRow[]; total: number }> {
+  // productType: optional filter used by the jefe de producción's "Transferir
+  // a sucursal" screen (Fase 10) — it only cares about made-in-house
+  // products, never resale ones bought ready-made.
+  async list(user: CurrentUserPayload, productType?: string): Promise<{ data: WarehouseProductStockRow[]; total: number }> {
     const rows = await this.prisma.warehouseProductStock.findMany({
-      where: { businessId: this.resolveBusinessId(user) },
+      where: {
+        businessId: this.resolveBusinessId(user),
+        ...(productType ? { variant: { product: { productType } } } : {}),
+      },
       orderBy: { variantId: 'asc' },
       include: { variant: { include: { product: true } } },
     });

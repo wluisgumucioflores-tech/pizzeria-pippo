@@ -4,7 +4,7 @@ import { Modal, Form, Input, Button, Divider, Checkbox, Select } from "antd";
 import type { FormInstance } from "antd";
 import type { AiChatPlan } from "@/features/ai-chat-plans/types/aiChatPlan.types";
 import type { CreateBusinessInput, EnabledModules } from "../types/business.types";
-import { BUSINESS_MODULE_KEYS, DEFAULT_ENABLED_MODULES_LIST, MODULE_LABELS } from "../constants/modules.constants";
+import { DEFAULT_ENABLED_MODULES_LIST, MODULE_LABELS, ROLE_MODULE_KEYS, FEATURE_MODULE_KEYS } from "../constants/modules.constants";
 
 interface Props {
   open: boolean;
@@ -16,17 +16,22 @@ interface Props {
 }
 
 interface FormValues extends Omit<CreateBusinessInput, "enabled_modules"> {
-  enabled_modules_selected?: string[];
+  role_modules_selected?: string[];
+  feature_modules_selected?: string[];
 }
 
+const DEFAULT_ROLE_MODULES = DEFAULT_ENABLED_MODULES_LIST.filter((key) => ROLE_MODULE_KEYS.includes(key));
+const DEFAULT_FEATURE_MODULES = DEFAULT_ENABLED_MODULES_LIST.filter((key) => FEATURE_MODULE_KEYS.includes(key));
+
 export function BusinessModal({ open, plans, saving, form, onClose, onSubmit }: Props) {
-  const selectedModules = Form.useWatch("enabled_modules_selected", form) as string[] | undefined;
-  const aiChatEnabled = (selectedModules ?? DEFAULT_ENABLED_MODULES_LIST).includes("aiChat");
+  const selectedFeatureModules = Form.useWatch("feature_modules_selected", form) as string[] | undefined;
+  const aiChatEnabled = (selectedFeatureModules ?? DEFAULT_FEATURE_MODULES).includes("aiChat");
 
   const handleFinish = (values: FormValues) => {
-    const { enabled_modules_selected, ...rest } = values;
+    const { role_modules_selected, feature_modules_selected, ...rest } = values;
+    const selected = [...(role_modules_selected ?? []), ...(feature_modules_selected ?? [])];
     const enabled_modules = Object.fromEntries(
-      BUSINESS_MODULE_KEYS.map((key) => [key, (enabled_modules_selected ?? []).includes(key)]),
+      [...ROLE_MODULE_KEYS, ...FEATURE_MODULE_KEYS].map((key) => [key, selected.includes(key)]),
     ) as Partial<EnabledModules>;
     onSubmit({ ...rest, enabled_modules });
   };
@@ -65,13 +70,24 @@ export function BusinessModal({ open, plans, saving, form, onClose, onSubmit }: 
         </Form.Item>
 
         <Divider orientation="left" plain>
-          Módulos habilitados
+          Roles disponibles para este negocio
         </Divider>
 
-        <Form.Item name="enabled_modules_selected" initialValue={DEFAULT_ENABLED_MODULES_LIST}>
+        <Form.Item name="role_modules_selected" initialValue={DEFAULT_ROLE_MODULES}>
           <Checkbox.Group
             className="flex flex-col gap-2"
-            options={BUSINESS_MODULE_KEYS.map((key) => ({ label: MODULE_LABELS[key], value: key }))}
+            options={ROLE_MODULE_KEYS.map((key) => ({ label: MODULE_LABELS[key], value: key }))}
+          />
+        </Form.Item>
+
+        <Divider orientation="left" plain>
+          Otros módulos habilitados
+        </Divider>
+
+        <Form.Item name="feature_modules_selected" initialValue={DEFAULT_FEATURE_MODULES}>
+          <Checkbox.Group
+            className="flex flex-col gap-2"
+            options={FEATURE_MODULE_KEYS.map((key) => ({ label: MODULE_LABELS[key], value: key }))}
           />
         </Form.Item>
 

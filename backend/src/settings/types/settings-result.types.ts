@@ -13,4 +13,7 @@ export interface SettingsResult {
   printer_business_name: string;
   use_stock: boolean;
   pos_enable_table_number: boolean;
+  stock_deduct_resale: boolean;
+  stock_deduct_insumos: boolean;
+  stock_deduct_made_unit: boolean;
 }

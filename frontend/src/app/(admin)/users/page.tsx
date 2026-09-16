@@ -7,7 +7,7 @@ import { useUsers } from "@/features/users/hooks/useUsers";
 
 export default function UsersPage() {
   const {
-    users, branches, loading, saving,
+    users, branches, enabledModules, loading, saving,
     modalOpen, editing, selectedRole, form,
     openCreate, openEdit, closeModal,
     handleRoleChange, handleSubmit, handleToggleBan, handleDelete,
@@ -33,6 +33,7 @@ export default function UsersPage() {
         saving={saving}
         selectedRole={selectedRole}
         branches={branches}
+        enabledModules={enabledModules}
         form={form}
         onClose={closeModal}
         onSubmit={handleSubmit}

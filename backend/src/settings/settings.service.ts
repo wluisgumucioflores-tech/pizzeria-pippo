@@ -25,7 +25,21 @@ const SETTINGS_KEYS = [
   'printer_business_name',
   'use_stock',
   'pos_enable_table_number',
+  'stock_deduct_resale',
+  'stock_deduct_insumos',
+  'stock_deduct_made_unit',
 ];
+
+// Sub-controls of use_stock (Configuración → Inventario), business-wide —
+// not per-product (see docs/features/jefe-produccion/feature.md, "Control
+// de inventario"). stock_deduct_made_unit only has effect if the business
+// currently has the 'produccion' module enabled (immediate cutoff if the
+// superadmin disables it later — see getStockControlFlags).
+const STOCK_CONTROL_DEFAULTS = {
+  stock_deduct_resale: true,
+  stock_deduct_insumos: true,
+  stock_deduct_made_unit: false,
+};
 
 const KITCHEN_STAGE_KEYS = [
   'kitchen_stage_warning_minutes',
@@ -106,6 +120,12 @@ export class SettingsService {
       // Opt-in: negocios sin mesas (delivery/takeaway puro) no quieren este
       // campo en el cajero, así que arranca desactivado salvo que se active.
       pos_enable_table_number: config.get('pos_enable_table_number') === 'true',
+      stock_deduct_resale:
+        config.get('stock_deduct_resale') !== 'false',
+      stock_deduct_insumos:
+        config.get('stock_deduct_insumos') !== 'false',
+      stock_deduct_made_unit:
+        config.get('stock_deduct_made_unit') === 'true',
     };
   }
 
@@ -157,6 +177,18 @@ export class SettingsService {
       [
         'pos_enable_table_number',
         String(dto.pos_enable_table_number ?? false),
+      ],
+      [
+        'stock_deduct_resale',
+        String(dto.stock_deduct_resale ?? STOCK_CONTROL_DEFAULTS.stock_deduct_resale),
+      ],
+      [
+        'stock_deduct_insumos',
+        String(dto.stock_deduct_insumos ?? STOCK_CONTROL_DEFAULTS.stock_deduct_insumos),
+      ],
+      [
+        'stock_deduct_made_unit',
+        String(dto.stock_deduct_made_unit ?? STOCK_CONTROL_DEFAULTS.stock_deduct_made_unit),
       ],
     ];
 
@@ -348,6 +380,37 @@ export class SettingsService {
       where: { businessId_key: { businessId, key: 'use_stock' } },
     });
     return row?.value !== 'false';
+  }
+
+  // Used by OrdersService when computing stock deductions (sale/cancellation) —
+  // business-wide sub-controls of use_stock, not per-product. Only read once
+  // isStockTrackingEnabled already returned true; the caller doesn't need to
+  // call this if the business has stock tracking off entirely.
+  // stock_deduct_made_unit is crossed here with enabled_modules.produccion —
+  // immediate cutoff if the superadmin disables the module after someone
+  // already turned the switch on (same criteria as the rest of the feature).
+  async getStockControlFlags(user: CurrentUserPayload): Promise<{
+    resale: boolean;
+    insumos: boolean;
+    madeUnit: boolean;
+  }> {
+    const businessId = this.resolveBusinessId(user);
+    const rows = await this.prisma.appSetting.findMany({
+      where: {
+        businessId,
+        key: {
+          in: ['stock_deduct_resale', 'stock_deduct_insumos', 'stock_deduct_made_unit'],
+        },
+      },
+    });
+    const config = new Map(rows.map((r) => [r.key, r.value]));
+    const madeUnitRaw = config.get('stock_deduct_made_unit') === 'true';
+
+    return {
+      resale: config.get('stock_deduct_resale') !== 'false',
+      insumos: config.get('stock_deduct_insumos') !== 'false',
+      madeUnit: madeUnitRaw && user.enabled_modules.produccion,
+    };
   }
 
   // Usado por el POS/Mesero para saber si mostrar el campo "mesa" al cobrar.

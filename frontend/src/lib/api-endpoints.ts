@@ -10,6 +10,10 @@ export const API_ENDPOINTS = {
     byId: (id: string) => `/businesses/${id}`,
     aiChatUsage: (id: string) => `/businesses/${id}/ai-chat-usage`,
   },
+  announcements: {
+    base: "/announcements",
+    byBusinessId: (businessId: string) => `/announcements/${businessId}`,
+  },
   aiChatPlans: {
     base: "/ai-chat-plans",
     list: (includeInactive: boolean) => `/ai-chat-plans${includeInactive ? "?includeInactive=true" : ""}`,
@@ -38,6 +42,7 @@ export const API_ENDPOINTS = {
     byId: (id: string) => `/products/${id}`,
     variants: (id: string) => `/products/${id}/variants`,
     allVariants: "/products/all-variants",
+    allVariantsByType: (productType: string) => `/products/all-variants?productType=${productType}`,
     posCatalog: (branchId: string) => `/products/pos-catalog?branchId=${branchId}`,
     branchPrices: (productId: string) => `/products/${productId}/branch-prices`,
     duplicate: (id: string) => `/products/${id}/duplicate`,
@@ -77,6 +82,7 @@ export const API_ENDPOINTS = {
     stockById: (id: string) => `/warehouse/stock/${id}`,
     movements: (qs: string) => `/warehouse/movements?${qs}`,
     productStock: "/warehouse/product-stock",
+    productStockByType: (productType: string) => `/warehouse/product-stock?productType=${productType}`,
     productMovements: (qs: string) => `/warehouse/product-movements?${qs}`,
     adjust: "/warehouse/adjust",
     purchase: "/warehouse/purchase",
@@ -100,6 +106,7 @@ export const API_ENDPOINTS = {
     daily: (qs: string) => `/reports/daily?${qs}`,
     cashiers: (qs: string) => `/reports/cashiers?${qs}`,
     orders: (qs: string) => `/reports/orders?${qs}`,
+    production: (qs: string) => `/reports/production?${qs}`,
   },
   settings: {
     base: "/settings",
@@ -142,6 +149,14 @@ export const API_ENDPOINTS = {
   telegram: {
     chats: "/telegram/chats",
     chatById: (id: string) => `/telegram/chats/${id}`,
+  },
+  production: {
+    ingredientUsage: "/production/ingredient-usage",
+    ingredientUsageList: (qs: string) => `/production/ingredient-usage${qs ? `?${qs}` : ""}`,
+    ingredientUsageById: (id: string) => `/production/ingredient-usage/${id}`,
+    output: "/production/output",
+    outputList: (qs: string) => `/production/output${qs ? `?${qs}` : ""}`,
+    outputById: (id: string) => `/production/output/${id}`,
   },
   public: {
     pizzas: "/public/pizzas",

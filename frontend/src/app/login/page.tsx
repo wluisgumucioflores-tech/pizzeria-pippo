@@ -8,6 +8,7 @@ const ROLE_REDIRECTS: Partial<Record<UserRole, string>> = {
   admin: "/dashboard",
   cocinero: "/kitchen",
   mesero: "/mesero",
+  produccion: "/produccion",
 };
 const DEFAULT_REDIRECT = "/pos";
 

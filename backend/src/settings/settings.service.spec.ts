@@ -6,6 +6,7 @@ import {
 import { SettingsService } from './settings.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
+import { DEFAULT_ENABLED_MODULES } from '@pippo/shared';
 
 describe('SettingsService', () => {
   let service: SettingsService;
@@ -29,6 +30,7 @@ describe('SettingsService', () => {
     branch_id: null,
     full_name: 'Admin',
     business_id: 'biz1',
+    enabled_modules: DEFAULT_ENABLED_MODULES,
   };
   const adminSinNegocio: CurrentUserPayload = {
     id: 'u2',
@@ -37,6 +39,7 @@ describe('SettingsService', () => {
     branch_id: null,
     full_name: 'Sin negocio',
     business_id: null,
+    enabled_modules: DEFAULT_ENABLED_MODULES,
   };
 
   beforeEach(async () => {
@@ -92,6 +95,9 @@ describe('SettingsService', () => {
         printer_business_name: 'GU PIZZA',
         use_stock: true,
         pos_enable_table_number: false,
+        stock_deduct_resale: true,
+        stock_deduct_insumos: true,
+        stock_deduct_made_unit: false,
       });
     });
 
@@ -433,6 +439,7 @@ describe('SettingsService', () => {
         branch_id: 'b1',
         full_name: 'Cocinero',
         business_id: 'biz1',
+        enabled_modules: DEFAULT_ENABLED_MODULES,
       };
       prisma.appSetting.findMany.mockResolvedValue([
         { key: 'kitchen_late_threshold_minutes', value: '20' },

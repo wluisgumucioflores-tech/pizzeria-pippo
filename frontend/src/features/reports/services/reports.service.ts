@@ -1,7 +1,7 @@
 import { nestFetch } from "@/lib/nestFetch";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { BranchesService } from "@/features/branches/services/branches.service";
-import type { Branch, SalesSummary, TopProduct, DailyData, StockAlert, CashierReport, Order } from "../types/reports.types";
+import type { Branch, SalesSummary, TopProduct, DailyData, StockAlert, CashierReport, BranchElaboratedStock, Order, ProductionReport } from "../types/reports.types";
 
 export const ReportsService = {
   async getBranches(): Promise<Branch[]> {
@@ -41,10 +41,20 @@ export const ReportsService = {
     };
   },
 
-  async fetchCashierReports(params: string): Promise<CashierReport[]> {
+  async fetchCashierReports(params: string): Promise<{ cashiers: CashierReport[]; branchStock: BranchElaboratedStock[] }> {
     const res = await nestFetch(API_ENDPOINTS.reports.cashiers(params));
     const data = await res.json();
-    return Array.isArray(data) ? data : [];
+    return {
+      cashiers: Array.isArray(data?.cashiers) ? data.cashiers : [],
+      branchStock: Array.isArray(data?.branch_stock) ? data.branch_stock : [],
+    };
+  },
+
+  async fetchProductionReport(params: string): Promise<ProductionReport> {
+    const res = await nestFetch(API_ENDPOINTS.reports.production(params));
+    const data = await res.json();
+    if (data && !data.error) return { ingredients: data.ingredients ?? [], outputs: data.outputs ?? [] };
+    return { ingredients: [], outputs: [] };
   },
 
   async fetchOrders(params: string, page: number, pageSize: number): Promise<{ data: Order[]; total: number }> {
