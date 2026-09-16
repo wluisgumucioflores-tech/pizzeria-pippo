@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Superadmin announcement banner (AnnouncementBanner) — text scrolls
+   right to left, constant length regardless of message. */
+@keyframes pippo-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}

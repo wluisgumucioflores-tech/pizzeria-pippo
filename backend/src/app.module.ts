@@ -31,6 +31,7 @@ import { AiChatModule } from './ai-chat/ai-chat.module';
 import { AiChatPlansModule } from './ai-chat-plans/ai-chat-plans.module';
 import { AiChatUsageModule } from './ai-chat-usage/ai-chat-usage.module';
 import { ProductionModule } from './production/production.module';
+import { AnnouncementsModule } from './announcements/announcements.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { ProductionModule } from './production/production.module';
     AuthModule,
     ReportsModule,
     ProductionModule,
+    AnnouncementsModule,
     IngredientsModule,
     ProductsModule,
     StockModule,

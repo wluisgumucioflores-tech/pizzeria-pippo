@@ -24,12 +24,18 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async me(@CurrentUser() user: CurrentUserPayload) {
     const business = user.business_id
-      ? await this.prisma.business.findUnique({ where: { id: user.business_id }, select: { name: true, enabledModules: true } })
+      ? await this.prisma.business.findUnique({
+          where: { id: user.business_id },
+          select: { name: true, enabledModules: true, announcement: { select: { id: true, message: true, isActive: true } } },
+        })
       : null;
 
     const enabledModules = { ...DEFAULT_ENABLED_MODULES, ...(business?.enabledModules as Partial<EnabledModules> | undefined) };
+    const announcement = business?.announcement?.isActive
+      ? { id: business.announcement.id, message: business.announcement.message }
+      : null;
 
-    return { ...user, business_name: business?.name ?? null, enabled_modules: enabledModules };
+    return { ...user, business_name: business?.name ?? null, enabled_modules: enabledModules, announcement };
   }
 
   @Patch('me/password')

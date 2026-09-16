@@ -17,7 +17,7 @@ import { refineUnusedDataProvider } from "@/lib/refineUnusedDataProvider";
 import { ChangePasswordModal } from "@/features/account/components/ChangePasswordModal";
 import { useChangePassword } from "@/features/account/hooks/useChangePassword";
 import Image from "next/image";
-import { ShopOutlined, KeyOutlined, CommentOutlined, RobotOutlined, HistoryOutlined } from "@ant-design/icons";
+import { ShopOutlined, KeyOutlined, CommentOutlined, RobotOutlined, HistoryOutlined, NotificationOutlined } from "@ant-design/icons";
 
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "1.0.0";
 
@@ -105,6 +105,11 @@ export default function SuperadminLayout({
               name: "changelog",
               list: "/changelog",
               meta: { label: "Novedades", icon: <HistoryOutlined /> },
+            },
+            {
+              name: "announcements",
+              list: "/announcements",
+              meta: { label: "Banners", icon: <NotificationOutlined /> },
             },
           ]}
           options={{

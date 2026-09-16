@@ -27,6 +27,7 @@ import { ChangePasswordModal } from "@/features/account/components/ChangePasswor
 import { useChangePassword } from "@/features/account/hooks/useChangePassword";
 import { AiChatWidget } from "@/features/ai-chat/components/AiChatWidget";
 import { RefreshProvider, useTriggerRefresh } from "@/lib/refresh-context";
+import { AnnouncementBanner } from "@/features/announcements/components/AnnouncementBanner";
 import Image from "next/image";
 import { buildAdminResources } from "./admin-resources";
 
@@ -34,6 +35,7 @@ const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "1.0.0";
 
 interface Identity {
   business_name: string | null;
+  announcement: { id: string; message: string } | null;
 }
 
 function AppFooter() {
@@ -60,32 +62,35 @@ function AdminHeader() {
   ];
 
   return (
-    <AntdLayout.Header
-      style={{
-        backgroundColor: token.colorBgElevated,
-        display: "flex",
-        justifyContent: "flex-end",
-        alignItems: "center",
-        padding: "0 24px",
-        height: 64,
-      }}
-    >
-      <Space size="middle">
-        <Tooltip title={tCommon("refresh")}>
-          <Button type="text" icon={<ReloadOutlined />} onClick={triggerRefresh} />
-        </Tooltip>
-        <LocaleSwitcher />
-        {(user?.name || user?.avatar) && (
-          <Dropdown menu={{ items: menuItems }} trigger={["click"]}>
-            <Space size="middle" style={{ cursor: "pointer" }}>
-              {user?.name && <Typography.Text strong>{user.name}</Typography.Text>}
-              {user?.avatar && <Avatar src={user.avatar} alt={user.name} />}
-            </Space>
-          </Dropdown>
-        )}
-      </Space>
-      <ChangePasswordModal open={open} saving={saving} form={form} onClose={closeModal} onSubmit={handleSubmit} />
-    </AntdLayout.Header>
+    <>
+      <AnnouncementBanner announcement={user?.announcement ?? null} />
+      <AntdLayout.Header
+        style={{
+          backgroundColor: token.colorBgElevated,
+          display: "flex",
+          justifyContent: "flex-end",
+          alignItems: "center",
+          padding: "0 24px",
+          height: 64,
+        }}
+      >
+        <Space size="middle">
+          <Tooltip title={tCommon("refresh")}>
+            <Button type="text" icon={<ReloadOutlined />} onClick={triggerRefresh} />
+          </Tooltip>
+          <LocaleSwitcher />
+          {(user?.name || user?.avatar) && (
+            <Dropdown menu={{ items: menuItems }} trigger={["click"]}>
+              <Space size="middle" style={{ cursor: "pointer" }}>
+                {user?.name && <Typography.Text strong>{user.name}</Typography.Text>}
+                {user?.avatar && <Avatar src={user.avatar} alt={user.name} />}
+              </Space>
+            </Dropdown>
+          )}
+        </Space>
+        <ChangePasswordModal open={open} saving={saving} form={form} onClose={closeModal} onSubmit={handleSubmit} />
+      </AntdLayout.Header>
+    </>
   );
 }
 
