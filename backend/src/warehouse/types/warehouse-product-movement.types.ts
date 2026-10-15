@@ -5,6 +5,8 @@ export interface WarehouseProductMovementRow {
   quantity: number;
   type: string;
   notes: string | null;
+  created_by: string | null;
+  created_by_name: string | null;
   created_at: string;
   product_variants: {
     id: string;

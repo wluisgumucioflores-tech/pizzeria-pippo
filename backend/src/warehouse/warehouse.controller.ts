@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
+import { ProduccionStockGuard } from '../common/guards/produccion-stock.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
@@ -17,13 +18,19 @@ import { PurchaseWarehouseProductStockDto } from './dto/purchase-warehouse-produ
 import { AdjustWarehouseProductStockDto } from './dto/adjust-warehouse-product-stock.dto';
 import { TransferWarehouseProductStockDto } from './dto/transfer-warehouse-product-stock.dto';
 
-// Central ingredient warehouse (warehouse_stock/warehouse_movements): real RLS is
-// admin-only for EVERYTHING (select included) — see docker exec pippo_db psql.
+// DB-level RLS on these tables (warehouse_stock_admin_all, etc.) is stale
+// and effectively inert: Prisma connects as the postgres superuser, which
+// bypasses RLS entirely (see CLAUDE.md "Autenticación y Sesiones" — Supabase
+// Auth isn't used anymore). The @Roles(...)/guards below are what actually
+// enforce access now.
+// Central ingredient warehouse (warehouse_stock/warehouse_movements): now
+// open to 'admin' and 'produccion' (gated per-business by produccionStock,
+// see ProduccionStockGuard) — same read/purchase/adjust/transfer access
+// admin already had.
 // Resale/finished-goods warehouse (warehouse_product_stock/warehouse_product_movements):
-// DB-level RLS is still "any authenticated user" (same as branch_product_stock), but
-// the product-* endpoints below now enforce @Roles('admin', 'produccion') at the app
-// level — jefe de producción needs them for Fase 10 (transfer to a branch), and this
-// closes a gap where any authenticated role could previously call them.
+// the product-* endpoints below enforce @Roles('admin', 'produccion') at the
+// app level independent of produccionStock — jefe de producción needs them
+// for Fase 10 (self-service transfer to a branch) regardless of that flag.
 @UseGuards(JwtAuthGuard)
 @Controller('warehouse')
 export class WarehouseController {
@@ -32,13 +39,19 @@ export class WarehouseController {
     private readonly warehouseProductService: WarehouseProductService,
   ) {}
 
-  @UseGuards(RolesGuard)
-  @Roles('admin')
+  // @Roles('admin', 'produccion') + ProduccionStockGuard: gives jefe de
+  // producción the same read/purchase/adjust/transfer access admin already
+  // has here, gated per-business by the produccionStock module (separate
+  // from the produccion module itself, which only controls the role).
+  @UseGuards(RolesGuard, ProduccionStockGuard)
+  @Roles('admin', 'produccion')
   @Get('stock')
   listStock(@Query() query: ListWarehouseStockQueryDto, @CurrentUser() user: CurrentUserPayload) {
     return this.warehouseService.list(query, user);
   }
 
+  // admin-only: produccion doesn't get the movements/history view (product
+  // decision), so it stays out of @Roles here unlike the rest of this file.
   @UseGuards(RolesGuard)
   @Roles('admin')
   @Get('movements')
@@ -46,36 +59,36 @@ export class WarehouseController {
     return this.warehouseService.getMovements(query, user);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles('admin')
+  @UseGuards(RolesGuard, ProduccionStockGuard)
+  @Roles('admin', 'produccion')
   @Patch('stock/:id')
   updateMinQuantity(@Param('id') id: string, @Body() dto: UpdateWarehouseMinQuantityDto, @CurrentUser() user: CurrentUserPayload) {
     return this.warehouseService.updateMinQuantity(id, dto, user);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles('admin')
+  @UseGuards(RolesGuard, ProduccionStockGuard)
+  @Roles('admin', 'produccion')
   @Delete('stock/:id')
   removeStock(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
     return this.warehouseService.remove(id, user);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles('admin')
+  @UseGuards(RolesGuard, ProduccionStockGuard)
+  @Roles('admin', 'produccion')
   @Post('purchase')
   purchase(@Body() dto: PurchaseWarehouseStockDto, @CurrentUser() user: CurrentUserPayload) {
     return this.warehouseService.purchase(dto, user);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles('admin')
+  @UseGuards(RolesGuard, ProduccionStockGuard)
+  @Roles('admin', 'produccion')
   @Post('adjust')
   adjust(@Body() dto: AdjustWarehouseStockDto, @CurrentUser() user: CurrentUserPayload) {
     return this.warehouseService.adjust(dto, user);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles('admin')
+  @UseGuards(RolesGuard, ProduccionStockGuard)
+  @Roles('admin', 'produccion')
   @Post('transfer')
   transfer(@Body() dto: TransferWarehouseStockDto, @CurrentUser() user: CurrentUserPayload) {
     return this.warehouseService.transfer(dto, user);

@@ -64,6 +64,12 @@ export function WarehouseMovementsTable({ movements, loading }: Props) {
         r.branches ? <Tag>{r.branches.name}</Tag> : <Text type="secondary">—</Text>,
     },
     {
+      title: t("columns.createdBy"),
+      dataIndex: "created_by_name",
+      key: "created_by_name",
+      render: (name: string | null) => name ?? <Text type="secondary">—</Text>,
+    },
+    {
       title: t("columns.notes"),
       dataIndex: "notes",
       key: "notes",

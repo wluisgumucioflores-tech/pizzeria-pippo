@@ -13,6 +13,7 @@ export const MODULE_LABELS: Record<BusinessModuleKey, string> = {
   mcpSaas: "MCP (servidor MCP externo)",
   aiChat: "Chat IA (asistente inteligente)",
   produccion: "Rol: Jefe de Producción (registro de insumos y elaboración)",
+  produccionStock: "Jefe de Producción: acceso a Stock / Bodega",
   admin: "Rol: Administrador (puede crear otros admins)",
   cajero: "Rol: Cajero",
 };

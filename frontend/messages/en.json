@@ -1160,7 +1160,8 @@
         "detail": "Detail",
         "quantity": "Quantity",
         "destination": "Destination",
-        "notes": "Notes"
+        "notes": "Notes",
+        "createdBy": "Done by"
       },
       "types": {
         "compra": "Purchase",
@@ -1233,6 +1234,8 @@
       "insumos": "Ingredients",
       "elaboracion": "Production",
       "transferencia": "Transfer",
+      "stock": "Stock",
+      "bodega": "Warehouse",
       "logout": "Log out"
     },
     "required": "This field is required",

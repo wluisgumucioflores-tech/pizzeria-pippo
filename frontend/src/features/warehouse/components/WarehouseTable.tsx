@@ -45,12 +45,14 @@ interface Props {
   onAdjust: (row: WarehouseRow) => void;
   onEditMinQty: (row: WarehouseRow) => void;
   onDelete: (row: WarehouseRow) => void;
+  // See WarehousePageHeader's basePath — same reason.
+  basePath?: string;
 }
 
 export function WarehouseTable({
   filteredRows, displayMobileRows, total, isLoading,
   isMobile, loadingMore, hasMore, page, PAGE_SIZE, mobileRows,
-  sentinelRef, onPageChange, onAdjust, onEditMinQty, onDelete,
+  sentinelRef, onPageChange, onAdjust, onEditMinQty, onDelete, basePath = "/warehouse",
 }: Props) {
   const router = useRouter();
   const t = useTranslations("common");
@@ -102,7 +104,7 @@ export function WarehouseTable({
       render: (_: unknown, row: WarehouseRow) => (
         <Space>
           <Button size="small" icon={<IconEdit />} onClick={() => onAdjust(row)}>{tw("adjust")}</Button>
-          <Button size="small" icon={<IconSwap />} onClick={() => router.push(`/warehouse/transfer?ingredientId=${row.ingredient_id}`)}>{tw("transfer")}</Button>
+          <Button size="small" icon={<IconSwap />} onClick={() => router.push(`${basePath}/transfer?ingredientId=${row.ingredient_id}`)}>{tw("transfer")}</Button>
           <Tooltip title={row.has_movements ? tw("hasMovementsTooltip") : t("delete")}>
             <Button size="small" danger icon={<IconDelete />} disabled={row.has_movements} onClick={() => onDelete(row)} />
           </Tooltip>
@@ -142,7 +144,7 @@ export function WarehouseTable({
               </div>
               <Space>
                 <Button size="small" icon={<IconEdit />} onClick={() => onAdjust(row)}>{tw("adjust")}</Button>
-                <Button size="small" icon={<IconSwap />} onClick={() => router.push(`/warehouse/transfer?ingredientId=${row.ingredient_id}`)}>{tw("transfer")}</Button>
+                <Button size="small" icon={<IconSwap />} onClick={() => router.push(`${basePath}/transfer?ingredientId=${row.ingredient_id}`)}>{tw("transfer")}</Button>
                 <Tooltip title={row.has_movements ? tw("hasMovementsTooltip") : t("delete")}>
                   <Button size="small" danger icon={<IconDelete />} disabled={row.has_movements} onClick={() => onDelete(row)} />
                 </Tooltip>

@@ -56,7 +56,7 @@ export class WarehouseProductService {
     const rows = await this.prisma.warehouseProductMovement.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      include: { variant: { include: { product: true } }, branch: true },
+      include: { variant: { include: { product: true } }, branch: true, creator: true },
     });
 
     return rows.map((row) => ({
@@ -66,6 +66,8 @@ export class WarehouseProductService {
       quantity: row.quantity.toNumber(),
       type: row.type,
       notes: row.notes,
+      created_by: row.createdBy,
+      created_by_name: row.creator?.fullName ?? null,
       created_at: row.createdAt.toISOString(),
       product_variants: {
         id: row.variant.id,

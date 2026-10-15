@@ -30,6 +30,10 @@ describe('OwnBranchOrAdminGuard', () => {
     expect(guard.canActivate(makeContext(user('admin', null), { branchId: 'b1' }))).toBe(true);
   });
 
+  it('permite el acceso a produccion (branchless) sin importar el branchId', () => {
+    expect(guard.canActivate(makeContext(user('produccion', null), { branchId: 'b1' }))).toBe(true);
+  });
+
   it('permite el acceso si el branchId de la query coincide con la sucursal del usuario', () => {
     expect(guard.canActivate(makeContext(user('cajero', 'b1'), { branchId: 'b1' }))).toBe(true);
   });

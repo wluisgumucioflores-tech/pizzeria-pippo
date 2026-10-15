@@ -9,7 +9,9 @@ export class OwnBranchOrAdminGuard implements CanActivate {
     if (!user) {
       throw new ForbiddenException('No tenés permiso para acceder a este recurso');
     }
-    if (user.role === 'admin') return true;
+    // produccion is branchless (business-wide), like admin — it relies on
+    // ProduccionStockGuard (stock.controller.ts) for the actual module gate.
+    if (user.role === 'admin' || user.role === 'produccion') return true;
 
     const resourceBranchId = request.query?.branchId ?? request.body?.branch_id;
     if (resourceBranchId && resourceBranchId === user.branch_id) return true;

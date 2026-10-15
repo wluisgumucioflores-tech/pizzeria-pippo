@@ -26,12 +26,13 @@ interface Props {
   onAdjust: (row: WarehouseRow) => void;
   onEditMinQty: (row: WarehouseRow) => void;
   onDelete: (row: WarehouseRow) => void;
+  basePath?: string;
 }
 
 export function WarehouseIngredientsTab({
   isMobile, search, onSearchChange, filterStatus, onStatusFilterChange,
   filteredRows, displayMobileRows, mobileRows, total, isLoading, loadingMore, hasMore,
-  page, pageSize, sentinelRef, onPageChange, onAdjust, onEditMinQty, onDelete,
+  page, pageSize, sentinelRef, onPageChange, onAdjust, onEditMinQty, onDelete, basePath,
 }: Props) {
   const t = useTranslations("warehouse");
 
@@ -72,6 +73,7 @@ export function WarehouseIngredientsTab({
         onAdjust={onAdjust}
         onEditMinQty={onEditMinQty}
         onDelete={onDelete}
+        basePath={basePath}
       />
     </>
   );

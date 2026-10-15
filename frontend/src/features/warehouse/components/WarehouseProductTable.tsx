@@ -30,7 +30,7 @@ function variantLabel(row: { product_variants: { name: string; products: { name:
   return pv.name === "Unidad" ? productName : `${productName} — ${pv.name}`;
 }
 
-export function WarehouseProductTable({ isMobile }: { isMobile: boolean }) {
+export function WarehouseProductTable({ isMobile, basePath = "/warehouse" }: { isMobile: boolean; basePath?: string }) {
   const router = useRouter();
   const t = useTranslations("common");
   const tw = useTranslations("warehouse");
@@ -79,7 +79,7 @@ export function WarehouseProductTable({ isMobile }: { isMobile: boolean }) {
       render: (_: unknown, row: ReturnType<typeof useWarehouseProductTable>["rows"][0]) => (
         <Space>
           <Button size="small" icon={<IconEdit />} onClick={() => openAdjust(row)}>{tw("adjust")}</Button>
-          <Button size="small" icon={<IconSwap />} onClick={() => router.push(`/warehouse/transfer?variantId=${row.variant_id}`)}>
+          <Button size="small" icon={<IconSwap />} onClick={() => router.push(`${basePath}/transfer?variantId=${row.variant_id}`)}>
             {tw("transfer")}
           </Button>
         </Space>
@@ -126,7 +126,7 @@ export function WarehouseProductTable({ isMobile }: { isMobile: boolean }) {
                 </div>
                 <Space>
                   <Button size="small" icon={<IconEdit />} onClick={() => openAdjust(row)}>{tw("adjust")}</Button>
-                  <Button size="small" icon={<IconSwap />} onClick={() => router.push(`/warehouse/transfer?variantId=${row.variant_id}`)}>
+                  <Button size="small" icon={<IconSwap />} onClick={() => router.push(`${basePath}/transfer?variantId=${row.variant_id}`)}>
                     {tw("transfer")}
                   </Button>
                 </Space>

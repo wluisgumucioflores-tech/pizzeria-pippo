@@ -15,6 +15,7 @@ const { Header, Sider, Content } = Layout;
 export default function ProduccionLayout({ children }: { children: React.ReactNode }) {
   const [allowed, setAllowed] = useState(false);
   const [businessName, setBusinessName] = useState<string | null>(null);
+  const [stockMode, setStockMode] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations("production");
@@ -38,6 +39,11 @@ export default function ProduccionLayout({ children }: { children: React.ReactNo
         return;
       }
       setBusinessName(profile.business_name);
+      // produccionStock swaps this panel's menu to Stock/Bodega instead of
+      // the usual insumos/elaboracion/transferencia — see CLAUDE.md feature
+      // flags rule. Defaults to false, so existing businesses using jefe de
+      // producción today are unaffected until a superadmin opts them in.
+      setStockMode(!!profile.enabled_modules.produccionStock);
       setAllowed(true);
     });
   }, []);
@@ -48,12 +54,25 @@ export default function ProduccionLayout({ children }: { children: React.ReactNo
     ? "elaboracion"
     : pathname.startsWith("/produccion/transferencia")
       ? "transferencia"
-      : "insumos";
-  const menuItems = [
-    { key: "insumos", label: t("menu.insumos") },
-    { key: "elaboracion", label: t("menu.elaboracion") },
-    { key: "transferencia", label: t("menu.transferencia") },
-  ];
+      : pathname.startsWith("/produccion/bodega")
+        ? "bodega"
+        : pathname.startsWith("/produccion/stock")
+          ? "stock"
+          : "insumos";
+  // produccionStock adds Stock/Bodega and hides insumos/elaboracion (the
+  // logging pages) — transferencia (Fase 10 self-service transfer) stays
+  // either way, it's a separate, already-working feature.
+  const menuItems = stockMode
+    ? [
+        { key: "stock", label: t("menu.stock") },
+        { key: "bodega", label: t("menu.bodega") },
+        { key: "transferencia", label: t("menu.transferencia") },
+      ]
+    : [
+        { key: "insumos", label: t("menu.insumos") },
+        { key: "elaboracion", label: t("menu.elaboracion") },
+        { key: "transferencia", label: t("menu.transferencia") },
+      ];
 
   const handleLogout = async () => {
     await signOut();

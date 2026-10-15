@@ -1,6 +1,6 @@
 // Single source of truth for optional business modules — add a new flaggable
 // module here and every place that reads/writes enabled_modules picks it up.
-export const BUSINESS_MODULE_KEYS = ["kitchen", "stock", "employees", "telegram", "printer", "mesero", "mcpSaas", "aiChat", "produccion", "admin", "cajero"] as const;
+export const BUSINESS_MODULE_KEYS = ["kitchen", "stock", "employees", "telegram", "printer", "mesero", "mcpSaas", "aiChat", "produccion", "produccionStock", "admin", "cajero"] as const;
 
 export type BusinessModuleKey = (typeof BUSINESS_MODULE_KEYS)[number];
 
@@ -16,6 +16,10 @@ export const DEFAULT_ENABLED_MODULES: EnabledModules = {
   mcpSaas: false,
   aiChat: false,
   produccion: false,
+  // Gives the produccion role access to the Stock/Bodega pages within its
+  // own panel — independent of the main "stock" module, which gates that
+  // same access for admins.
+  produccionStock: false,
   // admin/cajero are base roles every business could already create before
   // this per-role control existed — default true so we don't break
   // existing businesses that never configured this explicitly.

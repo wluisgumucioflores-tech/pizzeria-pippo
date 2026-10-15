@@ -44,9 +44,10 @@ export function WarehouseMovementsMobileList({ movements, loading }: Props) {
                 {display} {r.unit}
               </Text>
             </div>
-            {(r.branches || r.notes) && (
+            {(r.branches || r.notes || r.created_by_name) && (
               <div style={{ marginTop: 6, display: "flex", gap: 8, flexWrap: "wrap" }}>
                 {r.branches && <Tag style={{ margin: 0 }}>→ {r.branches.name}</Tag>}
+                {r.created_by_name && <Text type="secondary" style={{ fontSize: 12 }}>{t("columns.createdBy")}: {r.created_by_name}</Text>}
                 {r.notes && <Text type="secondary" style={{ fontSize: 12 }}>{r.notes}</Text>}
               </div>
             )}

@@ -79,7 +79,7 @@ export class WarehouseService {
     const rows = await this.prisma.warehouseMovement.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      include: { ingredient: true, branch: true },
+      include: { ingredient: true, branch: true, creator: true },
     });
 
     return rows.map((row) => ({
@@ -90,6 +90,7 @@ export class WarehouseService {
       branch_id: row.branchId,
       notes: row.notes,
       created_by: row.createdBy,
+      created_by_name: row.creator?.fullName ?? null,
       created_at: row.createdAt.toISOString(),
       ingredients: { name: row.ingredient.name, unit: row.ingredient.unit },
       branches: row.branch ? { name: row.branch.name } : null,

@@ -51,7 +51,16 @@ export function useWarehouseTransfer(preselectedIngredient: string | null, prese
       unit: r.unit,
     }));
     setWarehouseIngredientStock(stockRows);
-    setVariants(loadedVariants);
+    // loadedVariants only covers productType 'resale' (see
+    // ProductStockService.getResaleVariants) — made-in-house products with
+    // warehouse stock (producción propia transferida) aren't in that catalog,
+    // so the Select couldn't resolve their label and fell back to the raw
+    // id. Patch in any variant that's in warehouse stock but missing there.
+    const resaleIds = new Set(loadedVariants.map((v) => v.id));
+    const missingFromCatalog = loadedProductStock
+      .filter((r) => r.product_variants && !resaleIds.has(r.variant_id))
+      .map((r) => ({ id: r.variant_id, name: r.product_variants!.name, products: r.product_variants!.products }));
+    setVariants([...loadedVariants, ...missingFromCatalog]);
     setWarehouseProductStock(loadedProductStock.map((r) => ({ variant_id: r.variant_id, quantity: r.quantity })));
 
     if (preselectedIngredient) {

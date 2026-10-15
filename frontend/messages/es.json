@@ -1160,7 +1160,8 @@
         "detail": "Detalle",
         "quantity": "Cantidad",
         "destination": "Destino",
-        "notes": "Notas"
+        "notes": "Notas",
+        "createdBy": "Realizado por"
       },
       "types": {
         "compra": "Compra",
@@ -1233,6 +1234,8 @@
       "insumos": "Insumos",
       "elaboracion": "Producción",
       "transferencia": "Transferir",
+      "stock": "Stock",
+      "bodega": "Bodega",
       "logout": "Cerrar sesión"
     },
     "required": "Este campo es obligatorio",

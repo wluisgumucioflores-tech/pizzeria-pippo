@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@ne
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { OwnBranchOrAdminGuard } from '../common/guards/own-branch-or-admin.guard';
+import { ProduccionStockGuard } from '../common/guards/produccion-stock.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
@@ -26,40 +27,43 @@ export class StockController {
     private readonly productStockService: ProductStockService,
   ) {}
 
-  @UseGuards(OwnBranchOrAdminGuard)
+  // OwnBranchOrAdminGuard also admits produccion (branchless, business-wide
+  // like admin); ProduccionStockGuard then enforces the produccionStock
+  // module flag for that role specifically — admins are unaffected.
+  @UseGuards(OwnBranchOrAdminGuard, ProduccionStockGuard)
   @Get()
   list(@Query() query: ListStockQueryDto, @CurrentUser() user: CurrentUserPayload) {
     return this.stockService.list(query, user);
   }
 
-  @UseGuards(OwnBranchOrAdminGuard)
+  @UseGuards(OwnBranchOrAdminGuard, ProduccionStockGuard)
   @Get('alerts')
   getAlerts(@Query() query: ListAlertsQueryDto, @CurrentUser() user: CurrentUserPayload) {
     return this.stockService.getAlerts(query, user);
   }
 
-  @UseGuards(OwnBranchOrAdminGuard)
+  @UseGuards(OwnBranchOrAdminGuard, ProduccionStockGuard)
   @Get('movements')
   getMovements(@Query() query: ListMovementsQueryDto, @CurrentUser() user: CurrentUserPayload) {
     return this.stockService.getMovements(query, user);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles('admin')
+  @UseGuards(RolesGuard, ProduccionStockGuard)
+  @Roles('admin', 'produccion')
   @Post('purchase')
   purchase(@Body() dto: PurchaseStockDto, @CurrentUser() user: CurrentUserPayload) {
     return this.stockService.purchase(dto, user);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles('admin')
+  @UseGuards(RolesGuard, ProduccionStockGuard)
+  @Roles('admin', 'produccion')
   @Post('adjust')
   adjust(@Body() dto: AdjustStockDto, @CurrentUser() user: CurrentUserPayload) {
     return this.stockService.adjust(dto, user);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles('admin')
+  @UseGuards(RolesGuard, ProduccionStockGuard)
+  @Roles('admin', 'produccion')
   @Patch(':id')
   updateMinQuantity(@Param('id') id: string, @Body() dto: UpdateMinQuantityDto, @CurrentUser() user: CurrentUserPayload) {
     return this.stockService.updateMinQuantity(id, dto.min_quantity, user);

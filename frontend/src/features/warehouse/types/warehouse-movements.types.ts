@@ -18,6 +18,7 @@ export interface IngredientMovement {
   type: string;
   branch_id: string | null;
   notes: string | null;
+  created_by_name: string | null;
   created_at: string;
   ingredients: WMovIngredient;
   branches: WMovBranch | null;
@@ -30,6 +31,7 @@ export interface ProductMovement {
   type: string;
   branch_id: string | null;
   notes: string | null;
+  created_by_name: string | null;
   created_at: string;
   product_variants: WMovProductVariant | null;
   branches: WMovBranch | null;
@@ -41,6 +43,7 @@ export interface UnifiedMovement {
   type: string;
   branch_id: string | null;
   notes: string | null;
+  created_by_name: string | null;
   created_at: string;
   origin: "ingredient" | "product";
   detailName: string;

@@ -6,6 +6,7 @@ export interface WarehouseMovementRow {
   branch_id: string | null;
   notes: string | null;
   created_by: string | null;
+  created_by_name: string | null;
   created_at: string;
   ingredients: { name: string; unit: string };
   branches: { name: string } | null;
