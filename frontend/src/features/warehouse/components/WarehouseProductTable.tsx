@@ -1,9 +1,10 @@
 "use client";
 
-import { Table, Tag, Space, Button, Tooltip, Typography, Spin, Modal, Form, InputNumber, Input } from "antd";
+import { Table, Tag, Space, Button, Tooltip, Typography, Spin, Modal, Form, InputNumber, Input, Select } from "antd";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useWarehouseProductTable } from "../hooks/useWarehouseProductTable";
+import { IconSearch } from "./WarehouseIcons";
 
 const { Text } = Typography;
 
@@ -34,7 +35,11 @@ export function WarehouseProductTable({ isMobile, basePath = "/warehouse" }: { i
   const router = useRouter();
   const t = useTranslations("common");
   const tw = useTranslations("warehouse");
-  const { rows, loading, adjustingRow, adjustLoading, adjustForm, alertCount, openAdjust, closeAdjust, handleAdjust } = useWarehouseProductTable();
+  const {
+    rows, filteredRows, loading, adjustingRow, adjustLoading, adjustForm, alertCount,
+    search, setSearch, filterStatus, setFilterStatus,
+    openAdjust, closeAdjust, handleAdjust,
+  } = useWarehouseProductTable();
 
   const columns = [
     {
@@ -101,9 +106,28 @@ export function WarehouseProductTable({ isMobile, basePath = "/warehouse" }: { i
         </div>
       )}
 
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+        <Input
+          placeholder={tw("searchProduct")}
+          prefix={<IconSearch />}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          allowClear
+          style={{ width: isMobile ? "100%" : 220 }}
+        />
+        <Select
+          placeholder={tw("status")}
+          allowClear
+          value={filterStatus}
+          onChange={setFilterStatus}
+          style={{ width: isMobile ? "100%" : 140 }}
+          options={[{ value: "low", label: tw("statusLow") }, { value: "ok", label: tw("statusOk") }]}
+        />
+      </div>
+
       {isMobile ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {rows.map((row) => {
+          {filteredRows.map((row) => {
             const isLow = row.quantity < row.min_quantity;
             return (
               <div key={row.id} style={{ background: isLow ? "#fef2f2" : "#fff", border: `1px solid ${isLow ? "#fca5a5" : "#e5e7eb"}`, borderRadius: 10, padding: "12px 14px" }}>
@@ -133,7 +157,7 @@ export function WarehouseProductTable({ isMobile, basePath = "/warehouse" }: { i
               </div>
             );
           })}
-          {rows.length === 0 && !loading && (
+          {filteredRows.length === 0 && !loading && (
             <Text type="secondary" style={{ textAlign: "center", display: "block", padding: 32 }}>
               {tw("noResaleProducts")}
             </Text>
@@ -141,7 +165,7 @@ export function WarehouseProductTable({ isMobile, basePath = "/warehouse" }: { i
         </div>
       ) : (
         <Table
-          dataSource={rows}
+          dataSource={filteredRows}
           columns={columns}
           rowKey="id"
           loading={loading}
