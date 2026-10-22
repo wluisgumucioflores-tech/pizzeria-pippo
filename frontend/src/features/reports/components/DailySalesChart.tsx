@@ -7,6 +7,8 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from "recharts";
+import { ChartDownloadButton } from "@/components/ChartDownloadButton";
+import { useDownloadChartImage } from "@/hooks/useDownloadChartImage";
 import type { DailyData } from "../types/reports.types";
 
 interface Props {
@@ -15,8 +17,14 @@ interface Props {
 
 export function DailySalesChart({ dailyData }: Props) {
   const t = useTranslations("reports");
+  const { ref, download, downloading } = useDownloadChartImage("ventas-diarias");
   return (
-    <Card title={t("dailySales")} size="small">
+    <Card
+      ref={ref}
+      title={t("dailySales")}
+      size="small"
+      extra={dailyData.length > 0 ? <ChartDownloadButton onClick={download} loading={downloading} /> : undefined}
+    >
       {dailyData.length > 0 ? (
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={dailyData}>

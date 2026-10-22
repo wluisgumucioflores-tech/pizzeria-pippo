@@ -4,6 +4,8 @@ import { Card, Table, Tag, Typography, Space } from "antd";
 import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { useCategoryOptions } from "@/features/categories/hooks/useCategoryOptions";
+import { ChartDownloadButton } from "@/components/ChartDownloadButton";
+import { useDownloadChartImage } from "@/hooks/useDownloadChartImage";
 import type { TopProduct } from "../types/reports.types";
 
 const { Text } = Typography;
@@ -58,9 +60,16 @@ export function TopProductsTable({ topProducts, loading }: Props) {
   const categoryLabel = (categoryId: string | null) =>
     categoryOptions.find((c) => c.value === categoryId)?.label ?? "—";
   const columns = buildColumns(t, categoryLabel);
+  const { ref, download, downloading } = useDownloadChartImage("productos-mas-vendidos");
 
   return (
-    <Card title={t("topProducts")} size="small" style={{ marginBottom: 24 }}>
+    <Card
+      ref={ref}
+      title={t("topProducts")}
+      size="small"
+      style={{ marginBottom: 24 }}
+      extra={topProducts.length > 0 ? <ChartDownloadButton onClick={download} loading={downloading} /> : undefined}
+    >
       {isMobile ? (
         loading ? (
           <div style={{ textAlign: "center", padding: 32, color: "#9ca3af" }}>{tc("loading")}</div>

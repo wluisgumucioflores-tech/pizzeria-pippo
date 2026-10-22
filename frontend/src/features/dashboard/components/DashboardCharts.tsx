@@ -8,6 +8,8 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from "recharts";
+import { ChartDownloadButton } from "@/components/ChartDownloadButton";
+import { useDownloadChartImage } from "@/hooks/useDownloadChartImage";
 import type { TopProduct, DailyData } from "../types/dashboard.types";
 
 const { Text } = Typography;
@@ -73,16 +75,22 @@ interface Props {
 export function DashboardCharts({ dailyData, topProducts, loading, showingYesterday }: Props) {
   const t = useTranslations("dashboard");
   const topColumns = buildTopColumns(t);
+  const { ref, download, downloading } = useDownloadChartImage("ventas-ultimos-7-dias");
+  const topRef = useDownloadChartImage(showingYesterday ? "top5-productos-ayer" : "top5-productos-hoy");
   return (
     <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
       <Col xs={24} lg={14}>
         <Card
+          ref={ref}
           title={t("salesLast7Days")}
           size="small"
           extra={
-            <Link href="/reports" className="flex items-center gap-1 text-sm text-gray-600 hover:text-blue-600">
-              {t("viewReports")} <IconArrow />
-            </Link>
+            <Space>
+              {dailyData.length > 0 && <ChartDownloadButton onClick={download} loading={downloading} />}
+              <Link href="/reports" className="flex items-center gap-1 text-sm text-gray-600 hover:text-blue-600">
+                {t("viewReports")} <IconArrow />
+              </Link>
+            </Space>
           }
         >
           {dailyData.length > 0 ? (
@@ -120,12 +128,14 @@ export function DashboardCharts({ dailyData, topProducts, loading, showingYester
 
       <Col xs={24} lg={10}>
         <Card
+          ref={topRef.ref}
           title={
             <Space>
               <IconFire />
               {showingYesterday ? t("top5Yesterday") : t("top5Today")}
             </Space>
           }
+          extra={topProducts.length > 0 ? <ChartDownloadButton onClick={topRef.download} loading={topRef.downloading} /> : undefined}
           size="small"
           style={{ height: "100%" }}
         >

@@ -6,6 +6,8 @@ import {
   PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { useCategoryOptions } from "@/features/categories/hooks/useCategoryOptions";
+import { ChartDownloadButton } from "@/components/ChartDownloadButton";
+import { useDownloadChartImage } from "@/hooks/useDownloadChartImage";
 import type { TopProduct } from "../types/reports.types";
 
 const PALETTE = ["#f97316", "#3b82f6", "#22c55e", "#a855f7", "#ec4899", "#14b8a6"];
@@ -16,6 +18,7 @@ interface Props {
 
 export function TopProductsChart({ topProducts }: Props) {
   const t = useTranslations("reports");
+  const { ref, download, downloading } = useDownloadChartImage("ventas-por-categoria");
   const { options: categoryOptions } = useCategoryOptions();
   const categoryLabel = (categoryId: string | null) =>
     categoryOptions.find((c) => c.value === categoryId)?.label ?? "—";
@@ -28,7 +31,12 @@ export function TopProductsChart({ topProducts }: Props) {
   }, [] as { name: string; value: number }[]);
 
   return (
-    <Card title={t("salesByCategory")} size="small">
+    <Card
+      ref={ref}
+      title={t("salesByCategory")}
+      size="small"
+      extra={categoryData.length > 0 ? <ChartDownloadButton onClick={download} loading={downloading} /> : undefined}
+    >
       {categoryData.length > 0 ? (
         <ResponsiveContainer width="100%" height={220}>
           <PieChart>
