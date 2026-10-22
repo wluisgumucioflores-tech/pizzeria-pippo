@@ -125,5 +125,6 @@ export function usePromotions() {
     handleSave, handleToggleIsActive, handleToggleActive,
     handleTypeChange,
     addRule, updateRule, removeRule,
+    refetch: fetchAll,
   };
 }

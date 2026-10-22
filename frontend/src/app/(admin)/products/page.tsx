@@ -2,6 +2,7 @@
 
 import { ProductsTable } from "@/features/products/components/ProductsTable";
 import { useProducts } from "@/features/products/hooks/useProducts";
+import { useRegisterRefresh } from "@/lib/refresh-context";
 
 export default function ProductsPage() {
   const {
@@ -10,7 +11,9 @@ export default function ProductsPage() {
     filterCategory, setFilterCategory,
     search, setSearch,
     handleToggleActive, handleDelete, handleDuplicate,
+    refetch,
   } = useProducts();
+  useRegisterRefresh(refetch);
 
   return (
     <div className="p-6">

@@ -10,6 +10,7 @@ import { ReportsGeneralTab } from "@/features/reports/components/ReportsGeneralT
 import { ReportsOrdersTab } from "@/features/reports/components/ReportsOrdersTab";
 import { CancelOrderModal } from "@/features/pos/components/CancelOrderModal";
 import { useReportsPage } from "@/features/reports/hooks/useReportsPage";
+import { useRegisterRefresh } from "@/lib/refresh-context";
 
 const CashierReportTable = dynamic(() =>
   import("@/features/reports/components/CashierReportTable").then(m => m.CashierReportTable)
@@ -23,7 +24,8 @@ const ProductionReportTable = dynamic(() =>
 
 export default function ReportsPage() {
   const t = useTranslations("reports");
-  const { filters, sales, cashier, production, ordersReport, cancellation } = useReportsPage();
+  const { filters, sales, cashier, production, ordersReport, cancellation, refetch } = useReportsPage();
+  useRegisterRefresh(refetch);
   const selectedBranchLabel = filters.branches.find((b) => b.id === filters.selectedBranch)?.name;
 
   return (

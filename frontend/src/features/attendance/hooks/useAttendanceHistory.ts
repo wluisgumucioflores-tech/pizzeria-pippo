@@ -33,5 +33,5 @@ export function useAttendanceHistory() {
 
   const expectedStartTime = branches.find((b) => b.id === selectedBranch)?.expected_start_time ?? null;
 
-  return { records, branches, loading, selectedBranch, setSelectedBranch, dateRange, setDateRange, expectedStartTime };
+  return { records, branches, loading, selectedBranch, setSelectedBranch, dateRange, setDateRange, expectedStartTime, refetch: load };
 }

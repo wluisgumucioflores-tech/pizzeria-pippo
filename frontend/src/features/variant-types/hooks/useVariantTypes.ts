@@ -57,5 +57,6 @@ export function useVariantTypes() {
     modalOpen, editing,
     openCreate, openEdit, closeModal,
     handleSave, handleToggle,
+    refetch: load,
   };
 }

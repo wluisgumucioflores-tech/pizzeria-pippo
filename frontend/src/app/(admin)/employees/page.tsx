@@ -4,6 +4,7 @@ import { EmployeesTable } from "@/features/employees/components/EmployeesTable";
 import { EmployeeModal } from "@/features/employees/components/EmployeeModal";
 import { EmployeeCredentialModal } from "@/features/employees/components/EmployeeCredentialModal";
 import { useEmployees } from "@/features/employees/hooks/useEmployees";
+import { useRegisterRefresh } from "@/lib/refresh-context";
 
 export default function EmployeesPage() {
   const {
@@ -11,7 +12,9 @@ export default function EmployeesPage() {
     modalOpen, editing, credential,
     openCreate, openEdit, closeModal, closeCredentialModal,
     handleSubmit, handleToggleActive, handleRegenerateCredential,
+    refetch,
   } = useEmployees();
+  useRegisterRefresh(refetch);
 
   return (
     <div className="p-6">

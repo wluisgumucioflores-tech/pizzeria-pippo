@@ -8,6 +8,7 @@ import { useIsMobile } from "@/lib/useIsMobile";
 import { useProductDetail } from "@/features/products/hooks/useProductDetail";
 import { ProductImageCard } from "@/features/products/components/ProductImageCard";
 import { ProductVariantsList } from "@/features/products/components/ProductVariantsList";
+import { useRegisterRefresh } from "@/lib/refresh-context";
 
 const { Title, Text } = Typography;
 
@@ -15,7 +16,8 @@ export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const isMobile = useIsMobile();
-  const { product, loading } = useProductDetail(id);
+  const { product, loading, refetch } = useProductDetail(id);
+  useRegisterRefresh(refetch);
   const t = useTranslations("common");
   const tp = useTranslations("products");
 

@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { DashboardSummaryCards } from "@/features/dashboard/components/DashboardSummaryCards";
 import { DashboardStockAlerts } from "@/features/dashboard/components/DashboardStockAlerts";
 import { useDashboard } from "@/features/dashboard/hooks/useDashboard";
+import { useRegisterRefresh } from "@/lib/refresh-context";
 
 const DashboardCharts = dynamic(
   () => import("@/features/dashboard/components/DashboardCharts").then((m) => m.DashboardCharts),
@@ -17,7 +18,8 @@ const DashboardCharts = dynamic(
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
   const tNav = useTranslations("nav");
-  const { summary, topProducts, dailyData, stockAlerts, warehouseAlerts, summaryDate, showingYesterday, loading } = useDashboard();
+  const { summary, topProducts, dailyData, stockAlerts, warehouseAlerts, summaryDate, showingYesterday, loading, refetch } = useDashboard();
+  useRegisterRefresh(refetch);
 
   return (
     <div style={{ padding: 24 }}>

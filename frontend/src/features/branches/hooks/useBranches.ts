@@ -102,5 +102,6 @@ export function useBranches() {
     handleSubmit,
     handleToggleActive,
     handleDelete,
+    refetch: fetchBranches,
   };
 }

@@ -9,6 +9,7 @@ import { useWarehouseMovements } from "@/features/warehouse/hooks/useWarehouseMo
 import { WarehouseMovementsFilters } from "@/features/warehouse/components/WarehouseMovementsFilters";
 import { WarehouseMovementsTable } from "@/features/warehouse/components/WarehouseMovementsTable";
 import { WarehouseMovementsMobileList } from "@/features/warehouse/components/WarehouseMovementsMobileList";
+import { useRegisterRefresh } from "@/lib/refresh-context";
 
 const { Title } = Typography;
 
@@ -24,7 +25,9 @@ export default function WarehouseMovementsPage() {
     filterBranch, setFilterBranch,
     filterDates, setFilterDates,
     filterOrigin, setFilterOrigin,
+    refetch,
   } = useWarehouseMovements();
+  useRegisterRefresh(refetch);
 
   return (
     <div style={{ padding: isMobile ? 16 : 24 }}>

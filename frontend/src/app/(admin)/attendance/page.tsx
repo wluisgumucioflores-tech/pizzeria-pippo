@@ -3,6 +3,7 @@
 import { AttendanceFilters } from "@/features/attendance/components/AttendanceFilters";
 import { AttendanceHistoryTable } from "@/features/attendance/components/AttendanceHistoryTable";
 import { useAttendanceHistory } from "@/features/attendance/hooks/useAttendanceHistory";
+import { useRegisterRefresh } from "@/lib/refresh-context";
 
 export default function AttendancePage() {
   const {
@@ -10,7 +11,9 @@ export default function AttendancePage() {
     selectedBranch, setSelectedBranch,
     dateRange, setDateRange,
     expectedStartTime,
+    refetch,
   } = useAttendanceHistory();
+  useRegisterRefresh(refetch);
 
   return (
     <div className="p-6">

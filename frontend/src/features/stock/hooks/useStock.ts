@@ -235,5 +235,11 @@ export function useStock() {
     productMinQtyForm,
     openProductMinQty, handleProductMinQty,
     unifiedMovements, totalHistory, loadingHistory,
+    refetch: () => {
+      ing.refreshStock();
+      ing.refreshMovements();
+      prod.refreshProductStock();
+      prod.refreshMovements();
+    },
   };
 }

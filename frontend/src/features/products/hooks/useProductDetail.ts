@@ -23,5 +23,5 @@ export function useProductDetail(id: string) {
     load();
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { product, ingredients, loading, loadProduct };
+  return { product, ingredients, loading, loadProduct, refetch: loadProduct };
 }

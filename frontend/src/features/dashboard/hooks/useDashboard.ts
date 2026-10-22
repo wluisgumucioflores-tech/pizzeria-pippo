@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { DashboardService } from "../services/dashboard.service";
 import type { SalesSummary, TopProduct, DailyData, StockAlert, WarehouseAlert } from "../types/dashboard.types";
 
@@ -14,20 +14,19 @@ export function useDashboard() {
   const [showingYesterday, setShowingYesterday] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const load = async () => {
-      const data = await DashboardService.getDashboardData();
-      setSummary(data.summary);
-      setTopProducts(data.topProducts);
-      setDailyData(data.dailyData);
-      setStockAlerts(data.stockAlerts);
-      setWarehouseAlerts(data.warehouseAlerts);
-      setSummaryDate(data.summaryDate);
-      setShowingYesterday(data.showingYesterday);
-      setLoading(false);
-    };
-    load();
+  const load = useCallback(async () => {
+    const data = await DashboardService.getDashboardData();
+    setSummary(data.summary);
+    setTopProducts(data.topProducts);
+    setDailyData(data.dailyData);
+    setStockAlerts(data.stockAlerts);
+    setWarehouseAlerts(data.warehouseAlerts);
+    setSummaryDate(data.summaryDate);
+    setShowingYesterday(data.showingYesterday);
+    setLoading(false);
   }, []);
 
-  return { summary, topProducts, dailyData, stockAlerts, warehouseAlerts, summaryDate, showingYesterday, loading };
+  useEffect(() => { load(); }, [load]);
+
+  return { summary, topProducts, dailyData, stockAlerts, warehouseAlerts, summaryDate, showingYesterday, loading, refetch: load };
 }

@@ -95,5 +95,6 @@ export function useProducts() {
     handleDelete,
     handleDuplicate,
     mutate,
+    refetch: mutate,
   };
 }

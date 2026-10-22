@@ -4,6 +4,7 @@ import { UsersTable } from "@/features/users/components/UsersTable";
 import { UserModal } from "@/features/users/components/UserModal";
 import { ResetPasswordModal } from "@/features/users/components/ResetPasswordModal";
 import { useUsers } from "@/features/users/hooks/useUsers";
+import { useRegisterRefresh } from "@/lib/refresh-context";
 
 export default function UsersPage() {
   const {
@@ -13,7 +14,9 @@ export default function UsersPage() {
     handleRoleChange, handleSubmit, handleToggleBan, handleDelete,
     resetPasswordUser, resettingPassword, resetPasswordForm,
     openResetPassword, closeResetPasswordModal, handleResetPasswordSubmit,
+    refetch,
   } = useUsers();
+  useRegisterRefresh(refetch);
 
   return (
     <div className="p-6">

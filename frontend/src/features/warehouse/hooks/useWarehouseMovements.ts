@@ -96,5 +96,6 @@ export function useWarehouseMovements() {
     filterBranch, setFilterBranch,
     filterDates, setFilterDates,
     filterOrigin, setFilterOrigin,
+    refetch: fetchMovements,
   };
 }

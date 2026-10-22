@@ -5,6 +5,7 @@ import { useIsMobile } from "@/lib/useIsMobile";
 import { StockPageHeader } from "@/features/stock/components/StockPageHeader";
 import { StockTabs } from "@/features/stock/components/StockTabs";
 import { StockMinQtyModal } from "@/features/stock/components/StockMinQtyModal";
+import { useRegisterRefresh } from "@/lib/refresh-context";
 
 export default function StockPage() {
   const isMobile = useIsMobile();
@@ -28,7 +29,9 @@ export default function StockPage() {
     openProductMinQty, handleProductMinQty,
     unifiedMovements, totalHistory, loadingHistory,
     pageHistory, setPageHistory,
+    refetch,
   } = useStock();
+  useRegisterRefresh(refetch);
 
   const handleEditMinQty = (row: (typeof unifiedStock)[number]) =>
     row.origin === "insumo" ? openMinQty(row.source) : openProductMinQty(row.source);

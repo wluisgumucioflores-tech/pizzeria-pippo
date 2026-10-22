@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { PromotionsTable } from "@/features/promotions/components/PromotionsTable";
 import { usePromotions } from "@/features/promotions/hooks/usePromotions";
+import { useRegisterRefresh } from "@/lib/refresh-context";
 
 const PromotionModal = dynamic(
   () => import("@/features/promotions/components/PromotionModal").then((m) => m.PromotionModal),
@@ -19,7 +20,9 @@ export default function PromotionsPage() {
     handleSave, handleToggleIsActive, handleToggleActive,
     handleTypeChange,
     addRule, updateRule, removeRule,
+    refetch,
   } = usePromotions();
+  useRegisterRefresh(refetch);
 
   return (
     <div className="p-6">

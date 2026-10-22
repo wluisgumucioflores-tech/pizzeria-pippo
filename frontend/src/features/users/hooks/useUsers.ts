@@ -170,5 +170,6 @@ export function useUsers() {
     openResetPassword,
     closeResetPasswordModal,
     handleResetPasswordSubmit,
+    refetch: fetchUsers,
   };
 }

@@ -79,5 +79,6 @@ export function useEmployees() {
     modalOpen, editing, credential,
     openCreate, openEdit, closeModal, closeCredentialModal,
     handleSubmit, handleToggleActive, handleRegenerateCredential,
+    refetch: load,
   };
 }

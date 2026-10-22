@@ -145,5 +145,6 @@ export function useWarehouse() {
     handleDelete, handleAdjust, handleMinQty,
     closeAdjust: () => { setAdjustingRow(null); adjustForm.resetFields(); },
     closeMinQty: () => setEditingRow(null),
+    refetch: mutate,
   };
 }

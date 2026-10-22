@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { PromotionsService } from "../services/promotions.service";
 import type { Promotion, Branch, Variant } from "../types/promotion.types";
 
@@ -10,9 +10,9 @@ export function usePromotionDetail(id: string) {
   const [variants, setVariants] = useState<Variant[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     setLoading(true);
-    Promise.all([
+    return Promise.all([
       PromotionsService.getPromotion(id),
       PromotionsService.getBranches(),
       PromotionsService.getVariants(),
@@ -24,5 +24,7 @@ export function usePromotionDetail(id: string) {
     });
   }, [id]);
 
-  return { promotion, branches, variants, loading };
+  useEffect(() => { load(); }, [load]);
+
+  return { promotion, branches, variants, loading, refetch: load };
 }

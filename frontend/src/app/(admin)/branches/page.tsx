@@ -4,6 +4,7 @@ import { BranchesTable } from "@/features/branches/components/BranchesTable";
 import { BranchModal } from "@/features/branches/components/BranchModal";
 import { BranchBlockedModal } from "@/features/branches/components/BranchBlockedModal";
 import { useBranches } from "@/features/branches/hooks/useBranches";
+import { useRegisterRefresh } from "@/lib/refresh-context";
 
 export default function BranchesPage() {
   const {
@@ -11,7 +12,9 @@ export default function BranchesPage() {
     modalOpen, editing, blockModal, form,
     openCreate, openEdit, closeModal, closeBlockModal,
     handleSubmit, handleToggleActive, handleDelete,
+    refetch,
   } = useBranches();
+  useRegisterRefresh(refetch);
 
   return (
     <div className="p-6">

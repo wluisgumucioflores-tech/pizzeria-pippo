@@ -8,13 +8,15 @@ import { usePromotionDetail } from "@/features/promotions/hooks/usePromotionDeta
 import { getTypeOptions, TYPE_COLORS } from "@/features/promotions/constants/promotion.constants";
 import { PromotionInfoCard } from "@/features/promotions/components/PromotionInfoCard";
 import { PromotionRulesCard } from "@/features/promotions/components/PromotionRulesCard";
+import { useRegisterRefresh } from "@/lib/refresh-context";
 
 const { Title, Text } = Typography;
 
 export default function PromotionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { promotion, branches, variants, loading } = usePromotionDetail(id);
+  const { promotion, branches, variants, loading, refetch } = usePromotionDetail(id);
+  useRegisterRefresh(refetch);
   const t = useTranslations("common");
   const tp = useTranslations("promotions");
 

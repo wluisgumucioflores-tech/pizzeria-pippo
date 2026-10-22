@@ -8,6 +8,7 @@ import { WarehousePageHeader } from "@/features/warehouse/components/WarehousePa
 import { WarehouseIngredientsTab } from "@/features/warehouse/components/WarehouseIngredientsTab";
 import { WarehouseProductTable } from "@/features/warehouse/components/WarehouseProductTable";
 import { WarehouseAdjustModal, WarehouseMinQtyModal } from "@/features/warehouse/components/WarehouseModals";
+import { useRegisterRefresh } from "@/lib/refresh-context";
 
 export default function WarehousePage() {
   const [activeTab, setActiveTab] = useState("ingredients");
@@ -23,7 +24,11 @@ export default function WarehousePage() {
     openMinQty, openAdjust,
     handleDelete, handleAdjust, handleMinQty,
     closeAdjust, closeMinQty,
+    refetch,
   } = useWarehouse();
+  // Only refreshes the "Ingredientes" tab — "Productos" manages its own data
+  // independently inside WarehouseProductTable, not exposed here.
+  useRegisterRefresh(refetch);
 
   return (
     <div style={{ padding: isMobile ? 16 : 24 }}>
