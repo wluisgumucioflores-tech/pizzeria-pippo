@@ -545,7 +545,16 @@ describe('ProductsService', () => {
           createdAt: new Date('2026-01-01T00:00:00.000Z'),
           isActive: true,
           branchPrices: [{ branchId: 'b1', variantId: 'v1', price: decimal(22) }],
-          recipes: [{ ingredientId: 'i1', quantity: decimal(1), applyCondition: 'always' }],
+          // The query includes the ingredient relation, so the mock has to
+          // carry it — the mapping reads r.ingredient.name/unit.
+          recipes: [
+            {
+              ingredientId: 'i1',
+              quantity: decimal(1),
+              applyCondition: 'always',
+              ingredient: { name: 'Harina', unit: 'kg' },
+            },
+          ],
         },
       ]);
 
@@ -560,19 +569,32 @@ describe('ProductsService', () => {
           created_at: '2026-01-01T00:00:00.000Z',
           is_active: true,
           branch_prices: [{ branch_id: 'b1', variant_id: 'v1', price: 22 }],
-          recipes: [{ ingredient_id: 'i1', quantity: 1, apply_condition: 'always' }],
+          recipes: [
+            {
+              ingredient_id: 'i1',
+              quantity: 1,
+              apply_condition: 'always',
+              ingredients: { name: 'Harina', unit: 'kg' },
+            },
+          ],
         },
       ]);
     });
   });
 
   describe('getPosCatalog', () => {
+    // The query asks Prisma for `branchPrices: { where: { branchId } }`, so a
+    // variant priced only in ANOTHER branch comes back with an EMPTY
+    // branchPrices array — never with the other branch's row. Modelling it as
+    // `[{ branchId: 'other-branch' }]` describes a result Prisma cannot
+    // produce, and made the service look as if it had stopped filtering.
     it('filtra variantes "made" sin branch_price para esta sucursal, y descarta el producto si queda sin variantes', async () => {
       prisma.product.findMany.mockResolvedValue([
         {
           id: 'p1',
           name: 'Pizza',
           category: 'pizza',
+          categoryId: null,
           description: null,
           imageUrl: null,
           isActive: true,
@@ -591,7 +613,8 @@ describe('ProductsService', () => {
               name: 'Grande',
               basePrice: decimal(30),
               isActive: true,
-              branchPrices: [{ branchId: 'other-branch', price: decimal(35) }],
+              // Priced only in another branch → empty for b1.
+              branchPrices: [],
               recipes: [],
             },
           ],
@@ -600,6 +623,7 @@ describe('ProductsService', () => {
           id: 'p2',
           name: 'Sin precio en b1',
           category: 'pizza',
+          categoryId: null,
           description: null,
           imageUrl: null,
           isActive: true,
@@ -610,7 +634,7 @@ describe('ProductsService', () => {
               name: 'Chica',
               basePrice: decimal(20),
               isActive: true,
-              branchPrices: [{ branchId: 'other-branch', price: decimal(20) }],
+              branchPrices: [],
               recipes: [],
             },
           ],

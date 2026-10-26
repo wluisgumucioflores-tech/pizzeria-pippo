@@ -597,12 +597,45 @@ describe('OrdersService', () => {
       ).rejects.toThrow(ConflictException);
     });
 
-    it('rechaza con 409 si el pedido ya está listo (no se puede agregar más)', async () => {
+    // Hasta d6ce1ef esto devolvía 409. Ahora agregar items a un pedido ya
+    // entregado lo REABRE en cocina, en vez de forzar un pedido nuevo: misma
+    // cuenta y mismo número. Era el único test de este camino, así que si se
+    // borraba quedaba sin cubrir.
+    it('reabre en cocina un pedido que ya estaba listo, en lugar de rechazarlo', async () => {
       prisma.order.findUnique.mockResolvedValue(pendingOrder({ kitchenStatus: 'ready' }));
+      prisma.productVariant.findMany.mockResolvedValue([madeVariant]);
 
-      await expect(
-        service.addItemsToOrder('o1', { total: 75, items: [{ variant_id: 'v-pizza', qty: 1 }] }, cashier),
-      ).rejects.toThrow(ConflictException);
+      const result = await service.addItemsToOrder(
+        'o1',
+        { total: 75, items: [{ variant_id: 'v-pizza', qty: 1 }] },
+        cashier,
+      );
+
+      expect(tx.order.update).toHaveBeenCalledWith({
+        where: { id: 'o1' },
+        data: { total: 150, kitchenStatus: 'pending' },
+      });
+      expect(ordersGateway.emitOrderUpdated).toHaveBeenCalledWith(
+        'b1',
+        expect.objectContaining({ id: 'o1', kitchen_status: 'pending' }),
+      );
+      expect(result).toEqual({ total: 150 });
+    });
+
+    it('no toca kitchen_status si el pedido todavía estaba pendiente', async () => {
+      prisma.order.findUnique.mockResolvedValue(pendingOrder());
+      prisma.productVariant.findMany.mockResolvedValue([madeVariant]);
+
+      await service.addItemsToOrder(
+        'o1',
+        { total: 75, items: [{ variant_id: 'v-pizza', qty: 1 }] },
+        cashier,
+      );
+
+      expect(tx.order.update).toHaveBeenCalledWith({
+        where: { id: 'o1' },
+        data: { total: 150 },
+      });
     });
 
     it('rechaza con 403 si no es admin y no es de la sucursal de la orden', async () => {
@@ -758,14 +791,25 @@ describe('OrdersService', () => {
           createdAt: new Date('2026-07-06T12:00:00Z'),
           kitchenStatus: 'pending',
           orderType: 'dine_in',
+          tableNumber: '5',
+          waiterName: 'Ana',
+          lastReadyAt: null,
           items: [
             {
               id: 'i1',
               qty: 2,
               qtyPhysical: 2,
+              // The query uses `include`, so every scalar of order_items comes
+              // back — createdAt included, and the mapping reads it.
+              createdAt: new Date('2026-07-06T12:00:05Z'),
               variant: {
                 name: 'Familiar',
-                product: { name: 'Hawaiana', description: 'Jamón y piña' },
+                product: {
+                  name: 'Hawaiana',
+                  description: 'Jamón y piña',
+                  category: 'pizza',
+                  categoryId: null,
+                },
               },
               flavors: [
                 {
@@ -798,14 +842,23 @@ describe('OrdersService', () => {
           created_at: '2026-07-06T12:00:00.000Z',
           kitchen_status: 'pending',
           order_type: 'dine_in',
+          table_number: '5',
+          waiter_name: 'Ana',
+          last_ready_at: null,
           order_items: [
             {
               id: 'i1',
               qty: 2,
               qty_physical: 2,
+              created_at: '2026-07-06T12:00:05.000Z',
               product_variants: {
                 name: 'Familiar',
-                products: { name: 'Hawaiana', description: 'Jamón y piña' },
+                products: {
+                  name: 'Hawaiana',
+                  description: 'Jamón y piña',
+                  category: 'pizza',
+                  category_id: null,
+                },
               },
               order_item_flavors: [
                 {
@@ -832,9 +885,11 @@ describe('OrdersService', () => {
 
       await service.markReady('o1', cashier);
 
+      // lastReadyAt is stamped so the kitchen can show how long ago an order
+      // was finished; asserted loosely because it is Date.now() at call time.
       expect(prisma.order.update).toHaveBeenCalledWith({
         where: { id: 'o1' },
-        data: { kitchenStatus: 'ready' },
+        data: { kitchenStatus: 'ready', lastReadyAt: expect.any(Date) },
       });
       expect(ordersGateway.emitOrderUpdated).toHaveBeenCalledWith('b1', {
         id: 'o1',
