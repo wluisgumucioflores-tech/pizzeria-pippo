@@ -15,8 +15,9 @@ export function useKitchenOrders(lateThresholdMinutes: number) {
   const [currentTime, setCurrentTime] = useState("");
   const [connected, setConnected] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
-  useNewIdAlert(orders.map((o) => o.id), notifyNewOrder);
+  useNewIdAlert(orders.map((o) => o.id), notifyNewOrder, loaded);
 
   useEffect(() => {
     unlockAudioOnFirstInteraction();
@@ -46,6 +47,7 @@ export function useKitchenOrders(lateThresholdMinutes: number) {
     if (!branchId) return;
     const data = await KitchenService.getPendingOrders(branchId);
     setOrders(data);
+    setLoaded(true);
   }, [branchId]);
 
   useEffect(() => {

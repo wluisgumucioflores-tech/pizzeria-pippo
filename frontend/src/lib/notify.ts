@@ -13,8 +13,30 @@ function getAudioContext(): AudioContext | null {
 function playBeep(frequency: number, duration: number, delay = 0): void {
   const ctx = getAudioContext();
   if (!ctx) return;
-  if (ctx.state === "suspended") ctx.resume();
 
+  // A suspended context has a FROZEN currentTime, so scheduling against it put
+  // every oscillator at a timestamp already in the past. Nothing played at the
+  // time, and the whole backlog fired at once the next time the context woke
+  // up — which is any user gesture, e.g. the cashier tapping a product. Resume
+  // first and only schedule once the clock is actually running.
+  if (ctx.state === "suspended") {
+    void ctx.resume().then(
+      () => scheduleBeep(ctx, frequency, duration, delay),
+      // No user gesture yet, so the browser refuses: drop this beep rather
+      // than queue it for a surprise replay later.
+      () => undefined,
+    );
+    return;
+  }
+  scheduleBeep(ctx, frequency, duration, delay);
+}
+
+function scheduleBeep(
+  ctx: AudioContext,
+  frequency: number,
+  duration: number,
+  delay: number,
+): void {
   const startAt = ctx.currentTime + delay;
   const oscillator = ctx.createOscillator();
   const gain = ctx.createGain();
@@ -60,14 +82,26 @@ export function notifyOrderReady(): void {
 // página. Se llama una vez al montar cada pantalla (cocina/POS/mesero) para
 // que el contexto quede "desbloqueado" apenas el operador toca la pantalla,
 // en vez de fallar en silencio la primera vez que suena una alerta real.
+// Los navegadores bloquean Web Audio hasta el primer gesto del usuario, y
+// vuelven a suspender el contexto cuando la pestaña queda en segundo plano
+// (los navegadores móviles, muy agresivamente). Por eso los listeners quedan
+// puestos de forma permanente en vez de { once: true }: con "once" el contexto
+// se desbloqueaba una sola vez y, tras la siguiente suspensión, no se
+// recuperaba nunca más y las alertas reales fallaban en silencio.
+let audioUnlockBound = false;
+
 export function unlockAudioOnFirstInteraction(): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || audioUnlockBound) return;
+  audioUnlockBound = true;
+
   const unlock = () => {
     const ctx = getAudioContext();
-    if (ctx?.state === "suspended") ctx.resume();
-    window.removeEventListener("pointerdown", unlock);
-    window.removeEventListener("keydown", unlock);
+    if (ctx?.state === "suspended") void ctx.resume();
   };
-  window.addEventListener("pointerdown", unlock, { once: true });
-  window.addEventListener("keydown", unlock, { once: true });
+  window.addEventListener("pointerdown", unlock);
+  window.addEventListener("keydown", unlock);
+  // Coming back to the tab is the other moment the context needs waking.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") unlock();
+  });
 }

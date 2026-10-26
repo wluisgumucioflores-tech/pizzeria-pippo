@@ -10,6 +10,7 @@ export function useMeseroOrders(branchId: string | undefined, waiterName: string
   const [orders, setOrders] = useState<DayOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [connected, setConnected] = useState(true);
+  const [loaded, setLoaded] = useState(false);
 
   const fetchOrders = useCallback(async () => {
     if (!branchId) return;
@@ -17,6 +18,7 @@ export function useMeseroOrders(branchId: string | undefined, waiterName: string
     const data = await PosService.getDayOrders(branchId);
     setOrders(data);
     setLoading(false);
+    setLoaded(true);
   }, [branchId]);
 
   useEffect(() => {
@@ -47,7 +49,8 @@ export function useMeseroOrders(branchId: string | undefined, waiterName: string
 
   useNewIdAlert(
     myOrders.filter((o) => o.kitchen_status === "ready").map((o) => o.id),
-    notifyOrderReady
+    notifyOrderReady,
+    loaded
   );
 
   return { myOrders, loading, refresh: fetchOrders, connected };
