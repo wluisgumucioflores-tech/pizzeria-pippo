@@ -2,47 +2,14 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { PosService } from "../services/pos.service";
+import { PosCatalogCache } from "../services/pos-catalog-cache.service";
+import { requestPersistentStorage } from "@/lib/offline-db";
 import type { Product } from "../types/pos.types";
 import type { Promotion } from "@/lib/promotions";
-import { todayInBolivia } from "@/lib/timezone";
 
 interface VariantMeta {
   category: string | null;
   variantName: string;
-}
-
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
-
-interface PosCache {
-  date: string;
-  branchId: string;
-  cachedAt: number;
-  products: Product[];
-  promotions: Promotion[];
-  useStock: boolean;
-  enableTableNumber: boolean;
-}
-
-function getCached(branchId: string): PosCache | null {
-  try {
-    const raw = sessionStorage.getItem("pos_cache");
-    if (!raw) return null;
-    const cached: PosCache = JSON.parse(raw);
-    if (cached.date !== todayInBolivia() || cached.branchId !== branchId) return null;
-    if (Date.now() - cached.cachedAt > CACHE_TTL_MS) return null;
-    return cached;
-  } catch {
-    return null;
-  }
-}
-
-function setCache(branchId: string, products: Product[], promotions: Promotion[], useStock: boolean, enableTableNumber: boolean) {
-  try {
-    const payload: PosCache = { date: todayInBolivia(), branchId, cachedAt: Date.now(), products, promotions, useStock, enableTableNumber };
-    sessionStorage.setItem("pos_cache", JSON.stringify(payload));
-  } catch {
-    // sessionStorage full or unavailable — continue without cache
-  }
 }
 
 export function usePosProducts(branchId: string | undefined) {
@@ -51,24 +18,41 @@ export function usePosProducts(branchId: string | undefined) {
   const [useStock, setUseStock] = useState(true);
   const [enableTableNumber, setEnableTableNumber] = useState(false);
   const [loading, setLoading] = useState(false);
+  // True when what's on screen came from the cache and the refresh failed —
+  // the cashier can keep selling but prices may be out of date.
+  const [servingCached, setServingCached] = useState(false);
 
   const fetchData = useCallback(async (id: string, skipCache = false) => {
-    const cached = skipCache ? null : getCached(id);
+    const cached = skipCache ? null : await PosCatalogCache.read(id);
     if (cached) {
-      setProducts(cached.products);
-      setPromotions(cached.promotions);
-      setUseStock(cached.useStock);
-      setEnableTableNumber(cached.enableTableNumber);
+      setProducts(cached.catalog.products);
+      setPromotions(cached.catalog.promotions);
+      setUseStock(cached.catalog.useStock);
+      setEnableTableNumber(cached.catalog.enableTableNumber);
+      setServingCached(false);
+      // A fresh cache needs no network round trip at all — this is what lets
+      // the POS open instantly on a slow connection.
+      if (!cached.isStale) return;
     } else {
       setLoading(true);
     }
-    const result = await PosService.getProductsAndPromotions(id);
-    setProducts(result.products);
-    setPromotions(result.promotions);
-    setUseStock(result.useStock);
-    setEnableTableNumber(result.enableTableNumber);
-    setCache(id, result.products, result.promotions, result.useStock, result.enableTableNumber);
-    setLoading(false);
+
+    try {
+      const result = await PosService.getProductsAndPromotions(id);
+      setProducts(result.products);
+      setPromotions(result.promotions);
+      setUseStock(result.useStock);
+      setEnableTableNumber(result.enableTableNumber);
+      setServingCached(false);
+      await PosCatalogCache.write({ branchId: id, ...result });
+    } catch {
+      // This used to have no catch at all, so a failed request left `loading`
+      // stuck at true forever — the POS spinner that never resolved. Now the
+      // cached catalog (if any) stays on screen and the cashier is told.
+      setServingCached(!!cached);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const refresh = useCallback(() => {
@@ -89,7 +73,32 @@ export function usePosProducts(branchId: string | undefined) {
             : variant
         ),
       }));
-      setCache(branchId, next, promotions, useStock, enableTableNumber);
+      void PosCatalogCache.write({ branchId, products: next, promotions, useStock, enableTableNumber });
+      return next;
+    });
+  }, [branchId, promotions, useStock, enableTableNumber]);
+
+  // Offline counterpart of applyStockUpdates: a queued sale gets no server
+  // response to read absolute quantities from, so the sold units are subtracted
+  // locally. Without this the cashier could keep selling the same last unit
+  // while the connection is down.
+  const decrementLocalStock = useCallback((sold: { variant_id: string; qty_physical: number }[]) => {
+    if (!sold.length || !branchId) return;
+    const soldByVariant = new Map<string, number>();
+    for (const item of sold) {
+      soldByVariant.set(item.variant_id, (soldByVariant.get(item.variant_id) ?? 0) + item.qty_physical);
+    }
+    setProducts((prev) => {
+      const next = prev.map((product) => ({
+        ...product,
+        product_variants: product.product_variants.map((variant) => {
+          const qty = soldByVariant.get(variant.id);
+          // Untracked variants (made-to-order) carry no stock_quantity.
+          if (qty === undefined || variant.stock_quantity == null) return variant;
+          return { ...variant, stock_quantity: variant.stock_quantity - qty };
+        }),
+      }));
+      void PosCatalogCache.write({ branchId, products: next, promotions, useStock, enableTableNumber });
       return next;
     });
   }, [branchId, promotions, useStock, enableTableNumber]);
@@ -97,6 +106,12 @@ export function usePosProducts(branchId: string | undefined) {
   useEffect(() => {
     if (branchId) fetchData(branchId);
   }, [branchId, fetchData]);
+
+  // Ask once per session so the browser doesn't evict the cached catalog (and,
+  // more importantly, the sales queue) when disk space runs low.
+  useEffect(() => {
+    void requestPersistentStorage();
+  }, []);
 
   const getVariantPrice = (variant: Product["product_variants"][0], bid: string) => {
     const override = variant.branch_prices?.find((bp) => bp.branch_id === bid);
@@ -151,5 +166,5 @@ export function usePosProducts(branchId: string | undefined) {
     return null;
   }, [products, useStock]);
 
-  return { products, promotions, useStock, enableTableNumber, loading, getVariantPrice, getPromoLabel, getStockQty, refresh, applyStockUpdates };
+  return { products, promotions, useStock, enableTableNumber, loading, servingCached, getVariantPrice, getPromoLabel, getStockQty, refresh, applyStockUpdates, decrementLocalStock };
 }

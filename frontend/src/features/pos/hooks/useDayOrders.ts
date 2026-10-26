@@ -7,7 +7,7 @@ import { useNewIdAlert } from "@/lib/useNewIdAlert";
 import { PosService } from "../services/pos.service";
 import type { DayOrder, PaymentMethod, SplitPayment } from "../types/pos.types";
 
-export function useDayOrders(branchId: string | undefined, showOrders: boolean) {
+export function useDayOrders(branchId: string | undefined) {
   const [dayOrders, setDayOrders] = useState<DayOrder[]>([]);
   const [markingReady, setMarkingReady] = useState<string | null>(null);
   const [cancelModal, setCancelModal] = useState<DayOrder | null>(null);
@@ -16,19 +16,28 @@ export function useDayOrders(branchId: string | undefined, showOrders: boolean) 
   const [paying, setPaying] = useState(false);
   const [addItemsModal, setAddItemsModal] = useState<DayOrder | null>(null);
   const [connected, setConnected] = useState(true);
+  // Gates the ready-alert baseline: nothing beeps until the first load lands.
+  const [loaded, setLoaded] = useState(false);
 
   const fetchDayOrders = useCallback(async (bid: string) => {
     const data = await PosService.getDayOrders(bid);
     setDayOrders(data);
+    setLoaded(true);
   }, []);
 
   useEffect(() => {
     unlockAudioOnFirstInteraction();
   }, []);
 
+  // One full load per branch. From here on the WebSocket below keeps dayOrders
+  // in sync (new orders, kitchen status, resync on reconnect), so confirming a
+  // sale no longer has to refetch the whole day — which got progressively
+  // slower as orders piled up. It also isn't gated on the "Pedidos" tab being
+  // open anymore: the header's pending badge reads dayOrders while the cashier
+  // is still on the sale tab, and used to under-report until the first sale.
   useEffect(() => {
-    if (showOrders && branchId) fetchDayOrders(branchId);
-  }, [showOrders, branchId, fetchDayOrders]);
+    if (branchId) fetchDayOrders(branchId);
+  }, [branchId, fetchDayOrders]);
 
   // Realtime: kitchen_status updates + new orders (ej. creados por un mesero)
   useEffect(() => {
@@ -57,7 +66,8 @@ export function useDayOrders(branchId: string | undefined, showOrders: boolean) 
 
   useNewIdAlert(
     dayOrders.filter((o) => o.kitchen_status === "ready" && !o.cancelled_at).map((o) => o.id),
-    notifyOrderReady
+    notifyOrderReady,
+    loaded
   );
 
   const handleMarkReady = async (orderId: string) => {

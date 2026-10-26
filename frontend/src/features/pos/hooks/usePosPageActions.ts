@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { message } from "antd";
-import { generateUUID } from "@/lib/uuid";
-import { PosService } from "../services/pos.service";
+import { useConfirmSale } from "./useConfirmSale";
+import type { useOfflineSales } from "./useOfflineSales";
 import type { usePosCart } from "./usePosCart";
 import type { usePaymentValidation } from "./usePaymentValidation";
-import type { Product, TicketData, OrderType, Variant, PosTab, PaymentMethod, SplitPayment, DayOrder } from "../types/pos.types";
+import type { Product, Variant, PosTab, DayOrder } from "../types/pos.types";
 import type { CartItem, DiscountedItem, FlavorItem } from "@/lib/promotions";
 
 interface Params {
@@ -16,29 +15,29 @@ interface Params {
   getVariantPrice: (variant: Variant, branchId: string) => number;
   cart: ReturnType<typeof usePosCart>;
   broadcast: (event: string) => void;
-  fetchDayOrders: (branchId: string) => void;
   applyStockUpdates: (updates: { variant_id: string; quantity: number }[]) => void;
+  decrementLocalStock: (sold: { variant_id: string; qty_physical: number }[]) => void;
+  offlineSales: ReturnType<typeof useOfflineSales>;
+  offlineEnabled: boolean;
   paymentValidation: ReturnType<typeof usePaymentValidation>;
   setActiveTab: (tab: PosTab) => void;
 }
 
 export function usePosPageActions({
   branchId, isMobile, products, getVariantPrice, cart,
-  broadcast, fetchDayOrders, applyStockUpdates, paymentValidation, setActiveTab,
+  broadcast, applyStockUpdates, decrementLocalStock, paymentValidation, setActiveTab,
+  offlineSales, offlineEnabled,
 }: Params) {
   const [variantModal, setVariantModal] = useState<Product | null>(null);
-  const [paymentModal, setPaymentModal] = useState(false);
-  const [confirmModal, setConfirmModal] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
-  const [paymentProvider, setPaymentProvider] = useState<string | null>(null);
-  const [payments, setPayments] = useState<SplitPayment[] | null>(null);
-  const [saleNotes, setSaleNotes] = useState<string | null>(null);
-  const [saleTableNumber, setSaleTableNumber] = useState<string | null>(null);
-  const [ticket, setTicket] = useState<TicketData | null>(null);
-  const [confirmLoading, setConfirmLoading] = useState(false);
-  const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
   const [validationModalOpen, setValidationModalOpen] = useState(false);
   const [mobileView, setMobileView] = useState<"catalog" | "cart">("catalog");
+
+  // Closing a sale (payment selection + online/queued submit) lives in its own
+  // hook; this one stays about the catalog and the modals around it.
+  const sale = useConfirmSale({
+    branchId, cart, broadcast, applyStockUpdates, decrementLocalStock,
+    offlineSales, offlineEnabled, setActiveTab,
+  });
 
   const handleProductClick = (product: Product) => {
     const variants = product.product_variants ?? [];
@@ -72,64 +71,6 @@ export function usePosPageActions({
     }
   };
 
-  const handlePaymentConfirm = (
-    orderType: OrderType,
-    method: PaymentMethod,
-    provider: string | null,
-    splitPayments: SplitPayment[] | null,
-    notes: string | null,
-    tableNumber: string | null,
-  ) => {
-    setPaymentMethod(method);
-    setPaymentProvider(provider);
-    setPayments(splitPayments);
-    setSaleNotes(notes);
-    setSaleTableNumber(tableNumber);
-    cart.setOrderType(orderType);
-    setIdempotencyKey(generateUUID());
-    setPaymentModal(false);
-    setConfirmModal(true);
-  };
-
-  const handleConfirmSale = async () => {
-    if (!branchId) {
-      message.error("No hay sucursal seleccionada.");
-      return;
-    }
-    if (!cart.orderType) {
-      message.error("Seleccioná el tipo de pedido antes de confirmar.");
-      return;
-    }
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-    setConfirmLoading(true);
-    try {
-      const result = await PosService.confirmSale(branchId, cart.discountedCart, cart.total, paymentMethod, paymentProvider, cart.orderType, controller.signal, idempotencyKey ?? undefined, payments ?? undefined, saleNotes, saleTableNumber);
-
-      if (result.ok) {
-        broadcast("ORDER_COMPLETE");
-        cart.suppressNextClear();
-        setConfirmModal(false);
-        setPaymentMethod(null);
-        setPaymentProvider(null);
-        setPayments(null);
-        setIdempotencyKey(null);
-        setActiveTab("sale");
-        setTicket({ orderId: result.order_id!, dailyNumber: result.daily_number!, items: cart.discountedCart, total: cart.total, paymentMethod, paymentProvider, payments, orderType: cart.orderType, notes: saleNotes, tableNumber: saleTableNumber });
-        setSaleNotes(null);
-        setSaleTableNumber(null);
-        cart.clearCart();
-        fetchDayOrders(branchId);
-        if (result.stock_updates?.length) applyStockUpdates(result.stock_updates);
-      } else {
-        message.error(`Error al confirmar venta: ${result.error}`, 5);
-      }
-    } finally {
-      clearTimeout(timeout);
-      setConfirmLoading(false);
-    }
-  };
-
   const handleValidatePayment = () => {
     setValidationModalOpen(true);
     paymentValidation.start(cart.total);
@@ -138,7 +79,7 @@ export function usePosPageActions({
   const handleValidationConfirm = () => {
     paymentValidation.cancel();
     setValidationModalOpen(false);
-    handleConfirmSale();
+    sale.handleConfirmSale();
   };
 
   const handleValidationCancel = () => {
@@ -162,7 +103,7 @@ export function usePosPageActions({
       final_price: i.unit_price,
       promo_label: i.promo_label,
     }));
-    setTicket({
+    sale.setTicket({
       orderId: order.id,
       dailyNumber: order.daily_number,
       items,
@@ -178,18 +119,12 @@ export function usePosPageActions({
   };
 
   return {
+    // Spread first so the sale hook's own members stay authoritative.
+    ...sale,
     variantModal, setVariantModal,
-    paymentModal, setPaymentModal,
-    confirmModal, setConfirmModal,
-    paymentMethod, setPaymentMethod,
-    paymentProvider, setPaymentProvider,
-    payments,
-    ticket, setTicket,
-    confirmLoading,
     validationModalOpen,
     mobileView, setMobileView,
     handleProductClick, handleVariantSelect, handlePromoItems, handlePromoSingleVariant,
-    handlePaymentConfirm, handleConfirmSale,
     handleValidatePayment, handleValidationConfirm, handleValidationCancel,
     handlePrintDayOrder,
   };
