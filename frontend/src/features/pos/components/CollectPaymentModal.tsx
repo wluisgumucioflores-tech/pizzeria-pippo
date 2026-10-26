@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { Modal, Button, InputNumber, Typography } from "antd";
 import { ArrowRightOutlined } from "@ant-design/icons";
+import { cashDueFor } from "@/lib/cash-change";
 import { OptionCard } from "./OptionCard";
+import { CashChangeCalculator } from "./CashChangeCalculator";
+import { useCashChange } from "../hooks/useCashChange";
 import type { DayOrder, PaymentMethod, SplitPayment } from "../types/pos.types";
 
 const { Text } = Typography;
@@ -22,10 +25,22 @@ export function CollectPaymentModal({ order, submitting, onClose, onConfirm }: P
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
   const [cashAmount, setCashAmount] = useState(0);
 
-  if (!order) return null;
-  const total = Number(order.total);
+  // Everything below is derived BEFORE the `!order` early return so the hooks
+  // underneath always run — React forbids a conditional hook call.
+  const total = order ? Number(order.total) : 0;
   const qrAmount = Math.round((total - cashAmount) * 100) / 100;
   const mixtoValid = paymentMethod !== "mixto" || (cashAmount > 0 && qrAmount > 0);
+  const payments: SplitPayment[] | null =
+    paymentMethod === "mixto"
+      ? [
+          { method: "efectivo", amount: cashAmount },
+          { method: "qr", amount: qrAmount },
+        ]
+      : null;
+  const cashDue = order ? cashDueFor(paymentMethod, total, payments) : null;
+  const cashChange = useCashChange(cashDue);
+
+  if (!order) return null;
 
   const reset = () => {
     setPaymentMethod(null);
@@ -48,18 +63,11 @@ export function CollectPaymentModal({ order, submitting, onClose, onConfirm }: P
 
   const handleConfirm = () => {
     if (!paymentMethod || !mixtoValid) return;
-    const payments: SplitPayment[] | null =
-      paymentMethod === "mixto"
-        ? [
-            { method: "efectivo", amount: cashAmount },
-            { method: "qr", amount: qrAmount },
-          ]
-        : null;
     onConfirm(paymentMethod, payments);
   };
 
   return (
-    <Modal title="Cobrar pedido" open={!!order} onCancel={handleClose} footer={null} width={420}>
+    <Modal centered title="Cobrar pedido" open={!!order} onCancel={handleClose} footer={null} width={420}>
       <div className="flex flex-col gap-3 mt-3">
         <div className="bg-orange-50 rounded-lg px-4 py-3">
           <Text type="secondary" className="text-xs block" style={{ letterSpacing: 1 }}>
@@ -96,6 +104,17 @@ export function CollectPaymentModal({ order, submitting, onClose, onConfirm }: P
             </div>
             {!mixtoValid && <Text type="danger" className="text-xs mt-2 block">Ambos montos deben ser mayores a 0</Text>}
           </div>
+        )}
+
+        {cashDue !== null && mixtoValid && (
+          <CashChangeCalculator
+            amountDue={cashDue}
+            received={cashChange.received}
+            change={cashChange.change}
+            insufficient={cashChange.insufficient}
+            suggestions={cashChange.suggestions}
+            onReceivedChange={cashChange.setReceived}
+          />
         )}
 
         <Button

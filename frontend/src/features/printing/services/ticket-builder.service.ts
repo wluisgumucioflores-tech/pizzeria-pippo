@@ -87,6 +87,22 @@ export function buildTicketBytes(
         : "-";
   parts.push(encodeLine(`Pago: ${payment}`));
 
+  // Cash handed over + change returned, only when the cashier used the change
+  // calculator on this sale. Neither is stored with the order, so a reprint
+  // from "Pedidos del día" simply omits both lines.
+  if (ticket.cashReceived != null) {
+    for (const line of formatRow("Efectivo", `Bs ${ticket.cashReceived.toFixed(2)}`, width)) {
+      parts.push(encodeLine(line));
+    }
+  }
+  if (ticket.changeGiven != null && ticket.changeGiven > 0) {
+    parts.push(CMD.BOLD_ON);
+    for (const line of formatRow("CAMBIO", `Bs ${ticket.changeGiven.toFixed(2)}`, width)) {
+      parts.push(encodeLine(line));
+    }
+    parts.push(CMD.BOLD_OFF);
+  }
+
   if (ticket.notes) {
     parts.push(encodeLine(divider(width)));
     parts.push(encodeLine("Nota:"));

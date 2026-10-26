@@ -37,10 +37,12 @@ interface Props {
 export function TicketModal({ ticket, onClose, onPrint, printing, canPrint }: Props) {
   const t = useTranslations("pos");
   const tt = useTranslations("pos.ticketModal");
+  const tcc = useTranslations("pos.cashChange");
   const labels = { cash: t("paymentLabel.cash"), qr: t("paymentLabel.qr"), online: t("paymentLabel.online") };
 
   return (
     <Modal
+      centered
       title={tt("title")}
       open={!!ticket}
       onCancel={onClose}
@@ -100,6 +102,20 @@ export function TicketModal({ ticket, onClose, onPrint, printing, canPrint }: Pr
             <Text type="secondary">{tt("paymentMethodLabel")}</Text>
             <Text>{paymentLabel(ticket.paymentMethod, ticket.paymentProvider, ticket.payments, labels)}</Text>
           </div>
+          {/* Only present when the cashier used the change calculator on this
+              sale — a ticket reprinted from "Pedidos del día" has neither. */}
+          {ticket.cashReceived != null && (
+            <div className="flex justify-between">
+              <Text type="secondary">{tcc("cashReceivedTicket")}</Text>
+              <Text>Bs {ticket.cashReceived.toFixed(2)}</Text>
+            </div>
+          )}
+          {ticket.changeGiven != null && ticket.changeGiven > 0 && (
+            <div className="flex justify-between">
+              <Text strong className="!text-green-700">{tcc("changeTicket")}</Text>
+              <Text strong className="!text-green-700">Bs {ticket.changeGiven.toFixed(2)}</Text>
+            </div>
+          )}
           {ticket.notes && (
             <>
               <Divider className="!my-2" />
