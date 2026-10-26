@@ -17,7 +17,17 @@ Falta solo la Fase 6: la sección del admin con el historial de pedidos online y
    `2`. Es un conteo de saltos y no un `true` a propósito: ver el comentario en
    `backend/src/common/utils/trust-proxy.ts`.
 2. **Migración `076` en Supabase** — solo está en local.
-3. **`manifest.json`** — un cliente que entre por el QR puede instalar el PWA del admin. Ver `roadmap-fases.md`, Fase 4.
+3. ~~**`manifest.json`**~~ ✅ **Resuelto.** `src/app/order/layout.tsx` declara
+   `manifest: null` y `appleWebApp: null`, así que la ruta pública ya no hereda
+   el manifest del admin y el navegador no ofrece instalar nada.
+
+   **Queda abierto, aparte:** `next-pwa` inyecta `register.js` en `main.js`, que
+   carga en toda página, así que el **service worker sí se registra** en la ruta
+   del QR. No se tocó a propósito — es el mismo SW del que depende el cobro
+   offline del POS, y acotarle el scope arriesga romper eso. El `runtimeCaching`
+   solo cubre `/pos`, `/display`, estáticos de Next e imágenes de Supabase, así
+   que no precachea nada del admin; el efecto real en el celular del cliente es
+   que el menú carga más rápido la segunda vez.
 4. **Deuda de tamaño**: `pos/page.tsx` en 206 líneas (límite 100, violación preexistente) y `PosHeader.tsx` exactamente en 200 (límite 200). Ver `roadmap-fases.md`, Fase 5.
 
 ## Objetivo
