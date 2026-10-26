@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Button, Dropdown, Tag, Typography } from "antd";
-import { LogoutOutlined, ReloadOutlined, ShoppingCartOutlined, UnorderedListOutlined, BarChartOutlined, GiftOutlined, KeyOutlined, UserOutlined } from "@ant-design/icons";
+import { Button, Dropdown, Tag, Tooltip, Typography } from "antd";
+import { LogoutOutlined, ReloadOutlined, ShoppingCartOutlined, UnorderedListOutlined, BarChartOutlined, GiftOutlined, KeyOutlined, UserOutlined, FullscreenOutlined, FullscreenExitOutlined, QrcodeOutlined } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
 import { formatTimeBolivia } from "@/lib/timezone";
 import { useIsMobile } from "@/lib/useIsMobile";
+import { useFullscreenToggle } from "@/lib/useFullscreenToggle";
 import { LocaleSwitcher } from "@/features/i18n/components/LocaleSwitcher";
 import { getPrinterConfig } from "@/features/printing/services/printer-config.service";
 import { DEFAULT_TICKET_BUSINESS_NAME } from "@/features/printing/constants/printing.constants";
@@ -27,6 +28,9 @@ interface Props {
   onChangePassword: () => void;
   onLogout: () => void;
   printerSlot?: React.ReactNode;
+  offlineSlot?: React.ReactNode;
+  /** Pedidos online pendientes. `null` = el negocio no tiene el módulo → el tab no existe. */
+  onlineOrdersCount?: number | null;
 }
 
 function ConnectionBadge({ connected }: { connected: boolean }) {
@@ -38,13 +42,15 @@ function ConnectionBadge({ connected }: { connected: boolean }) {
   );
 }
 
-export function PosHeader({ identity, branches, activeTab, pendingCount, promoCount, connected, refreshing, onRefresh, onTabChange, onChangePassword, onLogout, printerSlot }: Props) {
+export function PosHeader({ identity, branches, activeTab, pendingCount, promoCount, connected, refreshing, onRefresh, onTabChange, onChangePassword, onLogout, printerSlot, offlineSlot, onlineOrdersCount }: Props) {
   const branchName = branches.find((b) => b.id === identity.branch_id)?.name;
   const [currentTime, setCurrentTime] = useState("");
   const [businessName, setBusinessName] = useState(DEFAULT_TICKET_BUSINESS_NAME);
   const isMobile = useIsMobile();
+  const showOnlineTab = onlineOrdersCount !== null && onlineOrdersCount !== undefined;
   const t = useTranslations("pos");
   const ta = useTranslations("account");
+  const fullscreen = useFullscreenToggle();
 
   useEffect(() => {
     const tick = () => setCurrentTime(formatTimeBolivia(new Date()));
@@ -94,12 +100,27 @@ export function PosHeader({ identity, branches, activeTab, pendingCount, promoCo
       {isMobile && tab === "orders" && t("tabs.orders")}
       {isMobile && tab === "sale" && t("tabs.sale")}
       {isMobile && tab === "summary" && t("tabs.summary")}
+      {isMobile && tab === "online" && t("tabs.online")}
       {badge != null && badge > 0 && (
         <span style={{ background: "#ef4444", color: "#fff", fontSize: 10, borderRadius: 10, padding: "1px 5px", marginLeft: 2 }}>
           {badge}
         </span>
       )}
     </button>
+  );
+
+  // Hides the OS status/navigation bars via the Fullscreen API — the only
+  // web-standard way to do that from a REGULAR browser tab (not installed).
+  // Hidden entirely when unsupported instead of showing a dead button.
+  const fullscreenButton = fullscreen.supported && (
+    <Tooltip title={fullscreen.isFullscreen ? t("header.exitFullscreen") : t("header.enterFullscreen")}>
+      <Button
+        size={isMobile ? "small" : "middle"}
+        icon={fullscreen.isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
+        onClick={fullscreen.toggle}
+        style={isMobile ? { flexShrink: 0, padding: "0 8px" } : undefined}
+      />
+    </Tooltip>
   );
 
   if (isMobile) {
@@ -113,7 +134,9 @@ export function PosHeader({ identity, branches, activeTab, pendingCount, promoCo
           <div style={{ flex: 1 }} />
           <Text style={{ fontFamily: "monospace", fontSize: 13, fontWeight: 600, color: "#374151", flexShrink: 0 }}>{currentTime}</Text>
           <ConnectionBadge connected={connected} />
+          {offlineSlot}
           {printerSlot}
+          {fullscreenButton}
           <Button
             size="small"
             icon={<ReloadOutlined spin={refreshing} />}
@@ -131,6 +154,7 @@ export function PosHeader({ identity, branches, activeTab, pendingCount, promoCo
           {tabBtn("sale", t("tabs.sale"), <ShoppingCartOutlined />)}
           {tabBtn("promos", t("tabs.promosShort"), <GiftOutlined />, promoCount)}
           {tabBtn("orders", t("tabs.orders"), <UnorderedListOutlined />, pendingCount)}
+          {showOnlineTab && tabBtn("online", t("tabs.online"), <QrcodeOutlined />, onlineOrdersCount!)}
           {tabBtn("summary", t("tabs.summary"), <BarChartOutlined />)}
         </div>
       </div>
@@ -152,7 +176,9 @@ export function PosHeader({ identity, branches, activeTab, pendingCount, promoCo
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Text style={{ fontFamily: "monospace", fontSize: 16, fontWeight: 600, color: "#374151" }}>{currentTime}</Text>
           <ConnectionBadge connected={connected} />
+          {offlineSlot}
           {printerSlot}
+          {fullscreenButton}
           <Button icon={<ReloadOutlined spin={refreshing} />} onClick={onRefresh} disabled={refreshing} />
           <LocaleSwitcher />
           <Dropdown trigger={["click"]} menu={userMenu}>
@@ -166,6 +192,7 @@ export function PosHeader({ identity, branches, activeTab, pendingCount, promoCo
         {tabBtn("sale", t("tabs.sale"), <ShoppingCartOutlined />)}
         {tabBtn("promos", t("tabs.promos"), <GiftOutlined />, promoCount)}
         {tabBtn("orders", t("tabs.ordersFull"), <UnorderedListOutlined />, pendingCount)}
+        {showOnlineTab && tabBtn("online", t("tabs.onlineFull"), <QrcodeOutlined />, onlineOrdersCount!)}
         {tabBtn("summary", t("tabs.summary"), <BarChartOutlined />)}
       </div>
     </div>

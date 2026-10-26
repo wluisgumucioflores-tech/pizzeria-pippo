@@ -10,6 +10,10 @@ import { usePosBroadcast } from "@/features/pos/hooks/usePosBroadcast";
 import { useDayOrders } from "@/features/pos/hooks/useDayOrders";
 import { usePaymentValidation } from "@/features/pos/hooks/usePaymentValidation";
 import { usePosPageActions } from "@/features/pos/hooks/usePosPageActions";
+import { useOfflineSales } from "@/features/pos/hooks/useOfflineSales";
+import { useOnlineOrders } from "@/features/online-orders/hooks/useOnlineOrders";
+import { OnlineOrdersPanel } from "@/features/online-orders/components/OnlineOrdersPanel";
+import { OfflineQueueBadge } from "@/features/pos/components/OfflineQueueBadge";
 import { PosHeader } from "@/features/pos/components/PosHeader";
 import type { PosTab } from "@/features/pos/types/pos.types";
 import { PosMainArea } from "@/features/pos/components/PosMainArea";
@@ -27,7 +31,7 @@ export default function PosPage() {
   const t = useTranslations("pos");
   const { identity, branches, effectiveBranchId, isAdminChoosingBranch, selectBranch, handleLogout } = usePosIdentity();
   const { broadcast } = usePosBroadcast();
-  const { products, promotions, useStock, enableTableNumber, loading, getVariantPrice, getPromoLabel, getStockQty, refresh: refreshProducts, applyStockUpdates } = usePosProducts(effectiveBranchId ?? undefined);
+  const { products, promotions, useStock, enableTableNumber, loading, getVariantPrice, getPromoLabel, getStockQty, refresh: refreshProducts, applyStockUpdates, decrementLocalStock, servingCached } = usePosProducts(effectiveBranchId ?? undefined);
   const cart = usePosCart(promotions, effectiveBranchId ?? undefined, broadcast, getStockQty);
   const [activeTab, setActiveTab] = useState<PosTab>("sale");
   const [refreshing, setRefreshing] = useState(false);
@@ -38,7 +42,7 @@ export default function PosPage() {
     payModal, paying, openPayModal, closePayModal, handlePayOrder,
     addItemsModal, openAddItemsModal, closeAddItemsModal, handleItemsAdded,
     connected,
-  } = useDayOrders(effectiveBranchId ?? undefined, activeTab !== "sale");
+  } = useDayOrders(effectiveBranchId ?? undefined);
   const printer = usePrinter();
   const paymentValidation = usePaymentValidation(effectiveBranchId ?? undefined);
   const changePassword = useChangePassword();
@@ -50,6 +54,16 @@ export default function PosPage() {
     setRefreshing(false);
   };
 
+  // Off unless the superadmin enabled the offlineSales module for this
+  // business — with it off, useOfflineSales does nothing at all.
+  const offlineEnabled = identity?.offline_sales === true;
+  const offlineSales = useOfflineSales(effectiveBranchId ?? undefined, offlineEnabled);
+
+  // Same contract for the QR requests tab: module off → the hook no-ops and
+  // the tab isn't rendered at all (count stays null).
+  const onlineEnabled = identity?.online_orders === true;
+  const onlineOrders = useOnlineOrders(effectiveBranchId ?? undefined, onlineEnabled);
+
   const actions = usePosPageActions({
     branchId: effectiveBranchId ?? "",
     isMobile,
@@ -57,15 +71,17 @@ export default function PosPage() {
     getVariantPrice,
     cart,
     broadcast,
-    fetchDayOrders,
     applyStockUpdates,
+    decrementLocalStock,
+    offlineSales,
+    offlineEnabled,
     paymentValidation,
     setActiveTab,
   });
 
   if (!identity) {
     return (
-      <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f5f5f5" }}>
+      <div className="app-shell-height" style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "#f5f5f5" }}>
         <div style={{ color: "#9ca3af" }}>{t("loading")}</div>
       </div>
     );
@@ -81,7 +97,7 @@ export default function PosPage() {
   const activePromotions = getActivePromotions(promotions, branchId);
 
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "#f5f5f5", overflow: "hidden" }}>
+    <div className="app-shell-height pb-safe" style={{ display: "flex", flexDirection: "column", background: "#f5f5f5", overflow: "hidden" }}>
       <PosHeader
         identity={identity}
         branches={branches}
@@ -94,6 +110,14 @@ export default function PosPage() {
         onTabChange={setActiveTab}
         onChangePassword={changePassword.openModal}
         onLogout={handleLogout}
+        onlineOrdersCount={onlineEnabled ? onlineOrders.count : null}
+        offlineSlot={
+          <OfflineQueueBadge
+            snapshot={offlineSales.snapshot}
+            servingCached={servingCached}
+            onSyncNow={() => void offlineSales.syncNow()}
+          />
+        }
         printerSlot={
           <PrinterStatusButton
             status={printer.status}
@@ -127,6 +151,17 @@ export default function PosPage() {
 
       {activeTab === "orders" && (
         <DayOrdersPanel dayOrders={dayOrders} markingReady={markingReady} onMarkReady={handleMarkReady} onCancel={openCancelModal} onPay={openPayModal} onPrint={actions.handlePrintDayOrder} onAddItems={openAddItemsModal} />
+      )}
+
+      {activeTab === "online" && onlineEnabled && (
+        <OnlineOrdersPanel
+          orders={onlineOrders.orders}
+          loaded={onlineOrders.loaded}
+          acting={onlineOrders.acting}
+          onRefresh={() => void onlineOrders.refresh()}
+          onConfirm={(id) => void onlineOrders.confirm(id)}
+          onReject={(id, reason) => void onlineOrders.reject(id, reason)}
+        />
       )}
 
       {activeTab === "summary" && (
