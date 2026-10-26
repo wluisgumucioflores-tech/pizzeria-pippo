@@ -42,3 +42,13 @@ export const UNCATEGORIZED_ID = "__sin_categoria__";
 // Below this many products the whole menu fits in a couple of scrolls and a
 // search box is just a field taking up the top of the screen.
 export const SEARCH_MIN_PRODUCTS = 8;
+
+// antd Tag colours for the admin history. Confirmed is the only "good"
+// outcome; expired is grey rather than red because nobody did anything wrong,
+// the request just went unattended.
+export const STATUS_TAG_COLOR: Record<string, string> = {
+  pending: "gold",
+  confirmed: "green",
+  rejected: "red",
+  expired: "default",
+};

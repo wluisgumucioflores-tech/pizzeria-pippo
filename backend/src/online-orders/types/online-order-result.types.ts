@@ -29,6 +29,17 @@ export interface OnlineOrderResult {
   items: OnlineOrderLine[];
 }
 
+export interface OnlineOrdersHistoryResult {
+  items: OnlineOrderResult[];
+  /** Rows matching the filter, ignoring pagination — drives the pager. */
+  count: number;
+  /**
+   * Sum of `total` over every row matching the filter, NOT just the page.
+   * Paginating a total would make it lie as soon as there are two pages.
+   */
+  total_amount: number;
+}
+
 export interface ConfirmOnlineOrderResult {
   order_id: string;
   daily_number: number;

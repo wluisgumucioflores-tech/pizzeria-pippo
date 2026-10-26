@@ -44,7 +44,8 @@
     "employees": "Empleados",
     "attendance": "Asistencia",
     "reports": "Reportes",
-    "settings": "Configuración"
+    "settings": "Configuración",
+    "onlineOrders": "Pedidos online"
   },
   "localeSwitcher": {
     "es": "ES",
@@ -1551,5 +1552,38 @@
     "refreshing": "Consultando…",
     "lastChecked": "Consultado a las {time}",
     "forgetOrder": "Quitar de la lista"
+  },
+  "onlineOrdersAdmin": {
+    "filters": {
+      "branch": "Sucursal",
+      "allBranches": "Todas las sucursales",
+      "status": "Estado",
+      "allStatuses": "Todos los estados",
+      "dateRange": "Rango de fechas"
+    },
+    "summary": {
+      "count": "Pedidos",
+      "totalAmount": "Total de los pedidos listados"
+    },
+    "columns": {
+      "reference": "Referencia",
+      "branch": "Sucursal",
+      "customer": "Cliente",
+      "createdAt": "Fecha",
+      "status": "Estado",
+      "sale": "N° de ticket",
+      "total": "Total"
+    },
+    "status": {
+      "pending": "Pendiente",
+      "confirmed": "Confirmado",
+      "rejected": "Rechazado",
+      "expired": "Vencido"
+    },
+    "detail": {
+      "customerNote": "Nota del cliente",
+      "rejectReason": "Motivo del rechazo",
+      "expiredHint": "Nadie atendió este pedido antes del tiempo configurado y se descartó solo."
+    }
   }
 }

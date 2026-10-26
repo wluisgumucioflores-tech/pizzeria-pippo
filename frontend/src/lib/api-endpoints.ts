@@ -109,6 +109,7 @@ export const API_ENDPOINTS = {
     publicCreate: "/public/online-orders",
     publicStatus: (token: string) => `/public/online-orders/${token}`,
     byBranch: (branchId: string) => `/online-orders?branchId=${branchId}`,
+    history: (query: string) => `/online-orders/history${query}`,
     confirm: (id: string) => `/online-orders/${id}/confirm`,
     reject: (id: string) => `/online-orders/${id}/reject`,
   },

@@ -10,6 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { OrdersService } from '../orders/orders.service';
 import { OrdersGateway } from '../orders/realtime/orders.gateway';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
+import { DEFAULT_HISTORY_PAGE_SIZE } from './dto/online-orders-history-query.dto';
 
 const dec = (n: number) => ({ toNumber: () => n });
 
@@ -24,6 +25,8 @@ describe('OnlineOrdersService', () => {
       findMany: jest.Mock;
       findUnique: jest.Mock;
       updateMany: jest.Mock;
+      count: jest.Mock;
+      aggregate: jest.Mock;
     };
   };
   let ordersService: { create: jest.Mock };
@@ -71,6 +74,8 @@ describe('OnlineOrdersService', () => {
         findMany: jest.fn().mockResolvedValue([]),
         findUnique: jest.fn().mockResolvedValue(storedOrder()),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        count: jest.fn().mockResolvedValue(0),
+        aggregate: jest.fn().mockResolvedValue({ _sum: { total: null } }),
       },
     };
     ordersService = {
@@ -168,6 +173,140 @@ describe('OnlineOrdersService', () => {
           unit_price: 75,
         },
       ]);
+    });
+  });
+
+  describe('history', () => {
+    it('rechaza si el negocio no tiene el módulo', async () => {
+      await expect(service.history({}, sinModulo)).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    // Sin filtros contesta "todo lo que recibió este negocio", acotado por
+    // businessId y NO por sucursal — a diferencia de list(), que es la cola
+    // del cajero de una sucursal.
+    it('sin filtros consulta por negocio, más nuevo primero y con el tope por defecto', async () => {
+      await service.history({}, cajero);
+
+      expect(prisma.onlineOrder.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { businessId: 'biz1' },
+          orderBy: { createdAt: 'desc' },
+          take: DEFAULT_HISTORY_PAGE_SIZE,
+          skip: 0,
+        }),
+      );
+    });
+
+    // A diferencia de list(), acá NO se filtra por expiresAt ni por status:
+    // el historial tiene que mostrar los vencidos y rechazados, que son
+    // justamente los que el cajero nunca llegó a ver.
+    it('no esconde los vencidos ni los resueltos', async () => {
+      await service.history({}, cajero);
+
+      const { where } = prisma.onlineOrder.findMany.mock.calls[0][0];
+      expect(where.expiresAt).toBeUndefined();
+      expect(where.status).toBeUndefined();
+    });
+
+    it('filtra por estado, sucursal y rango de fechas', async () => {
+      await service.history(
+        {
+          branchId: 'br1',
+          status: 'confirmed',
+          from: '2026-10-01T00:00:00.000Z',
+          to: '2026-10-31T23:59:59.000Z',
+        },
+        cajero,
+      );
+
+      expect(prisma.onlineOrder.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            businessId: 'biz1',
+            branchId: 'br1',
+            status: 'confirmed',
+            createdAt: {
+              gte: new Date('2026-10-01T00:00:00.000Z'),
+              lte: new Date('2026-10-31T23:59:59.000Z'),
+            },
+          },
+        }),
+      );
+    });
+
+    it('acepta un rango abierto de un solo lado', async () => {
+      await service.history({ from: '2026-10-01T00:00:00.000Z' }, cajero);
+
+      const { where } = prisma.onlineOrder.findMany.mock.calls[0][0];
+      expect(where.createdAt).toEqual({
+        gte: new Date('2026-10-01T00:00:00.000Z'),
+      });
+    });
+
+    // Lo más importante de todo el historial: el total NO puede ser la suma de
+    // la página. Con dos páginas, un total paginado miente.
+    it('el total sale del aggregate sobre todo el filtro, no de la página', async () => {
+      // history() incluye la relación variant→product, a diferencia de
+      // confirm() que solo pide items — así que el row tiene que traerla.
+      prisma.onlineOrder.findMany.mockResolvedValue([
+        storedOrder({
+          items: [
+            {
+              variantId: 'v1',
+              qty: 2,
+              unitPrice: dec(75),
+              variant: { name: 'Grande', product: { name: 'Muzzarella' } },
+            },
+          ],
+        }),
+      ]);
+      prisma.onlineOrder.count.mockResolvedValue(87);
+      prisma.onlineOrder.aggregate.mockResolvedValue({
+        _sum: { total: dec(9999) },
+      });
+
+      const result = await service.history({ limit: 1 }, cajero);
+
+      expect(result.items).toHaveLength(1);
+      expect(result.count).toBe(87);
+      expect(result.total_amount).toBe(9999);
+      // El aggregate tiene que usar el MISMO where que la página, si no el
+      // total no se corresponde con lo listado.
+      expect(prisma.onlineOrder.aggregate).toHaveBeenCalledWith({
+        where: { businessId: 'biz1' },
+        _sum: { total: true },
+      });
+    });
+
+    it('devuelve total 0 cuando no hay nada que sumar', async () => {
+      prisma.onlineOrder.aggregate.mockResolvedValue({ _sum: { total: null } });
+
+      const result = await service.history({}, cajero);
+
+      expect(result.total_amount).toBe(0);
+      expect(result.items).toEqual([]);
+    });
+
+    it('respeta limit y offset', async () => {
+      await service.history({ limit: 10, offset: 30 }, cajero);
+
+      expect(prisma.onlineOrder.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ take: 10, skip: 30 }),
+      );
+    });
+
+    // Pasar el id de una sucursal ajena no puede devolver sus pedidos.
+    it('no deja consultar una sucursal de otro negocio', async () => {
+      prisma.branch.findUnique.mockResolvedValue({
+        businessId: 'OTRO-NEGOCIO',
+      });
+
+      await expect(
+        service.history({ branchId: 'br-ajena' }, cajero),
+      ).rejects.toThrow(NotFoundException);
+      expect(prisma.onlineOrder.findMany).not.toHaveBeenCalled();
     });
   });
 

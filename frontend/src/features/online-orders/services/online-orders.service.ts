@@ -2,11 +2,14 @@ import { io, type Socket } from "socket.io-client";
 import { getToken } from "@/lib/auth";
 import { nestFetch } from "@/lib/nestFetch";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
+import { buildHistoryQuery } from "../lib/history-query";
 import type {
   ConfirmOnlineOrderResult,
   OnlineOrderCreatedEvent,
   OnlineOrderResolvedEvent,
   OnlineOrderRow,
+  OnlineOrdersHistory,
+  OnlineOrdersHistoryFilters,
 } from "../types/manage.types";
 
 const NEST_API_URL = process.env.NEXT_PUBLIC_NEST_API_URL;
@@ -28,6 +31,20 @@ export const OnlineOrdersService = {
     } catch {
       return [];
     }
+  },
+
+  // Admin history. Unlike list() this DOES throw: the admin page shows a real
+  // error state, and silently rendering an empty history with a Bs 0.00 total
+  // would read as "nobody ordered" instead of "the request failed".
+  async history(
+    filters: OnlineOrdersHistoryFilters,
+    page: number,
+  ): Promise<OnlineOrdersHistory> {
+    const res = await nestFetch(
+      API_ENDPOINTS.onlineOrders.history(buildHistoryQuery(filters, page)),
+    );
+    if (!res.ok) throw new Error("No se pudo cargar el historial de pedidos");
+    return res.json();
   },
 
   async confirm(id: string): Promise<ConfirmOnlineOrderResult> {

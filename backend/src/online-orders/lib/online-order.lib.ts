@@ -4,6 +4,22 @@
 // testable and shared between the public endpoints (Fase 2) and the
 // management ones (Fase 3).
 
+// Mirrors the online_orders_status_check CHECK constraint in migration 076 —
+// the database is the authority on this list, this is just how the DTOs
+// validate a filter without a round trip.
+//
+// Deliberately NOT in packages/shared, even though the frontend has the same
+// four values: that package is consumed as a compiled dist, and adding an
+// export there without rebuilding it would break both typechecks.
+export const ONLINE_ORDER_STATUSES = [
+  'pending',
+  'confirmed',
+  'rejected',
+  'expired',
+] as const;
+
+export type OnlineOrderStatus = (typeof ONLINE_ORDER_STATUSES)[number];
+
 export interface PricedLine {
   productName: string;
   variantName: string;

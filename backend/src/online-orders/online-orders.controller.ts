@@ -15,6 +15,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import { OnlineOrdersService } from './online-orders.service';
 import { ListOnlineOrdersQueryDto } from './dto/list-online-orders-query.dto';
+import { OnlineOrdersHistoryQueryDto } from './dto/online-orders-history-query.dto';
 import { RejectOnlineOrderDto } from './dto/reject-online-order.dto';
 
 // MANAGEMENT controller — authenticated, admin/cajero only. The customer-facing
@@ -32,6 +33,17 @@ export class OnlineOrdersController {
     @CurrentUser() user: CurrentUserPayload,
   ) {
     return this.service.list(query.branchId, user);
+  }
+
+  // Admin history: every status, optional filters, plus the total of the
+  // filtered set. Distinct from GET / which is strictly the cashier's
+  // actionable queue.
+  @Get('history')
+  history(
+    @Query() query: OnlineOrdersHistoryQueryDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.service.history(query, user);
   }
 
   // Creates the actual sale (order_type 'online', unpaid) and links it.

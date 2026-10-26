@@ -28,6 +28,32 @@ export interface OnlineOrderRow {
   items: OnlineOrderRowItem[];
 }
 
+/** Los cuatro estados posibles, iguales al CHECK de online_orders en la 076. */
+export const ONLINE_ORDER_STATUSES = [
+  "pending",
+  "confirmed",
+  "rejected",
+  "expired",
+] as const;
+
+export type OnlineOrderStatusFilter = (typeof ONLINE_ORDER_STATUSES)[number];
+
+export interface OnlineOrdersHistoryFilters {
+  /** Vacío = todas las sucursales del negocio. */
+  branchId?: string;
+  status?: OnlineOrderStatusFilter;
+  from?: string;
+  to?: string;
+}
+
+export interface OnlineOrdersHistory {
+  items: OnlineOrderRow[];
+  /** Filas que matchean el filtro, sin paginar — maneja el paginador. */
+  count: number;
+  /** Suma de `total` sobre TODO el filtro, no solo la página visible. */
+  total_amount: number;
+}
+
 export interface ConfirmOnlineOrderResult {
   order_id: string;
   daily_number: number;

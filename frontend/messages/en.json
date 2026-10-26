@@ -44,7 +44,8 @@
     "employees": "Employees",
     "attendance": "Attendance",
     "reports": "Reports",
-    "settings": "Settings"
+    "settings": "Settings",
+    "onlineOrders": "Online orders"
   },
   "localeSwitcher": {
     "es": "ES",
@@ -1551,5 +1552,38 @@
     "refreshing": "Checking…",
     "lastChecked": "Checked at {time}",
     "forgetOrder": "Remove from list"
+  },
+  "onlineOrdersAdmin": {
+    "filters": {
+      "branch": "Branch",
+      "allBranches": "All branches",
+      "status": "Status",
+      "allStatuses": "All statuses",
+      "dateRange": "Date range"
+    },
+    "summary": {
+      "count": "Orders",
+      "totalAmount": "Total of listed orders"
+    },
+    "columns": {
+      "reference": "Reference",
+      "branch": "Branch",
+      "customer": "Customer",
+      "createdAt": "Date",
+      "status": "Status",
+      "sale": "Ticket #",
+      "total": "Total"
+    },
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "rejected": "Rejected",
+      "expired": "Expired"
+    },
+    "detail": {
+      "customerNote": "Customer note",
+      "rejectReason": "Rejection reason",
+      "expiredHint": "Nobody handled this order within the configured time and it was discarded."
+    }
   }
 }

@@ -15,6 +15,7 @@ import {
   SettingOutlined,
   IdcardOutlined,
   ScheduleOutlined,
+  QrcodeOutlined,
 } from "@ant-design/icons";
 
 interface ResourceDef {
@@ -71,6 +72,15 @@ export function buildAdminResources(t: (key: string) => string, enabledModules: 
       ? [
           { name: "employees", list: "/employees", meta: { label: t("employees"), icon: <IdcardOutlined /> } },
           { name: "attendance", list: "/attendance", meta: { label: t("attendance"), icon: <ScheduleOutlined /> } },
+        ]
+      : []),
+    ...(enabledModules.onlineOrders
+      ? [
+          {
+            name: "online-orders",
+            list: "/online-orders",
+            meta: { label: t("onlineOrders"), icon: <QrcodeOutlined /> },
+          },
         ]
       : []),
     { name: "reports", list: "/reports", meta: { label: t("reports"), icon: <BarChartOutlined /> } },

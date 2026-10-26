@@ -15,7 +15,7 @@ Ver `feature.md` para objetivo, actores, flujo y decisiones. Este documento tien
 | **5b** | QR por sucursal en el admin de Sucursales + ruta renombrada a `/order` | 4 | ✅ Hecho |
 | **5c** | UX/UI del menú del cliente: grilla de tarjetas, buscador, stepper, precios | 4 | ✅ Hecho |
 | **5d** | Tabs inferiores + historial en localStorage + **se eliminó el polling** | 5c | ✅ Hecho |
-| **6** | Admin: sección en el sidebar con el historial y el total de precios | 3 | ⏳ Pendiente |
+| **6** | Admin: sección en el sidebar con el historial y el total de precios | 3 | ✅ Hecho |
 
 Orden de ejecución = orden numérico, sin saltos. Las fases 4/5/6 consumen el mismo backend (2 y 3), así que a partir de ahí el orden es negociable si hace falta probar algo antes.
 
@@ -561,25 +561,94 @@ cambiar el entorno de toda la suite (que la haría más lenta).
 
 ---
 
-## Fase 6 — Admin
+## Fase 6 — Admin ✅
 
-### Qué se hace
+### Qué se hizo
 
-- Resource nuevo en `frontend/src/app/(admin)/admin-resources.tsx`, condicionado a `enabledModules.onlineOrders` (mismo patrón que `stock`/`employees`)
-- Página con la lista de pedidos online: filtro por estado y sucursal, **total de precios**, confirmar/rechazar
-- Columna de venta asociada para los confirmados, que lleve al pedido real
-- **Generación del QR por sucursal**: mostrarlo, descargarlo para imprimir, y copiar el link
-- Traducciones
+**Backend — endpoint nuevo `GET /online-orders/history`:**
+- `dto/online-orders-history-query.dto.ts` — todos los filtros opcionales:
+  `branchId`, `status`, `from`, `to`, `limit` (tope 100), `offset`
+- `OnlineOrdersService.history()` — devuelve `{ items, count, total_amount }`
+- `lib/online-order.lib.ts` += `ONLINE_ORDER_STATUSES`, espejo del CHECK de la 076
+- `resolveBusinessId()`, el mismo guard que usan los otros services por negocio
+- 9 tests nuevos
+
+**Frontend:**
+- Resource condicionado a `enabledModules.onlineOrders` en `admin-resources.tsx`
+- `src/app/(admin)/online-orders/page.tsx` (47 líneas)
+- `hooks/useOnlineOrdersHistory.ts` — filtros, paginación, estado de error
+- `components/OnlineOrdersHistoryFilters.tsx` — sucursal, estado, rango + los dos
+  números del resumen
+- `components/OnlineOrdersHistoryTable.tsx` — tabla con fila expandible
+- `components/OnlineOrderDetail.tsx` — items, nota del cliente, motivo del rechazo
+- `lib/history-query.ts` + 8 tests
+- Traducciones `onlineOrdersAdmin` y `nav.onlineOrders`
+
+### Decisiones tomadas acá
+
+**`history` es un método aparte, no un `list` con parámetros opcionales.**
+`list()` significa SIEMPRE "pendientes y todavía confirmables" — filtra por
+`status: 'pending'` y por `expiresAt > now`. Esa es una garantía de seguridad: el
+cajero nunca ve una fila que no pueda confirmar. Volverla condicional a query
+params habría permitido que una llamada mal armada le ponga adelante solicitudes
+vencidas. El historial, en cambio, tiene que mostrar los vencidos y rechazados
+justamente porque son los que el cajero nunca llegó a ver.
+
+**El total sale de un `aggregate`, no de sumar la página.** Con dos páginas, un
+total paginado miente. El `aggregate` usa el mismo `where` que la página, y hay un
+test que lo fija.
+
+**El total se rotula "Total de los pedidos listados", no "ingresos".** Con el
+filtro de estado en "todos" también suma rechazados y vencidos, que nunca fueron
+dinero. Para ver ingresos reales hay que filtrar por `confirmado`.
+
+**El `where` se acota por `businessId`, no por sucursal**, así la vista por defecto
+contesta "todo lo que recibió este negocio". Un `branchId` explícito igual tiene
+que pertenecer al negocio, o pasar el id de una sucursal ajena filtraría sus
+pedidos — hay un test de eso.
+
+### Desvíos respecto del plan original
+
+**La columna de venta asociada muestra el N° de ticket, no un link.** El plan decía
+"que lleve al pedido real", pero **no existe** ninguna ruta de detalle de orden en
+el admin: las órdenes solo se ven agregadas en `/reports`. Un link a `/reports` no
+caería en esa orden, así que sería un afordance falso. El número de ticket es el
+dato que cocina y el cajero usan de verdad.
+
+**No se agregó confirmar/rechazar desde el admin.** El backend ya lo soporta (el
+controller es `@Roles('admin','cajero')`), pero las acciones viven en el tab del
+cajero, que es quien atiende en el momento. Agregarlas acá es una decisión de
+producto pendiente, no una omisión técnica.
+
+**La generación del QR no va acá**: se movió a Sucursales en la Fase 5b, a pedido
+del usuario.
+
+**`ONLINE_ORDER_STATUSES` quedó duplicado** entre `backend/src/online-orders/lib/`
+y `frontend/src/features/online-orders/types/`. Lo correcto sería
+`packages/shared`, pero ese paquete se consume como `dist` compilado y agregar un
+export sin rebuildearlo rompe los dos typechecks. Son 4 literales que además fija
+el CHECK de la base.
+
+### Verificación
+
+- `tsc --noEmit` limpio en backend y frontend
+- `next lint` limpio
+- **528 tests de backend** (9 nuevos) y **152 de vitest** (8 nuevos)
+- Archivos en límites: `page.tsx` 47/100, mayor componente 128/200, hook 95/200
 
 ### Cómo probarla
 
 1. Módulo apagado → la sección **no aparece** en el sidebar.
-2. Prendido → aparece y lista los pedidos.
-3. El total de precios coincide con la suma de los pedidos listados.
-4. Filtrar por estado y por sucursal → resultados correctos.
-5. Descargar el QR de una sucursal, **escanearlo con el celular** → abre el menú de esa sucursal con sus precios.
-6. QR de otra sucursal → precios de esa otra sucursal.
-7. Confirmar desde el admin (no desde el cajero) → se crea la venta igual y entra a comanda.
+2. Prendido → aparece "Pedidos online" y lista el historial.
+3. El total coincide con la suma de los pedidos listados.
+4. Filtrar por `confirmado` → el total pasa a ser el ingreso real.
+5. Filtrar por sucursal y por rango de fechas → resultados correctos.
+6. **Un pedido vencido tiene que aparecer acá** aunque el cajero nunca lo vio.
+7. Expandir una fila → items, nota del cliente, y el motivo si fue rechazado.
+8. Un pedido confirmado muestra su **N° de ticket**; los demás muestran `—`.
+9. Cambiar un filtro estando en la página 3 → vuelve a la página 1 (si no,
+   quedaría mostrando una tabla vacía).
+10. Tocar el teléfono del cliente en un celular → abre el discador.
 
 ---
 

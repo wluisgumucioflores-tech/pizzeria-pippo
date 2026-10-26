@@ -2,6 +2,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
@@ -11,10 +12,15 @@ import { OrdersService } from '../orders/orders.service';
 import { OrdersGateway } from '../orders/realtime/orders.gateway';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import { RejectOnlineOrderDto } from './dto/reject-online-order.dto';
+import {
+  DEFAULT_HISTORY_PAGE_SIZE,
+  OnlineOrdersHistoryQueryDto,
+} from './dto/online-orders-history-query.dto';
 import { isActionable } from './lib/online-order.lib';
 import type {
   ConfirmOnlineOrderResult,
   OnlineOrderResult,
+  OnlineOrdersHistoryResult,
 } from './types/online-order-result.types';
 
 // Management side of the QR ordering feature (admin/cajero). The public side
@@ -33,6 +39,18 @@ export class OnlineOrdersService {
     private readonly ordersService: OrdersService,
     private readonly ordersGateway: OrdersGateway,
   ) {}
+
+  // Same guard the other per-business services use. admin/cajero always carry
+  // a business, so reaching this means the token is malformed, not that the
+  // caller asked for something invalid.
+  private resolveBusinessId(user: CurrentUserPayload): string {
+    if (!user.business_id) {
+      throw new InternalServerErrorException(
+        'El usuario no tiene un negocio asociado',
+      );
+    }
+    return user.business_id;
+  }
 
   private assertModuleEnabled(user: CurrentUserPayload): void {
     if (!user.enabled_modules.onlineOrders) {
@@ -82,6 +100,60 @@ export class OnlineOrdersService {
     });
 
     return orders.map((order) => this.toResult(order));
+  }
+
+  /**
+   * History for the admin section: every status, optionally filtered, with the
+   * total of the whole filtered set.
+   *
+   * Scoped by businessId rather than by branch so the default view answers
+   * "everything this business got". A branchId still has to belong to the
+   * business — otherwise passing someone else's id would leak their requests.
+   */
+  async history(
+    query: OnlineOrdersHistoryQueryDto,
+    user: CurrentUserPayload,
+  ): Promise<OnlineOrdersHistoryResult> {
+    this.assertModuleEnabled(user);
+    if (query.branchId) await this.assertBranchOwnership(query.branchId, user);
+
+    const where = {
+      businessId: this.resolveBusinessId(user),
+      ...(query.branchId ? { branchId: query.branchId } : {}),
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.from || query.to
+        ? {
+            createdAt: {
+              ...(query.from ? { gte: new Date(query.from) } : {}),
+              ...(query.to ? { lte: new Date(query.to) } : {}),
+            },
+          }
+        : {}),
+    };
+
+    // One round trip for all three: the page, how many rows match, and the
+    // amount. Running them sequentially would triple the wait for no reason.
+    const [rows, count, sum] = await Promise.all([
+      this.prisma.onlineOrder.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        take: query.limit ?? DEFAULT_HISTORY_PAGE_SIZE,
+        skip: query.offset ?? 0,
+        include: {
+          order: { select: { dailyNumber: true } },
+          items: { include: { variant: { include: { product: true } } } },
+        },
+      }),
+      this.prisma.onlineOrder.count({ where }),
+      this.prisma.onlineOrder.aggregate({ where, _sum: { total: true } }),
+    ]);
+
+    return {
+      items: rows.map((row) => this.toResult(row)),
+      count,
+      // _sum is null when nothing matched.
+      total_amount: sum._sum?.total?.toNumber() ?? 0,
+    };
   }
 
   async confirm(
