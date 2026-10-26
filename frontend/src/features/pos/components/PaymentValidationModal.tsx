@@ -21,7 +21,7 @@ export function PaymentValidationModal({ open, state, onConfirm, onReject, onCan
   const tCommon = useTranslations("common");
 
   return (
-    <Modal title={tv("title")} open={open} onCancel={onCancel} width={380} footer={null} closable={state.status !== "waiting"}>
+    <Modal centered title={tv("title")} open={open} onCancel={onCancel} width={380} footer={null} closable={state.status !== "waiting"}>
       <div className="mt-3 flex flex-col items-center text-center gap-4 py-2">
         {state.status === "waiting" && (
           <>

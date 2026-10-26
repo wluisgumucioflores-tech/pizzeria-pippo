@@ -87,6 +87,7 @@ export function PromoPercentageModal({ promo, products, branchId, getVariantPric
 
   return (
     <Modal
+      centered
       title={<span>{promo.name}</span>}
       open={!!promo}
       onCancel={onClose}

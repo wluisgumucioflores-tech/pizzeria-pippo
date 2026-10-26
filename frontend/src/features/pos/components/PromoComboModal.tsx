@@ -35,6 +35,7 @@ export function PromoComboModal({ promo, products, branchId, getVariantPrice, on
 
   return (
     <Modal
+      centered
       title={<span>🎁 {promo.name}</span>}
       open={!!promo}
       onCancel={onClose}

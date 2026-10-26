@@ -39,6 +39,7 @@ export function CancelOrderModal({ order, loading, onConfirm, onClose }: Props) 
 
   return (
     <Modal
+      centered
       open={!!order}
       title={<Text strong style={{ color: "#dc2626" }}>{tc("title", { label: orderLabel })}</Text>}
       okText={tc("confirm")}

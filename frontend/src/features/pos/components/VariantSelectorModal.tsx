@@ -61,7 +61,7 @@ export function VariantSelectorModal({
 
   if (!isPizza) {
     return (
-      <Modal title={product.name} open={!!product} onCancel={onClose} footer={null} width={360} style={{ maxWidth: "calc(100vw - 32px)" }}>
+      <Modal centered title={product.name} open={!!product} onCancel={onClose} footer={null} width={360} style={{ maxWidth: "calc(100vw - 32px)" }}>
         <div className="flex flex-col gap-3 mt-4">
           {variants.map((variant) => {
             const price = getVariantPrice(variant, branchId);
@@ -88,7 +88,7 @@ export function VariantSelectorModal({
   }
 
   return (
-    <Modal title={product.name} open={!!product} onCancel={onClose} footer={null} style={{ maxWidth: "calc(100vw - 32px)" }} width={420}>
+    <Modal centered title={product.name} open={!!product} onCancel={onClose} footer={null} style={{ maxWidth: "calc(100vw - 32px)" }} width={420}>
       <div className="flex flex-col gap-4 mt-4">
         <div>
           <Text type="secondary" className="block mb-2 text-xs uppercase tracking-wide">{t("size")}</Text>

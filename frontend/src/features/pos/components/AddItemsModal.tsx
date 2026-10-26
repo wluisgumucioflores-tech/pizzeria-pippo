@@ -78,6 +78,7 @@ export function AddItemsModal({
 
   return (
     <Modal
+      centered
       title={ta("title", { number: String(order.daily_number).padStart(2, "0") })}
       open={!!order}
       onCancel={handleClose}

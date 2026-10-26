@@ -2,6 +2,47 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Belt-and-suspenders for the dvh fix below: Tailwind's reset leaves body
+   with a transparent/white background, so ANY sliver not covered by our own
+   `.app-shell-height` element — a rounding difference, a system bar the
+   browser reserves outside the DOM viewport entirely, a stale cached layout —
+   shows stark white instead of blending with the app. Matches the background
+   most tablet-facing screens already use (POS, branch selector). */
+html, body {
+  height: 100%;
+  background-color: #f5f5f5;
+}
+
+/* Full-height app shell for tablet/phone screens (POS, etc).
+   Tried `height: 100dvh` first — the standard fix for the classic mobile
+   "100vh is taller than what's actually visible" bug — but it still left a
+   gap on a Xiaomi Pad 5 (MIUI), while ordinary scrolling pages on the SAME
+   device/browser show nothing of the kind. The difference: a normal page
+   lets the body grow and scroll, so a few px of viewport miscalculation is
+   invisible. This app deliberately locks the shell to an EXACT height (no
+   page scroll, everything fits via internal flex panels) specifically so it
+   can be used hands-free on a tablet — and that hard, color-contrasted edge
+   is what turns a tiny dvh rounding error on this browser/OS combination into
+   a visible seam.
+   `position: fixed; inset: 0` sidesteps the computation entirely instead of
+   trying to match it: the box is pinned directly to the browser's real
+   viewport edges (same mechanism used for modals/overlays), so there is no
+   height value to get wrong on any device. This is the actual top-level
+   element (no siblings competing for layout), so taking it out of normal
+   flow is safe. */
+.app-shell-height {
+  position: fixed;
+  inset: 0;
+}
+
+/* Bottom padding that only takes effect on devices with a gesture bar / home
+   indicator overlapping the viewport AND a page that opted into
+   viewport-fit=cover (see the root layout's `viewport` export) — 0 everywhere
+   else, so this is always safe to apply. */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 /* Superadmin announcement banner (AnnouncementBanner) — text scrolls
    right to left, constant length regardless of message. */
 @keyframes pippo-marquee {

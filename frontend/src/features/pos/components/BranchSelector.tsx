@@ -18,8 +18,7 @@ export function BranchSelector({ branches, userName, onSelect, onLogout }: Props
   const t = useTranslations("pos.branchSelector");
 
   return (
-    <div style={{
-      height: "100vh",
+    <div className="app-shell-height" style={{
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
@@ -27,6 +26,11 @@ export function BranchSelector({ branches, userName, onSelect, onLogout }: Props
       background: "#f5f5f5",
       gap: 24,
       padding: 24,
+      // app-shell-height now pins this box to the viewport with
+      // position:fixed, taking it out of normal document flow — the page can
+      // no longer scroll on its own if a business has enough branches to
+      // overflow a short screen, so this box provides its own scroll instead.
+      overflowY: "auto",
     }}>
       <div style={{ textAlign: "center" }}>
         <Title level={3} style={{ margin: 0 }}>{t("title")}</Title>

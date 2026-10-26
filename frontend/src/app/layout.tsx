@@ -7,6 +7,12 @@ import "./globals.css";
 
 export const viewport: Viewport = {
   themeColor: "#c0392b",
+  // "cover" lets the page draw edge-to-edge under notches / gesture-bar areas
+  // instead of the browser leaving that strip unstyled — combined with the
+  // env(safe-area-inset-*) padding used on tablet-facing screens (POS), so
+  // real content never sits under the cutout, it's just our own background
+  // there instead of the browser's default white.
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
