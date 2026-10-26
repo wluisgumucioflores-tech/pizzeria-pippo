@@ -1,13 +1,25 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { FileLogger } from './common/logger/file-logger.service';
 import { OpenApiDocumentHolder } from './mcp/openapi-document.holder';
+import { resolveTrustProxyHops } from './common/utils/trust-proxy';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { logger: new FileLogger() });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: new FileLogger(),
+  });
+
+  // Reads the real client IP from X-Forwarded-For when deployed behind a
+  // reverse proxy. See common/utils/trust-proxy.ts for why this is a hop count
+  // and not `true` — and what breaks if the number is wrong.
+  const trustProxyHops = resolveTrustProxyHops(process.env.TRUST_PROXY_HOPS);
+  if (trustProxyHops > 0) {
+    app.set('trust proxy', trustProxyHops);
+  }
   // maxAge lets the browser cache the CORS preflight (OPTIONS) response —
   // without it, every single request pays a separate ~250-300ms round trip
   // just to re-confirm the same CORS permissions the browser already has.
@@ -45,5 +57,21 @@ async function bootstrap() {
   }
 
   await app.listen(process.env.PORT ?? 3333);
+
+  // Said out loud at boot because getting this wrong fails SILENTLY: the app
+  // works, and only the per-client rate limit is quietly broken. In production
+  // behind a proxy with 0 hops, every public request looks like one client.
+  const logger = new Logger('Bootstrap');
+  if (trustProxyHops > 0) {
+    logger.log(
+      `trust proxy = ${trustProxyHops} salto(s) — la IP del cliente se lee de X-Forwarded-For`,
+    );
+  } else if (process.env.NODE_ENV === 'production') {
+    logger.warn(
+      'trust proxy DESACTIVADO en producción: si hay un reverse proxy adelante, ' +
+        'el rate limit de pedidos online es GLOBAL en vez de por cliente. ' +
+        'Configurar TRUST_PROXY_HOPS (1 con nginx, 2 si además hay Cloudflare).',
+    );
+  }
 }
 bootstrap();

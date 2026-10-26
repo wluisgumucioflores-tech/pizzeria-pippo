@@ -10,7 +10,12 @@ Falta solo la Fase 6: la sección del admin con el historial de pedidos online y
 
 ### Pendientes transversales antes de producción
 
-1. **`trust proxy` en `main.ts`** — sin eso, el rate limit del endpoint público pasa a ser global en vez de por IP. Ver `roadmap-fases.md`, Fase 2.
+1. ~~**`trust proxy` en `main.ts`**~~ ✅ **Resuelto.** Se lee de `TRUST_PROXY_HOPS`
+   (default `0`). **En el VPS de Hostinger hay que setearla en `1`** — con nginx
+   adelante y la variable en 0, el rate limit del endpoint público es global en
+   vez de por cliente. Si además se pone Cloudflare delante del dominio, pasa a
+   `2`. Es un conteo de saltos y no un `true` a propósito: ver el comentario en
+   `backend/src/common/utils/trust-proxy.ts`.
 2. **Migración `076` en Supabase** — solo está en local.
 3. **`manifest.json`** — un cliente que entre por el QR puede instalar el PWA del admin. Ver `roadmap-fases.md`, Fase 4.
 4. **Deuda de tamaño**: `pos/page.tsx` en 206 líneas (límite 100, violación preexistente) y `PosHeader.tsx` exactamente en 200 (límite 200). Ver `roadmap-fases.md`, Fase 5.
