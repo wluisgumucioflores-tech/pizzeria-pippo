@@ -76,3 +76,8 @@ mobile/**/*.iml
 
 # Backup script credentials
 docs/database/backup/.env
+
+# Editor / tooling local, no van al repo
+.vscode/
+.claude/skills/archify/
+apps/
