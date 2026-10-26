@@ -40,8 +40,29 @@ model Branch {
   devices                   Device[]
   employees                 Employee[]
   attendanceRecords         AttendanceRecord[]
+  dailyNumberBlocks         DailyNumberBlock[]
+  onlineOrders              OnlineOrder[]
 
   @@map("branches")
+}
+
+// Reserved daily_number ranges per device, so a POS selling offline hands out
+// final ticket numbers that can never collide with another device's.
+// See docs/database/migrations/075_daily_number_blocks.sql
+model DailyNumberBlock {
+  id         String   @id @default(uuid()) @db.Uuid
+  branchId   String   @map("branch_id") @db.Uuid
+  day        DateTime @db.Date
+  rangeStart Int      @map("range_start")
+  rangeEnd   Int      @map("range_end")
+  deviceId   String   @map("device_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, day, deviceId], map: "daily_number_blocks_device_unique")
+  @@index([branchId, day], map: "idx_daily_number_blocks_branch_day")
+  @@map("daily_number_blocks")
 }
 
 model Employee {
@@ -138,6 +159,7 @@ model Business {
   productionIngredientLogs  ProductionIngredientLog[]
   productionOutputLogs      ProductionOutputLog[]
   announcement              BusinessAnnouncement?
+  onlineOrders              OnlineOrder[]
 
   @@map("businesses")
 }
@@ -258,6 +280,7 @@ model Profile {
   productionOutputLogs     ProductionOutputLog[]
   warehouseMovements       WarehouseMovement[]
   warehouseProductMovements WarehouseProductMovement[]
+  resolvedOnlineOrders     OnlineOrder[]             @relation("OnlineOrderResolver")
 
   @@map("profiles")
 }
@@ -412,6 +435,7 @@ model ProductVariant {
   warehouseStock     WarehouseProductStock?
   warehouseMovements WarehouseProductMovement[]
   productionLogs     ProductionOutputLog[]
+  onlineOrderItems   OnlineOrderItem[]
 
   @@map("product_variants")
 }
@@ -671,13 +695,65 @@ model Order {
   idempotencyKey  String?   @unique @map("idempotency_key")
   lastReadyAt     DateTime? @map("last_ready_at")
 
-  branch   Branch         @relation(fields: [branchId], references: [id])
-  cashier  Profile        @relation("OrderCashier", fields: [cashierId], references: [id])
-  paidBy   Profile?       @relation("OrderPaidBy", fields: [paidById], references: [id])
-  items    OrderItem[]
-  payments OrderPayment[]
+  branch       Branch         @relation(fields: [branchId], references: [id])
+  cashier      Profile        @relation("OrderCashier", fields: [cashierId], references: [id])
+  paidBy       Profile?       @relation("OrderPaidBy", fields: [paidById], references: [id])
+  items        OrderItem[]
+  payments     OrderPayment[]
+  onlineOrders OnlineOrder[]
 
   @@map("orders")
+}
+
+// A customer's request from the public QR menu — NOT a sale yet. It becomes
+// one (a row in `orders`, order_type 'online', unpaid) only when an admin or
+// cashier confirms it; `orderId` is that bridge and stays null until then.
+// Unattended requests are marked 'expired', never deleted.
+// See docs/database/migrations/076_online_orders.sql
+model OnlineOrder {
+  id            String    @id @default(uuid()) @db.Uuid
+  businessId    String    @map("business_id") @db.Uuid
+  branchId      String    @map("branch_id") @db.Uuid
+  customerName  String    @map("customer_name")
+  customerPhone String    @map("customer_phone")
+  total         Decimal
+  status        String    @default("pending")
+  publicToken   String    @map("public_token")
+  orderId       String?   @map("order_id") @db.Uuid
+  notes         String?
+  rejectReason  String?   @map("reject_reason")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  expiresAt     DateTime  @map("expires_at")
+  resolvedAt    DateTime? @map("resolved_at")
+  resolvedBy    String?   @map("resolved_by") @db.Uuid
+
+  business   Business          @relation(fields: [businessId], references: [id])
+  branch     Branch            @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  order      Order?            @relation(fields: [orderId], references: [id])
+  resolver   Profile?          @relation("OnlineOrderResolver", fields: [resolvedBy], references: [id])
+  items      OnlineOrderItem[]
+
+  @@unique([publicToken], map: "online_orders_public_token_unique")
+  @@index([branchId, status, createdAt(sort: Desc)], map: "idx_online_orders_branch_status")
+  @@index([status, expiresAt], map: "idx_online_orders_status_expires")
+  @@map("online_orders")
+}
+
+// One line of a public request. No flavors/extras/promotions by design (v1
+// keeps the public menu to simple products and variants).
+model OnlineOrderItem {
+  id            String   @id @default(uuid()) @db.Uuid
+  onlineOrderId String   @map("online_order_id") @db.Uuid
+  variantId     String   @map("variant_id") @db.Uuid
+  qty           Int
+  unitPrice     Decimal  @map("unit_price")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  onlineOrder OnlineOrder    @relation(fields: [onlineOrderId], references: [id], onDelete: Cascade)
+  variant     ProductVariant @relation(fields: [variantId], references: [id])
+
+  @@index([onlineOrderId], map: "idx_online_order_items_order")
+  @@map("online_order_items")
 }
 
 model OrderPayment {

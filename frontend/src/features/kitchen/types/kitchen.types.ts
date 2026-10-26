@@ -32,7 +32,7 @@ export interface KitchenOrder {
   daily_number: number;
   created_at: string;
   kitchen_status: string;
-  order_type: "dine_in" | "takeaway" | "delivery" | "pedidos_ya";
+  order_type: "dine_in" | "takeaway" | "delivery" | "pedidos_ya" | "online";
   table_number: string | null;
   waiter_name: string | null;
   last_ready_at: string | null;

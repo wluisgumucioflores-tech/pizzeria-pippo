@@ -16,7 +16,7 @@ const { Text } = Typography;
 // once a second provider (e.g. a payment gateway) exists, this becomes a picker.
 const ONLINE_PROVIDER = "pedidos_ya" as const;
 
-type OrderType = "dine_in" | "takeaway" | "delivery" | "pedidos_ya";
+type OrderType = "dine_in" | "takeaway" | "delivery" | "pedidos_ya" | "online";
 
 interface Props {
   open: boolean;
@@ -211,6 +211,7 @@ export function PaymentModal({ open, total, enableTableNumber, onClose, onConfir
 
   return (
     <Modal
+      centered
       title={
         <div className="flex items-center justify-between pr-6">
           <span>{tm("title")}</span>

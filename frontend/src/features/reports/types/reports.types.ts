@@ -10,6 +10,7 @@ export interface SalesSummary {
     takeaway: { total: number; count: number };
     delivery: { total: number; count: number };
     pedidos_ya: { total: number; count: number };
+    online: { total: number; count: number };
   };
   by_payment_method: {
     efectivo: { total: number; count: number };
@@ -74,7 +75,7 @@ export interface Order {
   cashier_name: string;
   payment_method: "efectivo" | "qr" | "online" | "mixto" | null;
   payment_provider: string | null;
-  order_type: "dine_in" | "takeaway" | "delivery" | "pedidos_ya";
+  order_type: "dine_in" | "takeaway" | "delivery" | "pedidos_ya" | "online";
   cancelled_at: string | null;
   cancel_reason: string | null;
   notes: string | null;

@@ -56,6 +56,11 @@ export function useOrdersReport() {
           ? t("plain.delivery")
           : order.order_type === "pedidos_ya"
           ? t("plain.pedidosYa")
+          // Distinct key from plain.online, which is the PAYMENT method
+          // "Online" — in the exported sheet these are two different columns
+          // and reusing one label for both reads as a mistake.
+          : order.order_type === "online"
+          ? t("plain.onlineOrder")
           : t("plain.dineIn"),
         [h.payment]: order.payment_method === "efectivo" ? t("plain.cash")
           : order.payment_method === "qr" ? t("plain.qr")

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { message } from "antd";
 import { useTranslations } from "next-intl";
+import { DEFAULT_ONLINE_MENU_MODE, DEFAULT_ONLINE_ORDERS_EXPIRE_MINUTES } from "@pippo/shared";
 import { AppSettings } from "@/features/settings/types";
 import { getSettings, saveSettings, testConnection } from "@/features/settings/services/settings.service";
 
@@ -26,6 +27,11 @@ export function useSettings() {
     stock_deduct_resale: true,
     stock_deduct_insumos: true,
     stock_deduct_made_unit: false,
+    online_orders_whatsapp: "",
+    online_orders_expire_minutes: DEFAULT_ONLINE_ORDERS_EXPIRE_MINUTES,
+    online_menu_mode: DEFAULT_ONLINE_MENU_MODE,
+    online_menu_category_ids: [],
+    online_menu_product_ids: [],
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

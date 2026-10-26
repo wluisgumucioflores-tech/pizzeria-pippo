@@ -130,6 +130,7 @@ describe('ReportsService', () => {
           takeaway: { total: 0, count: 0 },
           delivery: { total: 0, count: 0 },
           pedidos_ya: { total: 0, count: 0 },
+          online: { total: 0, count: 0 },
         },
         by_payment_method: {
           efectivo: { total: 0, count: 0 },

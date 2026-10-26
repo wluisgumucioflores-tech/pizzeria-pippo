@@ -4,6 +4,12 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
+import {
+  DEFAULT_ONLINE_MENU_MODE,
+  DEFAULT_ONLINE_ORDERS_EXPIRE_MINUTES,
+  ONLINE_MENU_MODES,
+  type OnlineMenuMode,
+} from '@pippo/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import type { SettingsResult } from './types/settings-result.types';
@@ -28,6 +34,30 @@ const SETTINGS_KEYS = [
   'stock_deduct_resale',
   'stock_deduct_insumos',
   'stock_deduct_made_unit',
+  'online_orders_whatsapp',
+  'online_orders_expire_minutes',
+  'online_menu_mode',
+  'online_menu_category_ids',
+  'online_menu_product_ids',
+];
+
+// Public QR ordering (see docs/features/pedidos-online-qr/). Only read/written
+// when the business has the onlineOrders module on — the keys are stored
+// regardless, so turning the module off and back on doesn't lose the config.
+const ONLINE_ORDERS_DEFAULTS = {
+  online_orders_whatsapp: '',
+  online_orders_expire_minutes: DEFAULT_ONLINE_ORDERS_EXPIRE_MINUTES,
+  online_menu_mode: DEFAULT_ONLINE_MENU_MODE,
+};
+
+// Read on their own by the public QR endpoints (getOnlineOrdersConfig), which
+// have no user and don't need the other 13 settings.
+const ONLINE_ORDERS_SETTING_KEYS = [
+  'online_orders_whatsapp',
+  'online_orders_expire_minutes',
+  'online_menu_mode',
+  'online_menu_category_ids',
+  'online_menu_product_ids',
 ];
 
 // Sub-controls of use_stock (Configuración → Inventario), business-wide —
@@ -40,6 +70,24 @@ const STOCK_CONTROL_DEFAULTS = {
   stock_deduct_insumos: true,
   stock_deduct_made_unit: false,
 };
+
+// The four stock keys OrdersService needs on every single sale. They used to
+// cost two separate uncached queries per sale (use_stock, then the three
+// stock_deduct_* flags) for values that change a handful of times a year, so
+// they are read together and cached per business.
+const STOCK_SETTING_KEYS = [
+  'use_stock',
+  'stock_deduct_resale',
+  'stock_deduct_insumos',
+  'stock_deduct_made_unit',
+];
+
+// Short TTL rather than pure invalidation, because the backend can run as more
+// than one instance: an admin saving Configuración only invalidates the cache
+// of the instance that served the request, so the others must expire on their
+// own. 30s is well under the time it takes an admin to switch screens and
+// check, while still removing the queries from the sale path.
+const STOCK_SETTINGS_TTL_MS = 30_000;
 
 const KITCHEN_STAGE_KEYS = [
   'kitchen_stage_warning_minutes',
@@ -70,6 +118,36 @@ const KITCHEN_STAGE_DEFAULTS = {
 @Injectable()
 export class SettingsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private readonly stockSettingsCache = new Map<
+    string,
+    { expiresAt: number; values: Map<string, string> }
+  >();
+
+  // Raw stored values only — no module crossing or defaults applied here, so
+  // the cached entry stays independent of the requesting user (enabled_modules
+  // is per-request and must be re-evaluated on every call, see
+  // getStockControlFlags).
+  private async loadStockSettings(
+    businessId: string,
+  ): Promise<Map<string, string>> {
+    const cached = this.stockSettingsCache.get(businessId);
+    if (cached && cached.expiresAt > Date.now()) return cached.values;
+
+    const rows = await this.prisma.appSetting.findMany({
+      where: { businessId, key: { in: STOCK_SETTING_KEYS } },
+    });
+    const values = new Map(rows.map((r) => [r.key, r.value]));
+    this.stockSettingsCache.set(businessId, {
+      expiresAt: Date.now() + STOCK_SETTINGS_TTL_MS,
+      values,
+    });
+    return values;
+  }
+
+  private invalidateStockSettings(businessId: string): void {
+    this.stockSettingsCache.delete(businessId);
+  }
 
   async getSettings(user: CurrentUserPayload): Promise<SettingsResult> {
     const businessId = this.resolveBusinessId(user);
@@ -126,6 +204,23 @@ export class SettingsService {
         config.get('stock_deduct_insumos') !== 'false',
       stock_deduct_made_unit:
         config.get('stock_deduct_made_unit') === 'true',
+      online_orders_whatsapp:
+        config.get('online_orders_whatsapp')?.trim() ??
+        ONLINE_ORDERS_DEFAULTS.online_orders_whatsapp,
+      online_orders_expire_minutes: parseInt(
+        config.get('online_orders_expire_minutes') ??
+          String(ONLINE_ORDERS_DEFAULTS.online_orders_expire_minutes),
+        10,
+      ),
+      online_menu_mode: this.parseOnlineMenuMode(
+        config.get('online_menu_mode'),
+      ),
+      online_menu_category_ids: this.parseIdList(
+        config.get('online_menu_category_ids'),
+      ),
+      online_menu_product_ids: this.parseIdList(
+        config.get('online_menu_product_ids'),
+      ),
     };
   }
 
@@ -190,6 +285,30 @@ export class SettingsService {
         'stock_deduct_made_unit',
         String(dto.stock_deduct_made_unit ?? STOCK_CONTROL_DEFAULTS.stock_deduct_made_unit),
       ],
+      [
+        'online_orders_whatsapp',
+        dto.online_orders_whatsapp?.trim() ??
+          ONLINE_ORDERS_DEFAULTS.online_orders_whatsapp,
+      ],
+      [
+        'online_orders_expire_minutes',
+        String(
+          dto.online_orders_expire_minutes ??
+            ONLINE_ORDERS_DEFAULTS.online_orders_expire_minutes,
+        ),
+      ],
+      [
+        'online_menu_mode',
+        dto.online_menu_mode ?? ONLINE_ORDERS_DEFAULTS.online_menu_mode,
+      ],
+      [
+        'online_menu_category_ids',
+        JSON.stringify(dto.online_menu_category_ids ?? []),
+      ],
+      [
+        'online_menu_product_ids',
+        JSON.stringify(dto.online_menu_product_ids ?? []),
+      ],
     ];
 
     await Promise.all([
@@ -202,6 +321,8 @@ export class SettingsService {
       ),
       this.upsertTelegramBotConfig(businessId, dto),
     ]);
+
+    this.invalidateStockSettings(businessId);
   }
 
   // telegram_bot_token/telegram_chat_id/telegram_enabled/chat_ia_enabled from
@@ -376,10 +497,8 @@ export class SettingsService {
   // umbral de cocina: cualquier rol autenticado puede necesitarlo.
   async isStockTrackingEnabled(user: CurrentUserPayload): Promise<boolean> {
     const businessId = this.resolveBusinessId(user);
-    const row = await this.prisma.appSetting.findUnique({
-      where: { businessId_key: { businessId, key: 'use_stock' } },
-    });
-    return row?.value !== 'false';
+    const values = await this.loadStockSettings(businessId);
+    return values.get('use_stock') !== 'false';
   }
 
   // Used by OrdersService when computing stock deductions (sale/cancellation) —
@@ -395,15 +514,7 @@ export class SettingsService {
     madeUnit: boolean;
   }> {
     const businessId = this.resolveBusinessId(user);
-    const rows = await this.prisma.appSetting.findMany({
-      where: {
-        businessId,
-        key: {
-          in: ['stock_deduct_resale', 'stock_deduct_insumos', 'stock_deduct_made_unit'],
-        },
-      },
-    });
-    const config = new Map(rows.map((r) => [r.key, r.value]));
+    const config = await this.loadStockSettings(businessId);
     const madeUnitRaw = config.get('stock_deduct_made_unit') === 'true';
 
     return {
@@ -481,6 +592,12 @@ export class SettingsService {
         }),
       ),
     );
+
+    // Defensive: this generic writer is used for the Telegram/AI keys today,
+    // but nothing stops a stock key being saved through it.
+    if (updates.some(({ key }) => STOCK_SETTING_KEYS.includes(key))) {
+      this.invalidateStockSettings(businessId);
+    }
   }
 
   async testTelegramConnection(
@@ -567,6 +684,65 @@ export class SettingsService {
       select: { id: true },
     });
     return pizzaCategory ? [pizzaCategory.id] : [];
+  }
+
+  // businessId variant of isStockTrackingEnabled, for the public QR menu —
+  // which has no JWT and still needs to know whether to hide resale products
+  // that are out of stock. Shares the same cache.
+  async isStockTrackingEnabledForBusiness(businessId: string): Promise<boolean> {
+    const values = await this.loadStockSettings(businessId);
+    return values.get('use_stock') !== 'false';
+  }
+
+  // Resolved by businessId instead of a user, because the public QR endpoints
+  // have no JWT at all — the business comes from the branch in the scanned
+  // URL. Same "no user context" need the Telegram webhook already had, but
+  // properly multi-tenant rather than "the first business that exists".
+  async getOnlineOrdersConfig(businessId: string): Promise<{
+    whatsapp: string;
+    expireMinutes: number;
+    menuMode: OnlineMenuMode;
+    categoryIds: string[];
+    productIds: string[];
+  }> {
+    const rows = await this.prisma.appSetting.findMany({
+      where: { businessId, key: { in: ONLINE_ORDERS_SETTING_KEYS } },
+    });
+    const config = new Map(rows.map((r) => [r.key, r.value]));
+
+    return {
+      whatsapp:
+        config.get('online_orders_whatsapp')?.trim() ??
+        ONLINE_ORDERS_DEFAULTS.online_orders_whatsapp,
+      expireMinutes: parseInt(
+        config.get('online_orders_expire_minutes') ??
+          String(ONLINE_ORDERS_DEFAULTS.online_orders_expire_minutes),
+        10,
+      ),
+      menuMode: this.parseOnlineMenuMode(config.get('online_menu_mode')),
+      categoryIds: this.parseIdList(config.get('online_menu_category_ids')),
+      productIds: this.parseIdList(config.get('online_menu_product_ids')),
+    };
+  }
+
+  // Stored as a JSON array of uuids, same shape as
+  // kitchen_visible_category_ids. A malformed/hand-edited row degrades to an
+  // empty list rather than throwing on every settings read.
+  private parseIdList(stored: string | undefined): string[] {
+    if (!stored) return [];
+    try {
+      const parsed: unknown = JSON.parse(stored);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter((id): id is string => typeof id === 'string');
+    } catch {
+      return [];
+    }
+  }
+
+  private parseOnlineMenuMode(stored: string | undefined): OnlineMenuMode {
+    return ONLINE_MENU_MODES.includes(stored as OnlineMenuMode)
+      ? (stored as OnlineMenuMode)
+      : DEFAULT_ONLINE_MENU_MODE;
   }
 
   private maskToken(token: string): string {

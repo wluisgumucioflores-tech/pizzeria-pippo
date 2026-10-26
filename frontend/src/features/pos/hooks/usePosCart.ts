@@ -7,7 +7,7 @@ import {
 } from "@/lib/promotions";
 import type { Product } from "../types/pos.types";
 
-type OrderType = "dine_in" | "takeaway" | "delivery" | "pedidos_ya";
+type OrderType = "dine_in" | "takeaway" | "delivery" | "pedidos_ya" | "online";
 
 export function usePosCart(
   promotions: Promotion[],

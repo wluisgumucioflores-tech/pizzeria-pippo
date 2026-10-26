@@ -1,0 +1,50 @@
+// Shapes of the MANAGEMENT endpoints (admin/cajero). Unlike the public ones
+// these do carry the customer's name and phone — that's the point: the
+// business needs to know who to call.
+
+export interface OnlineOrderRowItem {
+  variant_id: string;
+  product_name: string;
+  variant_name: string;
+  qty: number;
+  unit_price: number;
+}
+
+export interface OnlineOrderRow {
+  id: string;
+  reference: string;
+  branch_id: string;
+  customer_name: string;
+  customer_phone: string;
+  total: number;
+  status: string;
+  notes: string | null;
+  reject_reason: string | null;
+  created_at: string;
+  expires_at: string;
+  resolved_at: string | null;
+  daily_number: number | null;
+  order_id: string | null;
+  items: OnlineOrderRowItem[];
+}
+
+export interface ConfirmOnlineOrderResult {
+  order_id: string;
+  daily_number: number;
+}
+
+/** Payload of the `online-order:created` socket event. */
+export interface OnlineOrderCreatedEvent {
+  id: string;
+  reference: string;
+  customer_name: string;
+  total: number;
+  created_at: string;
+  expires_at: string;
+}
+
+/** Payload of `online-order:resolved` — someone confirmed/rejected it, or it expired. */
+export interface OnlineOrderResolvedEvent {
+  id: string;
+  status: string;
+}

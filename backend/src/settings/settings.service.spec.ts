@@ -98,6 +98,11 @@ describe('SettingsService', () => {
         stock_deduct_resale: true,
         stock_deduct_insumos: true,
         stock_deduct_made_unit: false,
+        online_orders_whatsapp: '',
+        online_orders_expire_minutes: 30,
+        online_menu_mode: 'all',
+        online_menu_category_ids: [],
+        online_menu_product_ids: [],
       });
     });
 
@@ -306,6 +311,140 @@ describe('SettingsService', () => {
     });
   });
 
+  // Pedidos online por QR — ver docs/features/pedidos-online-qr/
+  describe('configuración de pedidos online', () => {
+    const upsertedValue = (key: string) => {
+      const call = prisma.appSetting.upsert.mock.calls.find(
+        (c) => c[0].where.businessId_key.key === key,
+      );
+      return call?.[0].create.value as string | undefined;
+    };
+
+    it('lee el modo de menú y las listas de ids guardadas', async () => {
+      prisma.appSetting.findMany.mockResolvedValue([
+        { key: 'online_menu_mode', value: 'categories' },
+        { key: 'online_menu_category_ids', value: '["cat-1","cat-2"]' },
+        { key: 'online_menu_product_ids', value: '["prod-1"]' },
+        { key: 'online_orders_whatsapp', value: '+59170000000' },
+        { key: 'online_orders_expire_minutes', value: '45' },
+      ]);
+
+      const result = await service.getSettings(admin);
+
+      expect(result.online_menu_mode).toBe('categories');
+      expect(result.online_menu_category_ids).toEqual(['cat-1', 'cat-2']);
+      expect(result.online_menu_product_ids).toEqual(['prod-1']);
+      expect(result.online_orders_whatsapp).toBe('+59170000000');
+      expect(result.online_orders_expire_minutes).toBe(45);
+    });
+
+    // Una fila corrupta (editada a mano en la base) no debe tirar abajo TODA
+    // la lectura de configuración — degrada a los defaults.
+    it('degrada a los defaults si el modo o las listas están corruptos', async () => {
+      prisma.appSetting.findMany.mockResolvedValue([
+        { key: 'online_menu_mode', value: 'modo-inventado' },
+        { key: 'online_menu_category_ids', value: 'no-es-json' },
+        { key: 'online_menu_product_ids', value: '{"no":"es-un-array"}' },
+      ]);
+
+      const result = await service.getSettings(admin);
+
+      expect(result.online_menu_mode).toBe('all');
+      expect(result.online_menu_category_ids).toEqual([]);
+      expect(result.online_menu_product_ids).toEqual([]);
+    });
+
+    it('guarda las cinco claves nuevas', async () => {
+      await service.updateSettings(admin, {
+        telegram_chat_id: '',
+        telegram_enabled: false,
+        kitchen_late_threshold_minutes: 10,
+        printer_paper_width: 58,
+        online_orders_whatsapp: '  +59171234567  ',
+        online_orders_expire_minutes: 15,
+        online_menu_mode: 'products',
+        online_menu_category_ids: [],
+        online_menu_product_ids: ['prod-1', 'prod-2'],
+      });
+
+      expect(upsertedValue('online_orders_whatsapp')).toBe('+59171234567');
+      expect(upsertedValue('online_orders_expire_minutes')).toBe('15');
+      expect(upsertedValue('online_menu_mode')).toBe('products');
+      expect(upsertedValue('online_menu_product_ids')).toBe(
+        '["prod-1","prod-2"]',
+      );
+    });
+
+    // El frontend manda SIEMPRE el objeto entero de configuración, pero un
+    // negocio que nunca abrió esta pestaña no tiene estos campos cargados:
+    // guardar otra pestaña debe escribir los defaults, no 'undefined'.
+    // Los endpoints públicos del QR no tienen JWT: resuelven el negocio desde
+    // la sucursal de la URL, así que necesitan leer sin CurrentUserPayload.
+    describe('getOnlineOrdersConfig — sin usuario', () => {
+      it('lee solo las 5 claves de pedidos online, por businessId', async () => {
+        prisma.appSetting.findMany.mockResolvedValue([
+          { key: 'online_orders_whatsapp', value: '+59170000000' },
+          { key: 'online_orders_expire_minutes', value: '20' },
+          { key: 'online_menu_mode', value: 'products' },
+          { key: 'online_menu_product_ids', value: '["p1"]' },
+        ]);
+
+        const config = await service.getOnlineOrdersConfig('biz1');
+
+        expect(prisma.appSetting.findMany).toHaveBeenCalledWith({
+          where: {
+            businessId: 'biz1',
+            key: {
+              in: [
+                'online_orders_whatsapp',
+                'online_orders_expire_minutes',
+                'online_menu_mode',
+                'online_menu_category_ids',
+                'online_menu_product_ids',
+              ],
+            },
+          },
+        });
+        expect(config).toEqual({
+          whatsapp: '+59170000000',
+          expireMinutes: 20,
+          menuMode: 'products',
+          categoryIds: [],
+          productIds: ['p1'],
+        });
+      });
+
+      it('devuelve los defaults si el negocio nunca configuró nada', async () => {
+        prisma.appSetting.findMany.mockResolvedValue([]);
+
+        const config = await service.getOnlineOrdersConfig('biz1');
+
+        expect(config).toEqual({
+          whatsapp: '',
+          expireMinutes: 30,
+          menuMode: 'all',
+          categoryIds: [],
+          productIds: [],
+        });
+      });
+    });
+
+    it('escribe los defaults si el DTO no trae los campos de pedidos online', async () => {
+      await service.updateSettings(admin, {
+        telegram_chat_id: '',
+        telegram_enabled: false,
+        kitchen_late_threshold_minutes: 10,
+        printer_paper_width: 58,
+      });
+
+      expect(upsertedValue('online_orders_whatsapp')).toBe('');
+      expect(upsertedValue('online_orders_expire_minutes')).toBe('30');
+      expect(upsertedValue('online_menu_mode')).toBe('all');
+      expect(upsertedValue('online_menu_category_ids')).toBe('[]');
+      expect(upsertedValue('online_menu_product_ids')).toBe('[]');
+    });
+  });
+
   describe('getRawSettings', () => {
     it('devuelve un mapa key -> value solo con las keys pedidas', async () => {
       prisma.appSetting.findMany.mockResolvedValue([
@@ -497,6 +636,102 @@ describe('SettingsService', () => {
         (call) => call[0].where.businessId_key.key === 'kitchen_color_fresh',
       );
       expect(colorCall[0].create.value).toBe('#00ff00');
+    });
+  });
+
+  // These two are read on every single sale (OrdersService.create), so they
+  // are cached per business instead of hitting the DB each time.
+  describe('flags de stock — caché del camino de venta', () => {
+    const otroNegocio: CurrentUserPayload = {
+      ...admin,
+      id: 'u3',
+      business_id: 'biz2',
+    };
+
+    it('lee los cuatro flags en una sola query y reusa el caché', async () => {
+      prisma.appSetting.findMany.mockResolvedValue([
+        { key: 'use_stock', value: 'true' },
+        { key: 'stock_deduct_resale', value: 'true' },
+        { key: 'stock_deduct_insumos', value: 'false' },
+        { key: 'stock_deduct_made_unit', value: 'false' },
+      ]);
+
+      expect(await service.isStockTrackingEnabled(admin)).toBe(true);
+      expect(await service.getStockControlFlags(admin)).toEqual({
+        resale: true,
+        insumos: false,
+        madeUnit: false,
+      });
+      // Three reads across two different methods, one query.
+      expect(await service.isStockTrackingEnabled(admin)).toBe(true);
+      expect(prisma.appSetting.findMany).toHaveBeenCalledTimes(1);
+    });
+
+    // Variante por businessId para el menú público del QR, que no tiene JWT.
+    // Comparte el mismo caché que la variante con usuario.
+    it('isStockTrackingEnabledForBusiness comparte el caché con la variante con usuario', async () => {
+      prisma.appSetting.findMany.mockResolvedValue([
+        { key: 'use_stock', value: 'false' },
+      ]);
+
+      expect(await service.isStockTrackingEnabled(admin)).toBe(false);
+      expect(await service.isStockTrackingEnabledForBusiness('biz1')).toBe(false);
+      expect(prisma.appSetting.findMany).toHaveBeenCalledTimes(1);
+    });
+
+    it('cachea por negocio, sin filtrar valores de uno a otro', async () => {
+      prisma.appSetting.findMany
+        .mockResolvedValueOnce([{ key: 'use_stock', value: 'true' }])
+        .mockResolvedValueOnce([{ key: 'use_stock', value: 'false' }]);
+
+      expect(await service.isStockTrackingEnabled(admin)).toBe(true);
+      expect(await service.isStockTrackingEnabled(otroNegocio)).toBe(false);
+      expect(prisma.appSetting.findMany).toHaveBeenCalledTimes(2);
+    });
+
+    it('invalida el caché cuando el admin guarda Configuración', async () => {
+      prisma.appSetting.findMany
+        .mockResolvedValueOnce([{ key: 'use_stock', value: 'true' }])
+        .mockResolvedValueOnce([{ key: 'use_stock', value: 'false' }]);
+
+      expect(await service.isStockTrackingEnabled(admin)).toBe(true);
+
+      await service.updateSettings(admin, {
+        telegram_chat_id: '',
+        telegram_enabled: false,
+        kitchen_stage_warning_minutes: 7,
+        kitchen_late_threshold_minutes: 15,
+        printer_paper_width: 58,
+        use_stock: false,
+      });
+
+      expect(await service.isStockTrackingEnabled(admin)).toBe(false);
+      expect(prisma.appSetting.findMany).toHaveBeenCalledTimes(2);
+    });
+
+    it('no cachea el cruce con enabled_modules.produccion — se evalúa por request', async () => {
+      prisma.appSetting.findMany.mockResolvedValue([
+        { key: 'stock_deduct_made_unit', value: 'true' },
+      ]);
+
+      const conProduccion: CurrentUserPayload = {
+        ...admin,
+        enabled_modules: { ...DEFAULT_ENABLED_MODULES, produccion: true },
+      };
+      const sinProduccion: CurrentUserPayload = {
+        ...admin,
+        enabled_modules: { ...DEFAULT_ENABLED_MODULES, produccion: false },
+      };
+
+      expect((await service.getStockControlFlags(conProduccion)).madeUnit).toBe(
+        true,
+      );
+      // Same business, same cached row, but the module is off for this
+      // request — the crossing must not come from the cache.
+      expect((await service.getStockControlFlags(sinProduccion)).madeUnit).toBe(
+        false,
+      );
+      expect(prisma.appSetting.findMany).toHaveBeenCalledTimes(1);
     });
   });
 });

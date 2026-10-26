@@ -16,6 +16,8 @@ export const MODULE_LABELS: Record<BusinessModuleKey, string> = {
   produccionStock: "Jefe de Producción: acceso a Stock / Bodega",
   admin: "Rol: Administrador (puede crear otros admins)",
   cajero: "Rol: Cajero",
+  offlineSales: "Ventas offline (cola local + sincronización)",
+  onlineOrders: "Pedidos online por QR (menú público)",
 };
 
 // Subset of modules that actually control whether a user ROLE can be

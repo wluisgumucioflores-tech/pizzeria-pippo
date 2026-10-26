@@ -55,6 +55,8 @@ DECLARE
   v_idempotency_key  text := NULLIF(payload->>'idempotency_key', '');
   v_day_start        timestamptz := (payload->>'day_start')::timestamptz;
   v_day_end          timestamptz := (payload->>'day_end')::timestamptz;
+  -- Number already reserved by an offline device (migration 075), if any.
+  v_given_number     integer := NULLIF(payload->>'daily_number', '')::integer;
   v_existing         record;
   v_daily_number     integer;
   v_order_id         uuid;
@@ -78,14 +80,29 @@ BEGIN
     END IF;
   END IF;
 
-  -- Serializar la numeración por sucursal+día (fix de race condition)
-  PERFORM pg_advisory_xact_lock(hashtext(v_branch_id::text || (payload->>'day_start')));
+  IF v_given_number IS NOT NULL THEN
+    -- The device already printed this number from its reserved range; trust it
+    -- and skip the lock entirely (nothing to serialize).
+    v_daily_number := v_given_number;
+  ELSE
+    -- Serializar la numeración por sucursal+día (fix de race condition)
+    PERFORM pg_advisory_xact_lock(hashtext(v_branch_id::text || (payload->>'day_start')));
 
-  SELECT COALESCE(MAX(daily_number), 0) + 1 INTO v_daily_number
-  FROM orders
-  WHERE branch_id = v_branch_id
-    AND created_at >= v_day_start
-    AND created_at <= v_day_end;
+    -- Jump past any range reserved for an offline device, otherwise an online
+    -- sale would take a number that device already handed to a customer.
+    SELECT GREATEST(
+      COALESCE((
+        SELECT MAX(daily_number) FROM orders
+        WHERE branch_id = v_branch_id
+          AND created_at >= v_day_start
+          AND created_at <= v_day_end
+      ), 0),
+      COALESCE((
+        SELECT MAX(range_end) FROM daily_number_blocks
+        WHERE branch_id = v_branch_id AND day = v_day_start::date
+      ), 0)
+    ) + 1 INTO v_daily_number;
+  END IF;
 
   INSERT INTO orders (branch_id, cashier_id, paid_by, total, daily_number, payment_method, payment_provider, order_type, table_number, waiter_name, notes, idempotency_key)
   VALUES (v_branch_id, v_cashier_id, v_paid_by, v_total, v_daily_number, v_payment_method, v_payment_provider, v_order_type, v_table_number, v_waiter_name, v_notes, v_idempotency_key)
@@ -182,6 +199,61 @@ EXCEPTION
       END IF;
     END IF;
     RAISE;
+END;
+$$;
+
+
+--
+-- Name: reserve_daily_number_block(uuid, date, timestamptz, timestamptz, integer, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.reserve_daily_number_block(p_branch_id uuid, p_day date, p_day_start timestamp with time zone, p_day_end timestamp with time zone, p_size integer, p_device_id text) RETURNS jsonb
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_existing   record;
+  v_next_start integer;
+BEGIN
+  IF p_size < 1 OR p_size > 500 THEN
+    RAISE EXCEPTION 'Tamaño de bloque inválido: %', p_size;
+  END IF;
+
+  PERFORM pg_advisory_xact_lock(hashtext(p_branch_id::text || p_day_start::text));
+
+  SELECT range_start, range_end INTO v_existing
+  FROM daily_number_blocks
+  WHERE branch_id = p_branch_id AND day = p_day AND device_id = p_device_id;
+
+  IF FOUND THEN
+    RETURN jsonb_build_object(
+      'range_start', v_existing.range_start,
+      'range_end', v_existing.range_end,
+      'reused', true
+    );
+  END IF;
+
+  SELECT GREATEST(
+    COALESCE((
+      SELECT MAX(daily_number) FROM orders
+      WHERE branch_id = p_branch_id
+        AND created_at >= p_day_start
+        AND created_at <= p_day_end
+    ), 0),
+    COALESCE((
+      SELECT MAX(range_end) FROM daily_number_blocks
+      WHERE branch_id = p_branch_id AND day = p_day
+    ), 0)
+  ) + 1 INTO v_next_start;
+
+  INSERT INTO daily_number_blocks (branch_id, day, range_start, range_end, device_id)
+  VALUES (p_branch_id, p_day, v_next_start, v_next_start + p_size - 1, p_device_id);
+
+  RETURN jsonb_build_object(
+    'range_start', v_next_start,
+    'range_end', v_next_start + p_size - 1,
+    'reused', false
+  );
 END;
 $$;
 
@@ -424,6 +496,23 @@ CREATE TABLE public.categories (
 
 
 --
+-- Name: daily_number_blocks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.daily_number_blocks (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    branch_id uuid NOT NULL,
+    day date NOT NULL,
+    range_start integer NOT NULL,
+    range_end integer NOT NULL,
+    device_id text NOT NULL,
+    created_at timestamp with time zone DEFAULT now(),
+    CONSTRAINT daily_number_blocks_range_check CHECK ((range_end >= range_start)),
+    CONSTRAINT daily_number_blocks_size_check CHECK ((range_start > 0))
+);
+
+
+--
 -- Name: devices; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -484,6 +573,48 @@ CREATE TABLE public.mcp_api_keys (
     is_active boolean DEFAULT true NOT NULL,
     last_used_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: online_order_items; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.online_order_items (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    online_order_id uuid NOT NULL,
+    variant_id uuid NOT NULL,
+    qty integer NOT NULL,
+    unit_price numeric NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT online_order_items_qty_check CHECK ((qty > 0)),
+    CONSTRAINT online_order_items_unit_price_check CHECK ((unit_price >= (0)::numeric))
+);
+
+
+--
+-- Name: online_orders; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.online_orders (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    business_id uuid NOT NULL,
+    branch_id uuid NOT NULL,
+    customer_name text NOT NULL,
+    customer_phone text NOT NULL,
+    total numeric NOT NULL,
+    status text DEFAULT 'pending'::text NOT NULL,
+    public_token text NOT NULL,
+    order_id uuid,
+    notes text,
+    reject_reason text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    expires_at timestamp with time zone NOT NULL,
+    resolved_at timestamp with time zone,
+    resolved_by uuid,
+    CONSTRAINT online_orders_confirmed_has_order_check CHECK ((((status = 'confirmed'::text) AND (order_id IS NOT NULL)) OR ((status <> 'confirmed'::text) AND (order_id IS NULL)))),
+    CONSTRAINT online_orders_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'confirmed'::text, 'rejected'::text, 'expired'::text]))),
+    CONSTRAINT online_orders_total_check CHECK ((total >= (0)::numeric))
 );
 
 
@@ -574,7 +705,7 @@ CREATE TABLE public.orders (
     waiter_name text,
     paid_by uuid,
     last_ready_at timestamp with time zone,
-    CONSTRAINT orders_order_type_check CHECK ((order_type = ANY (ARRAY['dine_in'::text, 'takeaway'::text, 'delivery'::text, 'pedidos_ya'::text]))),
+    CONSTRAINT orders_order_type_check CHECK ((order_type = ANY (ARRAY['dine_in'::text, 'takeaway'::text, 'delivery'::text, 'pedidos_ya'::text, 'online'::text]))),
     CONSTRAINT orders_payment_method_check CHECK (((payment_method IS NULL) OR (payment_method = ANY (ARRAY['efectivo'::text, 'qr'::text, 'online'::text, 'mixto'::text])))),
     CONSTRAINT orders_total_check CHECK ((total >= (0)::numeric))
 );
@@ -1036,6 +1167,14 @@ ALTER TABLE ONLY public.categories
 
 
 --
+-- Name: daily_number_blocks daily_number_blocks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.daily_number_blocks
+    ADD CONSTRAINT daily_number_blocks_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: devices devices_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1065,6 +1204,22 @@ ALTER TABLE ONLY public.ingredients
 
 ALTER TABLE ONLY public.mcp_api_keys
     ADD CONSTRAINT mcp_api_keys_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: online_order_items online_order_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.online_order_items
+    ADD CONSTRAINT online_order_items_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: online_orders online_orders_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.online_orders
+    ADD CONSTRAINT online_orders_pkey PRIMARY KEY (id);
 
 
 --
@@ -1352,6 +1507,13 @@ CREATE INDEX attendance_records_employee_created_idx ON public.attendance_record
 
 
 --
+-- Name: daily_number_blocks_device_unique; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX daily_number_blocks_device_unique ON public.daily_number_blocks USING btree (branch_id, day, device_id);
+
+
+--
 -- Name: devices_branch_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1373,6 +1535,20 @@ CREATE INDEX idx_ai_chat_usage_business_id ON public.ai_chat_usage USING btree (
 
 
 --
+-- Name: idx_branch_prices_variant_branch; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_branch_prices_variant_branch ON public.branch_prices USING btree (variant_id, branch_id);
+
+
+--
+-- Name: idx_branch_stock_branch_ingredient; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_branch_stock_branch_ingredient ON public.branch_stock USING btree (branch_id, ingredient_id);
+
+
+--
 -- Name: idx_categories_business_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1387,10 +1563,66 @@ CREATE UNIQUE INDEX idx_categories_one_pizza_per_business ON public.categories U
 
 
 --
+-- Name: idx_daily_number_blocks_branch_day; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_daily_number_blocks_branch_day ON public.daily_number_blocks USING btree (branch_id, day);
+
+
+--
 -- Name: idx_order_item_extras_order_item; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_order_item_extras_order_item ON public.order_item_extras USING btree (order_item_id);
+
+
+--
+-- Name: idx_online_order_items_order; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_online_order_items_order ON public.online_order_items USING btree (online_order_id);
+
+
+--
+-- Name: idx_online_orders_branch_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_online_orders_branch_status ON public.online_orders USING btree (branch_id, status, created_at DESC);
+
+
+--
+-- Name: idx_online_orders_order_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_online_orders_order_id ON public.online_orders USING btree (order_id) WHERE (order_id IS NOT NULL);
+
+
+--
+-- Name: idx_online_orders_status_expires; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_online_orders_status_expires ON public.online_orders USING btree (status, expires_at);
+
+
+--
+-- Name: online_orders_public_token_unique; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX online_orders_public_token_unique ON public.online_orders USING btree (public_token);
+
+
+--
+-- Name: idx_order_item_flavors_order_item; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_order_item_flavors_order_item ON public.order_item_flavors USING btree (order_item_id);
+
+
+--
+-- Name: idx_order_items_order_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_order_items_order_id ON public.order_items USING btree (order_id);
 
 
 --
@@ -1408,6 +1640,13 @@ CREATE INDEX idx_orders_branch_date ON public.orders USING btree (branch_id, cre
 
 
 --
+-- Name: idx_orders_branch_kitchen_pending; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_orders_branch_kitchen_pending ON public.orders USING btree (branch_id, created_at) WHERE ((kitchen_status = 'pending'::text) AND (cancelled_at IS NULL));
+
+
+--
 -- Name: idx_product_stock_movements_branch_variant; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1415,10 +1654,38 @@ CREATE INDEX idx_product_stock_movements_branch_variant ON public.product_stock_
 
 
 --
+-- Name: idx_product_variants_product; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_product_variants_product ON public.product_variants USING btree (product_id);
+
+
+--
 -- Name: idx_products_category_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_products_category_id ON public.products USING btree (category_id);
+
+
+--
+-- Name: idx_promotions_business; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_promotions_business ON public.promotions USING btree (business_id);
+
+
+--
+-- Name: idx_recipes_variant; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_recipes_variant ON public.recipes USING btree (variant_id);
+
+
+--
+-- Name: idx_stock_movements_branch_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_stock_movements_branch_created ON public.stock_movements USING btree (branch_id, created_at);
 
 
 --
@@ -1605,6 +1872,14 @@ ALTER TABLE ONLY public.categories
 
 
 --
+-- Name: daily_number_blocks daily_number_blocks_branch_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.daily_number_blocks
+    ADD CONSTRAINT daily_number_blocks_branch_fk FOREIGN KEY (branch_id) REFERENCES public.branches(id) ON DELETE CASCADE;
+
+
+--
 -- Name: devices devices_branch_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1650,6 +1925,54 @@ ALTER TABLE ONLY public.ingredients
 
 ALTER TABLE ONLY public.mcp_api_keys
     ADD CONSTRAINT mcp_api_keys_business_id_fkey FOREIGN KEY (business_id) REFERENCES public.businesses(id);
+
+
+--
+-- Name: online_order_items online_order_items_order_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.online_order_items
+    ADD CONSTRAINT online_order_items_order_fk FOREIGN KEY (online_order_id) REFERENCES public.online_orders(id) ON DELETE CASCADE;
+
+
+--
+-- Name: online_order_items online_order_items_variant_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.online_order_items
+    ADD CONSTRAINT online_order_items_variant_fk FOREIGN KEY (variant_id) REFERENCES public.product_variants(id);
+
+
+--
+-- Name: online_orders online_orders_branch_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.online_orders
+    ADD CONSTRAINT online_orders_branch_fk FOREIGN KEY (branch_id) REFERENCES public.branches(id) ON DELETE CASCADE;
+
+
+--
+-- Name: online_orders online_orders_business_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.online_orders
+    ADD CONSTRAINT online_orders_business_fk FOREIGN KEY (business_id) REFERENCES public.businesses(id) ON DELETE CASCADE;
+
+
+--
+-- Name: online_orders online_orders_order_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.online_orders
+    ADD CONSTRAINT online_orders_order_fk FOREIGN KEY (order_id) REFERENCES public.orders(id);
+
+
+--
+-- Name: online_orders online_orders_resolved_by_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.online_orders
+    ADD CONSTRAINT online_orders_resolved_by_fk FOREIGN KEY (resolved_by) REFERENCES public.profiles(id);
 
 
 --

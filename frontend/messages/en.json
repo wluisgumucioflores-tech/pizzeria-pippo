@@ -442,7 +442,9 @@
     },
     "header": {
       "branchFallback": "Branch",
-      "logout": "Log out"
+      "logout": "Log out",
+      "enterFullscreen": "Fullscreen",
+      "exitFullscreen": "Exit fullscreen"
     },
     "tabs": {
       "sale": "Sale",
@@ -450,7 +452,9 @@
       "promosShort": "Promos",
       "orders": "Orders",
       "ordersFull": "Today's orders",
-      "summary": "Summary"
+      "summary": "Summary",
+      "online": "Online",
+      "onlineFull": "Online orders"
     },
     "orderType": {
       "dineIn": "Dine in",
@@ -464,7 +468,10 @@
       "dineInLocal": "🍽️ Dine in",
       "takeawayLocal": "🥡 Takeaway",
       "deliveryLocal": "🛵 Delivery",
-      "pedidosYaLocal": "📱 Pedidos Ya"
+      "pedidosYaLocal": "📱 Pedidos Ya",
+      "online": "Online order",
+      "onlineEmoji": "🌐 Online order",
+      "onlineLocal": "🌐 Online"
     },
     "paymentMethod": {
       "cash": "Cash",
@@ -609,6 +616,30 @@
       "confirm": "Cancel order",
       "warning": "This will automatically restore stock and can't be undone.",
       "reasonPlaceholder": "Cancellation reason"
+    },
+    "cashChange": {
+      "paysWith": "Pays with",
+      "optional": "optional",
+      "exact": "Exact",
+      "otherAmount": "Other amount",
+      "clear": "Clear",
+      "changeDue": "CHANGE",
+      "missing": "Missing",
+      "cashReceivedTicket": "Cash",
+      "changeTicket": "Change"
+    },
+    "onlineOrders": {
+      "title": "Pending online orders",
+      "refresh": "Refresh",
+      "loading": "Loading…",
+      "empty": "No pending online orders.",
+      "expiresIn": "expires in {minutes} min",
+      "confirm": "Confirm",
+      "reject": "Reject",
+      "cancel": "Cancel",
+      "rejectTitle": "Reject order #{reference}",
+      "rejectHint": "The customer will see this reason on their screen.",
+      "rejectPlaceholder": "e.g. out of mozzarella"
     }
   },
   "display": {
@@ -725,7 +756,9 @@
       "dineInShort": "🍽️ In-house",
       "takeawayShort": "🥡 Takeaway",
       "deliveryShort": "🛵 Delivery",
-      "pedidosYaShort": "📱 Pedidos Ya"
+      "pedidosYaShort": "📱 Pedidos Ya",
+      "online": "🌐 Online order",
+      "onlineShort": "🌐 Online"
     },
     "payment": {
       "cash": "💵 Cash",
@@ -743,7 +776,8 @@
       "cash": "Cash",
       "qr": "QR",
       "online": "Online",
-      "none": "—"
+      "none": "—",
+      "onlineOrder": "Online order"
     },
     "status": {
       "cancelled": "Cancelled",
@@ -851,7 +885,8 @@
       "title": "Can't deactivate this branch",
       "understood": "Got it",
       "body": "There are {count} cashier(s) assigned to <b>{name}</b>. Deactivate or reassign them before continuing."
-    }
+    },
+    "qrTooltip": "View / download the online ordering QR"
   },
   "settings": {
     "tabs": {
@@ -862,7 +897,8 @@
       "devices": "Devices",
       "stock": "Inventory",
       "mcp": "MCP",
-      "pos": "Cashier"
+      "pos": "Cashier",
+      "onlineOrders": "Online orders"
     },
     "testConnection": "Test connection",
     "testSuccess": "Message sent successfully",
@@ -1005,6 +1041,30 @@
       "statusError": "Error changing status",
       "revoked": "Access revoked",
       "revokeError": "Error revoking access"
+    },
+    "onlineOrders": {
+      "title": "Online orders via QR",
+      "description": "The customer scans a QR code, sees the branch menu and places an order from their phone. The order stays pending until an admin or cashier confirms it.",
+      "whatsappNoticeTitle": "The customer sends the WhatsApp message themselves",
+      "whatsappNoticeBody": "On confirming, WhatsApp opens on the customer's phone with the order pre-written, but they have to press send. The system never sends it on its own. The notification that always arrives is the cashier's \"Online orders\" tab.",
+      "whatsappLabel": "Business WhatsApp number",
+      "whatsappExtra": "With country code, no spaces or dashes. This is the number customers send their order to.",
+      "whatsappInvalid": "Enter a valid number with country code (e.g. +59170000000).",
+      "expireLabel": "Discard unattended orders after",
+      "expireExtra": "If nobody confirms or rejects the order within this time, it is discarded automatically and the customer sees that it expired.",
+      "minutes": "minutes",
+      "menuModeLabel": "Which products show on the public menu",
+      "menuModeExtra": "Only affects the QR menu. Nothing changes for the cashier.",
+      "menuModeAll": "All active products",
+      "menuModeCategories": "Only some categories",
+      "menuModeProducts": "Only some products",
+      "categoriesLabel": "Visible categories",
+      "categoriesExtra": "Active products from the categories you pick will be shown.",
+      "categoriesPlaceholder": "Pick one or more categories",
+      "productsLabel": "Visible products",
+      "productsExtra": "Only the products you pick will be shown.",
+      "productsPlaceholder": "Search and pick products",
+      "emptySelectionWarning": "Nothing picked yet: the public menu will show up empty until you select at least one option."
     }
   },
   "devices": {
@@ -1404,5 +1464,92 @@
       "saveError": "Error saving",
       "toggleError": "Error changing status"
     }
+  },
+  "onlineOrders": {
+    "loadingMenu": "Loading the menu…",
+    "loadingStatus": "Checking your order…",
+    "unavailableTitle": "This menu isn't available",
+    "unavailableBody": "The QR code may be out of date, or the store isn't taking online orders right now. Check directly with the store.",
+    "loadErrorTitle": "We couldn't load the menu",
+    "loadErrorBody": "Check your connection and try again.",
+    "retry": "Try again",
+    "emptyMenu": "There are no products available to order here yet.",
+    "uncategorized": "Other",
+    "itemCount": "{count, plural, one {# item} other {# items}}",
+    "showDetail": "show detail",
+    "hideDetail": "hide detail",
+    "continue": "Continue",
+    "closeCart": "Close the cart",
+    "increase": "Add one",
+    "decrease": "Remove one",
+    "backToMenu": "Back to the menu",
+    "yourData": "Your details",
+    "yourDataHint": "We need them to let you know once your order is confirmed.",
+    "nameLabel": "Name",
+    "namePlaceholder": "Your name",
+    "nameInvalid": "Enter your name.",
+    "phoneLabel": "Phone (WhatsApp)",
+    "phoneInvalid": "Enter a valid phone number, with country code.",
+    "notesLabel": "Note (optional)",
+    "notesPlaceholder": "e.g. no onion",
+    "total": "Total",
+    "sendOrder": "Send order",
+    "sending": "Sending…",
+    "orderRef": "Your order",
+    "ticketNumber": "Order number:",
+    "orderNotFound": "We couldn't find your order. It may have been from another day.",
+    "orderAgain": "Place another order",
+    "refreshFailed": "We couldn't check the status. Please try again.",
+    "whatsappTitle": "Let the store know on WhatsApp",
+    "whatsappHint": "WhatsApp opens with your order pre-written. You have to press send yourself.",
+    "whatsappButton": "Open WhatsApp",
+    "status": {
+      "pending": "Pending confirmation",
+      "confirmed": "Confirmed",
+      "rejected": "Rejected",
+      "expired": "Expired"
+    },
+    "statusHelp": {
+      "pending": "The shop hasn't confirmed your order yet. Tap “Refresh status” to check again.",
+      "confirmed": "Done! The store is preparing your order. You pay when you pick it up.",
+      "rejected": "The store couldn't take your order.",
+      "expired": "Nobody handled the order in time and it was discarded. You can place it again."
+    },
+    "qr": {
+      "title": "Ordering QR — {branch}",
+      "hint": "Print this QR and stick it on the table or the display case. Scanning it shows the customer this branch's menu so they can place an order.",
+      "generating": "Generating the QR…",
+      "generateFailed": "The QR couldn't be generated.",
+      "download": "Download PNG",
+      "close": "Close",
+      "copy": "Copy",
+      "copied": "Link copied",
+      "copyFailed": "Couldn't copy. Select the link manually.",
+      "unreachableTitle": "This QR only works on this network",
+      "unreachableBody": "The address points at localhost or a local network IP, so a customer's phone outside the wifi won't be able to open it. Fine for testing, but set the system's public address (NEXT_PUBLIC_PUBLIC_BASE_URL) before printing it."
+    },
+    "searchPlaceholder": "Search for a product…",
+    "clearSearch": "Clear",
+    "noResults": "No products matched “{query}”.",
+    "cartFull": "You reached the maximum number of different products per order.",
+    "tabs": {
+      "menu": "Products",
+      "cart": "Cart",
+      "orders": "Orders"
+    },
+    "cartTitle": "Your order",
+    "emptyCartTitle": "Your cart is empty",
+    "emptyCartBody": "Pick products from the menu to build your order.",
+    "browseMenu": "Browse products",
+    "addMoreProducts": "Add more products",
+    "ordersTitle": "Your orders",
+    "ordersHint": "Saved on this phone. Tap one to see whether the shop confirmed it.",
+    "emptyOrdersTitle": "You haven't ordered yet",
+    "emptyOrdersBody": "Once you send an order it will show up here so you can follow it.",
+    "backToOrders": "Back to my orders",
+    "refreshStatus": "Refresh status",
+    "refreshing": "Checking…",
+    "lastChecked": "Checked at {time}",
+    "forgetOrder": "Remove from list"
   }
 }

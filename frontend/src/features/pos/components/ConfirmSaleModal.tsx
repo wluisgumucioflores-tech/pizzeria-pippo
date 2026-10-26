@@ -5,6 +5,9 @@ import { ArrowLeftOutlined, CheckOutlined } from "@ant-design/icons";
 import { PAYMENT_PROVIDERS } from "@pippo/shared";
 import { useTranslations } from "next-intl";
 import type { DiscountedItem } from "@/lib/promotions";
+import { cashDueFor } from "@/lib/cash-change";
+import { useCashChange } from "../hooks/useCashChange";
+import { CashChangeCalculator } from "./CashChangeCalculator";
 import type { PaymentMethod, SplitPayment } from "../types/pos.types";
 
 const { Text } = Typography;
@@ -13,7 +16,7 @@ const { Text } = Typography;
 // ready for cashiers to use yet.
 const ENABLE_QR_AUTO_VALIDATION = false;
 
-type OrderType = "dine_in" | "takeaway" | "delivery" | "pedidos_ya";
+type OrderType = "dine_in" | "takeaway" | "delivery" | "pedidos_ya" | "online";
 
 function paymentLabel(
   method: PaymentMethod,
@@ -45,7 +48,7 @@ interface Props {
   payments?: SplitPayment[] | null;
   orderType: OrderType | null;
   loading: boolean;
-  onConfirm: () => void;
+  onConfirm: (cashReceived: number | null) => void;
   onCancel: () => void;
   onValidatePayment?: () => void;
 }
@@ -56,8 +59,14 @@ export function ConfirmSaleModal({ open, discountedCart, total, totalDiscount, p
   const tc = useTranslations("pos.confirmSaleModal");
   const labels = { cash: t("paymentLabel.cash"), qr: t("paymentLabel.qr"), online: t("paymentLabel.online") };
 
+  // Null for QR, Pedidos Ya and "por cobrar" — those never produce change, so
+  // the calculator stays hidden instead of showing a meaningless field.
+  const cashDue = cashDueFor(paymentMethod, total, payments);
+  const cashChange = useCashChange(cashDue);
+
   return (
     <Modal
+      centered
       title={
         <div>
           <div>{tc("title")}</div>
@@ -84,7 +93,7 @@ export function ConfirmSaleModal({ open, discountedCart, total, totalDiscount, p
               size="large"
               icon={<CheckOutlined />}
               loading={loading}
-              onClick={onConfirm}
+              onClick={() => onConfirm(cashChange.received)}
               style={{ flex: 2, height: 48, background: "#ea580c", borderColor: "#ea580c" }}
             >
               {paymentMethod ? t("confirmAndCharge") : t("confirmOnly")}
@@ -122,6 +131,19 @@ export function ConfirmSaleModal({ open, discountedCart, total, totalDiscount, p
             )}
           </div>
         </div>
+
+        {/* Change calculator — right under the total, which is what the
+            cashier is reading while the customer hands over the money. */}
+        {cashDue !== null && (
+          <CashChangeCalculator
+            amountDue={cashDue}
+            received={cashChange.received}
+            change={cashChange.change}
+            insufficient={cashChange.insufficient}
+            suggestions={cashChange.suggestions}
+            onReceivedChange={cashChange.setReceived}
+          />
+        )}
 
         {/* Items */}
         <Text type="secondary" className="text-xs block mt-4 mb-2" style={{ letterSpacing: 0.5 }}>{tc("productsSummary")}</Text>

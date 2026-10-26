@@ -99,6 +99,18 @@ export const API_ENDPOINTS = {
     cancel: (id: string) => `/orders/${id}/cancel`,
     pay: (id: string) => `/orders/${id}/pay`,
     addItems: (id: string) => `/orders/${id}/items`,
+    numberBlock: "/orders/number-block",
+  },
+  // Pedidos online por QR — ver docs/features/pedidos-online-qr/.
+  // Las rutas /public/* no llevan auth: las consume el cliente final desde su
+  // celular, sin login. Las de gestión sí (admin/cajero).
+  onlineOrders: {
+    publicMenu: (branchId: string) => `/public/online-menu/${branchId}`,
+    publicCreate: "/public/online-orders",
+    publicStatus: (token: string) => `/public/online-orders/${token}`,
+    byBranch: (branchId: string) => `/online-orders?branchId=${branchId}`,
+    confirm: (id: string) => `/online-orders/${id}/confirm`,
+    reject: (id: string) => `/online-orders/${id}/reject`,
   },
   reports: {
     sales: (qs: string) => `/reports/sales?${qs}`,

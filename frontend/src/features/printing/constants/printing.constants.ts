@@ -20,6 +20,7 @@ export const ORDER_TYPE_LABELS: Record<string, string> = {
   takeaway: "Para llevar",
   delivery: "Delivery",
   pedidos_ya: "Pedidos Ya",
+  online: "Pedido online",
 };
 
 // GATT services exposed by common generic BLE thermal printers.

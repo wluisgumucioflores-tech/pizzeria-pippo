@@ -82,6 +82,25 @@
 | ✅ (local) | `072_product_deduct_stock_on_sale.sql` | *(superseded)* Agregaba `products.deduct_stock_on_sale` por producto — nunca se aplicó a Supabase |
 | ✅ (local) | `073_drop_product_deduct_stock_on_sale.sql` | Revierte la columna de `072` — el control pasa a ser 3 claves `app_settings` a nivel de negocio |
 
+### Performance y ventas offline — `074`-`075`
+
+> `074` son solo índices + `ANALYZE`, sin cambio de estructura: se puede aplicar en cualquier momento, aunque conviene fuera de hora pico porque `CREATE INDEX` toma locks breves. `075` **redefine `create_order_atomic`** (acepta un `daily_number` pre-asignado y saltea los rangos reservados), así que hay que aplicarla junto con el deploy del backend que la usa, no antes. Ambas ya corrieron en el Postgres **LOCAL**.
+
+| # | Archivo | Qué hace |
+|---|---------|----------|
+| ⏳ | `074_performance_indexes_order_flow.sql` | 9 índices en el camino de venta/cocina (`order_items`, `branch_stock`, `branch_prices`, `recipes`, `promotions`, `stock_movements`, `orders` parcial para cocina, `product_variants`) + `ANALYZE` |
+| ⏳ | `075_daily_number_blocks.sql` | Crea `daily_number_blocks` + función `reserve_daily_number_block` y redefine `create_order_atomic` — numeración de tickets para ventas offline |
+
+### Pedidos online por QR — `076`, Fase 1 de `docs/features/pedidos-online-qr/`
+
+> Un solo script para toda la feature. Independiente de `074`/`075`. Crea las tablas donde viven las **solicitudes** de los clientes (no son ventas hasta que alguien las confirma) y suma `'online'` al CHECK de `orders.order_type`. Ese `ALTER` es lo único que toca una tabla existente, y solo amplía valores permitidos — no invalida ninguna fila actual. Ya corrió en el Postgres **LOCAL**.
+
+| # | Archivo | Qué hace |
+|---|---------|----------|
+| ⏳ | `076_online_orders.sql` | Crea `online_orders` y `online_order_items` (solicitudes del menú público por QR, con estado `pending`/`confirmed`/`rejected`/`expired` y token público) + agrega `'online'` a `orders_order_type_check` |
+
+**Verificar después de aplicar:** las dos tablas y sus 5 índices existen; `INSERT` de una orden con `order_type = 'online'` ya no es rechazado por el CHECK; las ventas existentes (`dine_in`/`takeaway`/`delivery`/`pedidos_ya`) siguen funcionando igual.
+
 ## Aplicadas en producción
 
 > Confirmado el 2026-06-10: las migraciones `023`–`032` ya están aplicadas en producción

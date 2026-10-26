@@ -4,6 +4,7 @@ import {
   ArrayMinSize,
   IsArray,
   IsIn,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
@@ -40,8 +41,12 @@ export class CreateOrderDto {
   @Type(() => OrderPaymentInputDto)
   payments?: OrderPaymentInputDto[] | null;
 
-  @IsIn(['dine_in', 'takeaway', 'delivery', 'pedidos_ya'])
-  order_type!: 'dine_in' | 'takeaway' | 'delivery' | 'pedidos_ya';
+  // 'online' is the sale a confirmed QR request becomes (see
+  // docs/features/pedidos-online-qr/). Unrelated to payment_method 'online'
+  // above — different column, same word, same situation 'pedidos_ya' already
+  // had. Only OnlineOrdersService produces it; nothing in the POS does.
+  @IsIn(['dine_in', 'takeaway', 'delivery', 'pedidos_ya', 'online'])
+  order_type!: 'dine_in' | 'takeaway' | 'delivery' | 'pedidos_ya' | 'online';
 
   @IsOptional()
   @IsString()
@@ -62,6 +67,15 @@ export class CreateOrderDto {
   @IsString()
   @Length(8, 64)
   idempotency_key?: string | null;
+
+  // Ticket number the device already printed from a range it reserved while
+  // online (offline sales). Only honoured when the business has the
+  // offlineSales module on AND the number falls inside a range actually
+  // reserved for this branch and day — see OrdersService.assertReservedNumber.
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  daily_number?: number | null;
 
   @IsArray()
   @ArrayMinSize(1)

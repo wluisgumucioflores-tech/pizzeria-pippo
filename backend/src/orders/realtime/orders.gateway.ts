@@ -95,6 +95,36 @@ export class OrdersGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(this.branchRoom(branchId)).emit('order:updated', payload);
   }
 
+  // A customer submitted a request from the public QR menu — see
+  // docs/features/pedidos-online-qr/. Carries only what the cashier's badge
+  // and list row need; the full detail is fetched when they open it.
+  //
+  // Note the customer themselves can NEVER receive these: handleConnection
+  // requires a JWT, and they have none. Their waiting screen polls instead.
+  emitOnlineOrderCreated(
+    branchId: string,
+    payload: {
+      id: string;
+      reference: string;
+      customer_name: string;
+      total: number;
+      created_at: string;
+      expires_at: string;
+    },
+  ): void {
+    this.server.to(this.branchRoom(branchId)).emit('online-order:created', payload);
+  }
+
+  // Resolved by someone (confirmed/rejected) or expired by the cron — so a
+  // second cashier's screen drops it instead of showing a row they can no
+  // longer act on.
+  emitOnlineOrderResolved(
+    branchId: string,
+    payload: { id: string; status: string },
+  ): void {
+    this.server.to(this.branchRoom(branchId)).emit('online-order:resolved', payload);
+  }
+
   emitPaymentMatched(
     branchId: string,
     payload: {

@@ -54,6 +54,9 @@ export function OrdersStatsRow({ summary, loading }: Props) {
       {by_order_type.pedidos_ya.count > 0 && (
         <StatTile label={t("orderType.pedidosYa")} value={by_order_type.pedidos_ya.total} count={by_order_type.pedidos_ya.count} />
       )}
+      {by_order_type.online.count > 0 && (
+        <StatTile label={t("orderType.online")} value={by_order_type.online.total} count={by_order_type.online.count} />
+      )}
       <StatTile label={t("payment.cash")} value={by_payment_method.efectivo.total} count={by_payment_method.efectivo.count} />
       <StatTile label={t("payment.qr")} value={by_payment_method.qr.total} count={by_payment_method.qr.count} />
       <StatTile label={t("payment.online")} value={by_payment_method.online.total} count={by_payment_method.online.count} />

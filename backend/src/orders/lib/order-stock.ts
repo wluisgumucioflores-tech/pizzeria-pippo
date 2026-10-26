@@ -2,7 +2,16 @@
 // server-side stock deduction calculation stays in exact parity.
 // create_order_atomic() applies these deductions transactionally.
 
-export type OrderType = 'dine_in' | 'takeaway' | 'delivery' | 'pedidos_ya';
+export type OrderType =
+  | 'dine_in'
+  | 'takeaway'
+  | 'delivery'
+  | 'pedidos_ya'
+  // Confirmed QR request (docs/features/pedidos-online-qr/). A recipe with
+  // apply_condition 'always' deducts for it like any other sale; a recipe
+  // scoped to a specific order type simply won't match, which is correct —
+  // nobody has configured an 'online'-specific recipe.
+  | 'online';
 
 export interface RecipeRow {
   ingredient_id: string;

@@ -22,6 +22,7 @@ import { PaymentValidationModule } from './payment-validation/payment-validation
 import { TelegramModule } from './telegram/telegram.module';
 import { TelegramChatIaModule } from './telegram-chat-ia/telegram-chat-ia.module';
 import { PublicMenuModule } from './public-menu/public-menu.module';
+import { OnlineOrdersModule } from './online-orders/online-orders.module';
 import { EmployeesModule } from './employees/employees.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { BusinessesModule } from './businesses/businesses.module';
@@ -58,6 +59,7 @@ import { AnnouncementsModule } from './announcements/announcements.module';
     TelegramModule,
     TelegramChatIaModule,
     PublicMenuModule,
+    OnlineOrdersModule,
     EmployeesModule,
     AttendanceModule,
     BusinessesModule,

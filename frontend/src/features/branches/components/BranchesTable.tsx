@@ -3,7 +3,7 @@
 import { Table, Button, Space, Tag, Typography, Tooltip, Switch, Popconfirm } from "antd";
 import {
   PlusOutlined, EditOutlined, StopOutlined,
-  CheckCircleOutlined, EyeOutlined, DeleteOutlined,
+  CheckCircleOutlined, EyeOutlined, DeleteOutlined, QrcodeOutlined,
 } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/lib/useIsMobile";
@@ -20,12 +20,22 @@ interface Props {
   onEdit: (branch: Branch) => void;
   onToggleActive: (branch: Branch) => void;
   onDelete: (branch: Branch) => void;
+  /** Solo se pasa si el negocio tiene el módulo onlineOrders — si no, el botón de QR no existe. */
+  onShowQr?: (branch: Branch) => void;
 }
 
-export function BranchesTable({ branches, loading, showInactive, onToggleInactive, onCreate, onEdit, onToggleActive, onDelete }: Props) {
+export function BranchesTable({ branches, loading, showInactive, onToggleInactive, onCreate, onEdit, onToggleActive, onDelete, onShowQr }: Props) {
   const isMobile = useIsMobile();
   const t = useTranslations("common");
   const tb = useTranslations("branches");
+
+  // Solo para sucursal activa: el endpoint público rechaza las inactivas.
+  const qrButton = (branch: Branch) =>
+    onShowQr && branch.is_active ? (
+      <Tooltip title={tb("qrTooltip")}>
+        <Button icon={<QrcodeOutlined />} size="small" onClick={() => onShowQr(branch)} />
+      </Tooltip>
+    ) : null;
 
   const columns = [
     {
@@ -62,9 +72,10 @@ export function BranchesTable({ branches, loading, showInactive, onToggleInactiv
     {
       title: t("actions"),
       key: "actions",
-      width: 160,
+      width: 200,
       render: (_: unknown, record: Branch) => (
         <Space>
+          {qrButton(record)}
           <Tooltip title={t("edit")}>
             <Button icon={<EditOutlined />} size="small" onClick={() => onEdit(record)} />
           </Tooltip>
@@ -144,6 +155,7 @@ export function BranchesTable({ branches, loading, showInactive, onToggleInactiv
                     )}
                   </div>
                   <Space size={6}>
+                    {qrButton(branch)}
                     <Button icon={<EditOutlined />} size="small" onClick={() => onEdit(branch)} />
                     <Button
                       icon={branch.is_active ? <StopOutlined /> : <CheckCircleOutlined />}

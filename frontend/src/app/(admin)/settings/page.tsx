@@ -1,7 +1,7 @@
 "use client";
 
 import { Tabs } from "antd";
-import { BellOutlined, RobotOutlined, FireOutlined, PrinterOutlined, MobileOutlined, DatabaseOutlined, ShopOutlined, ApiOutlined } from "@ant-design/icons";
+import { BellOutlined, RobotOutlined, FireOutlined, PrinterOutlined, MobileOutlined, DatabaseOutlined, ShopOutlined, ApiOutlined, QrcodeOutlined } from "@ant-design/icons";
 import { useTranslations } from "next-intl";
 import { useGetIdentity } from "@refinedev/core";
 import { DEFAULT_ENABLED_MODULES, type EnabledModules } from "@pippo/shared";
@@ -10,6 +10,7 @@ import { KitchenSettingsForm } from "@/features/settings/components/KitchenSetti
 import { PrinterSettingsForm } from "@/features/settings/components/PrinterSettingsForm";
 import { StockSettingsForm } from "@/features/settings/components/StockSettingsForm";
 import { PosSettingsForm } from "@/features/settings/components/PosSettingsForm";
+import { OnlineOrdersSettingsForm } from "@/features/settings/components/OnlineOrdersSettingsForm";
 import { BotTab } from "@/features/settings/components/BotTab";
 import { DevicesTab } from "@/features/settings/components/DevicesTab";
 import { McpTab } from "@/features/settings/components/McpTab";
@@ -74,6 +75,12 @@ export default function SettingsPage() {
       key: "pos",
       label: <span><ShopOutlined /> {t("pos")}</span>,
       children: <PosSettingsForm />,
+    },
+    {
+      key: "online-orders",
+      label: <span><QrcodeOutlined /> {t("onlineOrders")}</span>,
+      children: <OnlineOrdersSettingsForm />,
+      hidden: !enabledModules.onlineOrders,
     },
   ].filter((item) => !item.hidden);
 

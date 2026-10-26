@@ -10,6 +10,9 @@ const ORDER_TYPE_BADGES: Record<KitchenOrder["order_type"], { emoji: string; lab
   takeaway: { emoji: "🥡", label: "Para llevar", className: "bg-blue-500 text-white" },
   delivery: { emoji: "🛵", label: "Delivery", className: "bg-emerald-500 text-white" },
   pedidos_ya: { emoji: "📱", label: "Pedidos Ya", className: "bg-orange-500 text-white" },
+  // Confirmed QR request — the customer ordered it themselves and is coming
+  // to pick it up, so cocina should see it's not a walk-in.
+  online: { emoji: "🌐", label: "Online", className: "bg-violet-500 text-white" },
 };
 
 export function OrderCard({

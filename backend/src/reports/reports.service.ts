@@ -68,6 +68,10 @@ export class ReportsService {
     const takeaway = orders.filter((o) => o.orderType === 'takeaway');
     const delivery = orders.filter((o) => o.orderType === 'delivery');
     const pedidosYa = orders.filter((o) => o.orderType === 'pedidos_ya');
+    // Confirmed QR requests (docs/features/pedidos-online-qr/). A business
+    // without the module just reports zeros — the key is always present so
+    // the frontend doesn't need to branch on it.
+    const online = orders.filter((o) => o.orderType === 'online');
 
     const byMethod = (method: string) => orders.filter((o) => o.paymentMethod === method);
     const sumTotal = (rows: typeof orders) => rows.reduce((sum, o) => sum + o.total.toNumber(), 0);
@@ -105,6 +109,10 @@ export class ReportsService {
         pedidos_ya: {
           total: sumTotal(pedidosYa),
           count: pedidosYa.length,
+        },
+        online: {
+          total: sumTotal(online),
+          count: online.length,
         },
       },
       by_payment_method: {

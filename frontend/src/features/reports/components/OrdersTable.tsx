@@ -18,6 +18,7 @@ const ORDER_TYPE_COLOR: Record<string, string> = {
   takeaway: "purple",
   delivery: "cyan",
   pedidos_ya: "gold",
+  online: "purple",
 };
 
 const ORDER_TYPE_KEY: Record<string, string> = {
@@ -25,6 +26,7 @@ const ORDER_TYPE_KEY: Record<string, string> = {
   takeaway: "orderType.takeaway",
   delivery: "orderType.delivery",
   pedidos_ya: "orderType.pedidosYa",
+  online: "orderType.online",
 };
 
 const IconExcel = () => (

@@ -11,6 +11,8 @@ import { OrdersGateway } from './realtime/orders.gateway';
   imports: [AuthModule, PromotionsModule, NotificationsModule, SettingsModule],
   controllers: [OrdersController],
   providers: [OrdersService, OrdersGateway],
-  exports: [OrdersGateway],
+  // OrdersService is exported for OnlineOrdersModule: confirming a QR request
+  // creates the sale through this same service instead of reimplementing one.
+  exports: [OrdersGateway, OrdersService],
 })
 export class OrdersModule {}
