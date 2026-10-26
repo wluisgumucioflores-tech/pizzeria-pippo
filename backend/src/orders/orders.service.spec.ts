@@ -239,6 +239,69 @@ describe('OrdersService', () => {
     ]);
   });
 
+  // Performance guards for the cashier -> kitchen path. The kitchen ticket is
+  // pushed over the WebSocket at the end of create(), so anything left between
+  // the sale being committed and that emit is pure delay for the cook.
+  it('avisa a cocina antes de leer el stock de reventa, no después', async () => {
+    prisma.productVariant.findMany.mockResolvedValue([resaleVariant]);
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        create_order_atomic: {
+          order_id: 'o2',
+          daily_number: 1,
+          duplicate: false,
+        },
+      },
+    ]);
+    prisma.branchProductStock.findMany.mockResolvedValue([
+      { variantId: 'v-coca', quantity: decimal(4) },
+    ]);
+
+    await service.create(
+      baseDto({ total: 10, items: [{ variant_id: 'v-coca', qty: 1 }] }),
+      cashier,
+    );
+
+    expect(ordersGateway.emitOrderCreated).toHaveBeenCalled();
+    expect(prisma.branchProductStock.findMany).toHaveBeenCalled();
+    expect(
+      ordersGateway.emitOrderCreated.mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      prisma.branchProductStock.findMany.mock.invocationCallOrder[0],
+    );
+  });
+
+  it('pide variantes y promociones en paralelo, no encadenadas', async () => {
+    let resolveVariants!: (value: unknown) => void;
+    prisma.productVariant.findMany.mockReturnValue(
+      new Promise((resolve) => {
+        resolveVariants = resolve;
+      }),
+    );
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        create_order_atomic: {
+          order_id: 'o2',
+          daily_number: 1,
+          duplicate: false,
+        },
+      },
+    ]);
+
+    const pending = service.create(
+      baseDto({ total: 10, items: [{ variant_id: 'v-coca', qty: 1 }] }),
+      cashier,
+    );
+    await new Promise((resolve) => setImmediate(resolve));
+
+    // Promotions must already be in flight while the variants query is still
+    // unresolved — if these ever go back to being chained, this fails.
+    expect(promotionsService.list).toHaveBeenCalled();
+
+    resolveVariants([resaleVariant]);
+    await expect(pending).resolves.toMatchObject({ order_id: 'o2' });
+  });
+
   it('rechaza si el producto o la variante están inactivos', async () => {
     prisma.productVariant.findMany.mockResolvedValue([
       { ...madeVariant, isActive: false },

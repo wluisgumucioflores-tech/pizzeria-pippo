@@ -22,6 +22,7 @@ import { GetKitchenOrdersQueryDto } from './dto/get-kitchen-orders-query.dto';
 import { CancelOrderDto } from './dto/cancel-order.dto';
 import { PayOrderDto } from './dto/pay-order.dto';
 import { AddOrderItemsDto } from './dto/add-order-items.dto';
+import { ReserveNumberBlockDto } from './dto/reserve-number-block.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('orders')
@@ -42,6 +43,17 @@ export class OrdersController {
       daily_number: result.daily_number,
       stock_updates: result.stock_updates,
     };
+  }
+
+  // Reserves a range of ticket numbers for one device, so it can keep selling
+  // with correct numbers while its connection is down. Requires the
+  // offlineSales module (checked in the service).
+  @Post('number-block')
+  async reserveNumberBlock(
+    @Body() dto: ReserveNumberBlockDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.ordersService.reserveNumberBlock(dto, user);
   }
 
   @Get()

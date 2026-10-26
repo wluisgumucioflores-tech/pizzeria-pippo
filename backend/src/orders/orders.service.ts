@@ -29,6 +29,7 @@ import type { CreateOrderDto } from './dto/create-order.dto';
 import type { CancelOrderDto } from './dto/cancel-order.dto';
 import type { PayOrderDto } from './dto/pay-order.dto';
 import type { AddOrderItemsDto } from './dto/add-order-items.dto';
+import type { ReserveNumberBlockDto } from './dto/reserve-number-block.dto';
 import type { OrderItemInputDto } from './dto/order-item-input.dto';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
 import type { CreateOrderResult } from './types/create-order-result.types';
@@ -77,14 +78,21 @@ export class OrdersService {
       new Set(items.map((i) => i.variant_id).concat(flavorVariantIds)),
     );
 
-    const variants = await this.prisma.productVariant.findMany({
-      where: { id: { in: variantIds } },
-      include: {
-        branchPrices: true,
-        recipes: { include: { ingredient: true } },
-        product: true,
-      },
-    });
+    // Promotions don't depend on the variants, so both are fetched in parallel
+    // instead of chained (variants here, promotions only at step 3 before).
+    // These are the two most expensive round trips of a sale — overlapping them
+    // takes a whole one out of the time the cashier waits.
+    const [variants, allPromotions] = await Promise.all([
+      this.prisma.productVariant.findMany({
+        where: { id: { in: variantIds } },
+        include: {
+          branchPrices: true,
+          recipes: { include: { ingredient: true } },
+          product: true,
+        },
+      }),
+      this.promotionsService.list({}, user) as unknown as Promise<Promotion[]>,
+    ]);
     const variantById = new Map(variants.map((v) => [v.id, v]));
 
     // 2. Server-side price resolution — never trust client prices
@@ -152,11 +160,8 @@ export class OrdersService {
     });
 
     // 3. Recompute promotions and totals server-side (reuses PromotionsService's
-    // query + mapping instead of duplicating it — same "all non-deleted promotions" set)
-    const allPromotions = (await this.promotionsService.list(
-      {},
-      user,
-    )) as unknown as Promotion[];
+    // query + mapping instead of duplicating it — same "all non-deleted
+    // promotions" set). Already loaded above, alongside the variants.
     const activePromotions = getActivePromotions(
       allPromotions,
       branchId,
@@ -182,6 +187,10 @@ export class OrdersService {
     user: CurrentUserPayload,
   ): Promise<CreateOrderResult> {
     await this.assertBranchOwnership(dto.branch_id, user);
+
+    if (dto.daily_number != null) {
+      await this.assertReservedNumber(dto.branch_id, dto.daily_number, user);
+    }
 
     const { variants, variantById, discounted, serverTotal } =
       await this.resolveOrderItems(dto.items, dto.branch_id, user);
@@ -285,6 +294,9 @@ export class OrdersService {
       waiter_name: dto.waiter_name?.trim() || null,
       notes: dto.notes?.trim() || null,
       idempotency_key: dto.idempotency_key ?? null,
+      // Already validated against a reserved range above; create_order_atomic
+      // trusts it and skips the MAX(daily_number) lock entirely.
+      daily_number: dto.daily_number ?? null,
       day_start: dateRangeFrom(today),
       day_end: dateRangeTo(today),
       items: discounted.map((d) => ({
@@ -311,43 +323,15 @@ export class OrdersService {
     `;
     const result = rows[0].create_order_atomic;
 
-    // 6b. Stock puntual de las variantes de reventa afectadas — el POS lo usa
-    // para actualizar solo esas 1-3 variantes en memoria en vez de recargar
-    // todo el catálogo (getPosCatalog) después de cada venta.
-    if (deductions.resale_deductions.length > 0) {
-      const stockRows = await this.prisma.branchProductStock.findMany({
-        where: {
-          branchId: dto.branch_id,
-          variantId: {
-            in: deductions.resale_deductions.map((d) => d.variant_id),
-          },
-        },
-        select: { variantId: true, quantity: true },
-      });
-      result.stock_updates = stockRows.map((r) => ({
-        variant_id: r.variantId,
-        quantity: r.quantity.toNumber(),
-      }));
-    }
-
-    // 7. Low-stock alert — fire-and-forget, outside the "transaction" (best-effort)
-    if (
-      user.business_id &&
-      (deductions.ingredient_deductions.length > 0 ||
-        deductions.resale_deductions.length > 0)
-    ) {
-      void this.lowStockAlertService.checkAndNotify(
-        user.business_id,
-        dto.branch_id,
-        deductions.ingredient_deductions.map((d) => d.ingredient_id),
-        deductions.resale_deductions.map((d) => d.variant_id),
-      );
-    }
-
-    // 8. Live update for kitchen/POS — skip on an idempotency-key hit, the
+    // 7. Live update for kitchen/POS — skip on an idempotency-key hit, the
     // order already existed and was already broadcast the first time. El
     // payload se arma con lo que ya se resolvió en memoria (variantes,
     // precios, sabores) — nada de esto pega a la base de nuevo.
+    //
+    // This runs BEFORE the resale-stock read below on purpose: the kitchen
+    // ticket doesn't depend on that stock, so making it wait for one more
+    // round trip only delayed the comanda. Everything after this point is for
+    // the cashier's own screen or best-effort background work.
     if (!result.duplicate) {
       const now = new Date().toISOString();
       this.ordersGateway.emitOrderCreated(dto.branch_id, {
@@ -407,7 +391,98 @@ export class OrdersService {
       });
     }
 
+    // 8. Low-stock alert — fire-and-forget, outside the "transaction" (best-effort)
+    if (
+      user.business_id &&
+      (deductions.ingredient_deductions.length > 0 ||
+        deductions.resale_deductions.length > 0)
+    ) {
+      void this.lowStockAlertService.checkAndNotify(
+        user.business_id,
+        dto.branch_id,
+        deductions.ingredient_deductions.map((d) => d.ingredient_id),
+        deductions.resale_deductions.map((d) => d.variant_id),
+      );
+    }
+
+    // 9. Stock puntual de las variantes de reventa afectadas — el POS lo usa
+    // para actualizar solo esas 1-3 variantes en memoria en vez de recargar
+    // todo el catálogo (getPosCatalog) después de cada venta.
+    if (deductions.resale_deductions.length > 0) {
+      const stockRows = await this.prisma.branchProductStock.findMany({
+        where: {
+          branchId: dto.branch_id,
+          variantId: {
+            in: deductions.resale_deductions.map((d) => d.variant_id),
+          },
+        },
+        select: { variantId: true, quantity: true },
+      });
+      result.stock_updates = stockRows.map((r) => ({
+        variant_id: r.variantId,
+        quantity: r.quantity.toNumber(),
+      }));
+    }
+
     return result;
+  }
+
+  // Reserves a contiguous daily_number range for one device so it can keep
+  // selling with correct, final ticket numbers while offline (see
+  // docs/database/migrations/075_daily_number_blocks.sql).
+  async reserveNumberBlock(
+    dto: ReserveNumberBlockDto,
+    user: CurrentUserPayload,
+  ): Promise<{ range_start: number; range_end: number; reused: boolean }> {
+    await this.assertBranchOwnership(dto.branch_id, user);
+    this.assertOfflineSalesEnabled(user);
+
+    const today = todayInBolivia();
+    const rows = await this.prisma.$queryRaw<
+      { reserve_daily_number_block: { range_start: number; range_end: number; reused: boolean } }[]
+    >`
+      SELECT public.reserve_daily_number_block(
+        ${dto.branch_id}::uuid,
+        ${today}::date,
+        ${dateRangeFrom(today)}::timestamptz,
+        ${dateRangeTo(today)}::timestamptz,
+        ${dto.size}::integer,
+        ${dto.device_id}::text
+      ) AS reserve_daily_number_block
+    `;
+    return rows[0].reserve_daily_number_block;
+  }
+
+  private assertOfflineSalesEnabled(user: CurrentUserPayload): void {
+    if (!user.enabled_modules.offlineSales) {
+      throw new ForbiddenException(
+        'Tu negocio no tiene habilitadas las ventas offline.',
+      );
+    }
+  }
+
+  // A client-supplied ticket number is only trusted when it sits inside a range
+  // actually reserved for this branch today. Without this check any client
+  // could post an arbitrary number and collide with another device's ticket.
+  private async assertReservedNumber(
+    branchId: string,
+    dailyNumber: number,
+    user: CurrentUserPayload,
+  ): Promise<void> {
+    this.assertOfflineSalesEnabled(user);
+
+    const blocks = await this.prisma.dailyNumberBlock.findMany({
+      where: { branchId, day: new Date(todayInBolivia()) },
+      select: { rangeStart: true, rangeEnd: true },
+    });
+    const covered = blocks.some(
+      (b) => dailyNumber >= b.rangeStart && dailyNumber <= b.rangeEnd,
+    );
+    if (!covered) {
+      throw new ConflictException(
+        'El número de pedido no corresponde a un rango reservado. Volvé a sincronizar.',
+      );
+    }
   }
 
   // Agregar items a un pedido que ya se mandó a cocina y sigue "pendiente"

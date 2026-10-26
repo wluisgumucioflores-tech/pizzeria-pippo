@@ -26,6 +26,10 @@ export interface Identity {
   name: string;
   role: string;
   branch_id: string | null;
+  /** Business's offlineSales module — gates the local sales queue entirely. */
+  offline_sales: boolean;
+  /** Business's onlineOrders module — gates the QR requests tab entirely. */
+  online_orders: boolean;
 }
 
 export interface Branch {
@@ -33,9 +37,11 @@ export interface Branch {
   name: string;
 }
 
-export type OrderType = "dine_in" | "takeaway" | "delivery" | "pedidos_ya";
+export type OrderType = "dine_in" | "takeaway" | "delivery" | "pedidos_ya" | "online";
 
-export type PosTab = "sale" | "promos" | "orders" | "summary";
+// "online" solo aparece si el negocio tiene el módulo onlineOrders
+// (docs/features/pedidos-online-qr/) — ver PosHeader.
+export type PosTab = "sale" | "promos" | "orders" | "summary" | "online";
 
 export type PaymentMethod = "efectivo" | "qr" | "online" | "mixto" | null;
 
@@ -82,4 +88,9 @@ export interface TicketData {
   tableNumber?: string | null;
   waiterName?: string | null;
   notes?: string | null;
+  // Cash handed over and change returned. Only set when the cashier used the
+  // change calculator during this sale — they are not persisted with the
+  // order, so a ticket reprinted later from "Pedidos del día" has neither.
+  cashReceived?: number | null;
+  changeGiven?: number | null;
 }
