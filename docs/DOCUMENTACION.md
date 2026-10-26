@@ -1047,3 +1047,15 @@ npx tsc --noEmit      # Verificación de tipos TypeScript (Claude puede ejecutar
 ---
 
 *Documentación generada en base al estado real del código — Marzo 2026 (actualizada 2026-03-20)*
+
+
+#production
+
+# 1. Traer el código nuevo al server (el build usa context: . → código en disco del server)
+git pull origin main
+
+# 2. Reconstruir solo la imagen de pippo-backend
+docker compose build pippo-backend
+
+# 3. Recrear solo ese contenedor con la imagen nueva, sin reiniciar ai-orchestrator
+docker compose up -d --no-deps pippo-backend
