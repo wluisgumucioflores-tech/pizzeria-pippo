@@ -16,6 +16,7 @@ import {
   IdcardOutlined,
   ScheduleOutlined,
   QrcodeOutlined,
+  WalletOutlined,
 } from "@ant-design/icons";
 
 interface ResourceDef {
@@ -82,6 +83,9 @@ export function buildAdminResources(t: (key: string) => string, enabledModules: 
             meta: { label: t("onlineOrders"), icon: <QrcodeOutlined /> },
           },
         ]
+      : []),
+    ...(enabledModules.cashbox
+      ? [{ name: "cashbox", list: "/cashbox", meta: { label: t("cashbox"), icon: <WalletOutlined /> } }]
       : []),
     { name: "reports", list: "/reports", meta: { label: t("reports"), icon: <BarChartOutlined /> } },
     { name: "settings", list: "/settings", meta: { label: t("settings"), icon: <SettingOutlined /> } },

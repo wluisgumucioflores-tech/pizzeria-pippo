@@ -45,7 +45,8 @@
     "attendance": "Asistencia",
     "reports": "Reportes",
     "settings": "Configuración",
-    "onlineOrders": "Pedidos online"
+    "onlineOrders": "Pedidos online",
+    "cashbox": "Caja"
   },
   "localeSwitcher": {
     "es": "ES",
@@ -1584,6 +1585,79 @@
       "customerNote": "Nota del cliente",
       "rejectReason": "Motivo del rechazo",
       "expiredHint": "Nadie atendió este pedido antes del tiempo configurado y se descartó solo."
+    }
+  },
+  "cashbox": {
+    "header": {
+      "openButton": "Abrir caja",
+      "expenseButton": "Gasto",
+      "closeButton": "Cerrar caja",
+      "openTag": "Caja abierta"
+    },
+    "openModal": {
+      "title": "Abrir caja",
+      "confirm": "Abrir caja",
+      "amountLabel": "Monto inicial en caja"
+    },
+    "expenseModal": {
+      "title": "Registrar gasto de caja chica",
+      "confirm": "Guardar gasto",
+      "amountLabel": "Monto",
+      "categoryLabel": "Categoría",
+      "noteLabel": "Nota (opcional)",
+      "notePlaceholder": "Ej: Compra de detergente y bolsas",
+      "categories": {
+        "insumos": "Insumos",
+        "mantenimiento": "Mantenimiento",
+        "transporte": "Transporte",
+        "otro": "Otro"
+      }
+    },
+    "closeModal": {
+      "title": "Cerrar caja",
+      "confirm": "Cerrar caja",
+      "opening": "Apertura",
+      "cashSales": "Ventas en efectivo",
+      "expenses": "Gastos registrados",
+      "expected": "Esperado en caja",
+      "countedLabel": "Monto contado",
+      "difference": "Diferencia",
+      "shortage": "faltante",
+      "surplus": "sobrante",
+      "balanced": "cuadra"
+    },
+    "report": {
+      "columns": {
+        "date": "Fecha",
+        "branch": "Sucursal",
+        "cashier": "Cajero",
+        "opening": "Apertura",
+        "sales": "Ventas",
+        "expenses": "Gastos",
+        "closing": "Cierre",
+        "difference": "Diferencia",
+        "status": "Estado"
+      },
+      "status": {
+        "open": "Abierta",
+        "closed": "Cerrada",
+        "auto_closed": "Auto-cerrada (sin conteo)"
+      },
+      "empty": "No hay sesiones de caja en este período"
+    },
+    "adminControl": {
+      "pickBranch": "Elegí una sucursal arriba para abrir o cerrar su caja.",
+      "openTag": "Caja abierta",
+      "openButton": "Abrir caja",
+      "expenseButton": "Gasto",
+      "closeButton": "Cerrar caja"
+    },
+    "page": {
+      "filters": {
+        "branch": "Sucursal",
+        "allBranches": "Todas las sucursales",
+        "dateRange": "Rango de fechas"
+      }
     }
   }
 }

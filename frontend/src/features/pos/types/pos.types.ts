@@ -30,6 +30,8 @@ export interface Identity {
   offline_sales: boolean;
   /** Business's onlineOrders module — gates the QR requests tab entirely. */
   online_orders: boolean;
+  /** Business's cashbox module — gates the open/expense/close cash widget entirely. */
+  cashbox: boolean;
 }
 
 export interface Branch {

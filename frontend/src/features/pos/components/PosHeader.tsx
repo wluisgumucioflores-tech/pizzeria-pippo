@@ -29,6 +29,7 @@ interface Props {
   onLogout: () => void;
   printerSlot?: React.ReactNode;
   offlineSlot?: React.ReactNode;
+  cashboxSlot?: React.ReactNode;
   /** Pedidos online pendientes. `null` = el negocio no tiene el módulo → el tab no existe. */
   onlineOrdersCount?: number | null;
 }
@@ -42,7 +43,7 @@ function ConnectionBadge({ connected }: { connected: boolean }) {
   );
 }
 
-export function PosHeader({ identity, branches, activeTab, pendingCount, promoCount, connected, refreshing, onRefresh, onTabChange, onChangePassword, onLogout, printerSlot, offlineSlot, onlineOrdersCount }: Props) {
+export function PosHeader({ identity, branches, activeTab, pendingCount, promoCount, connected, refreshing, onRefresh, onTabChange, onChangePassword, onLogout, printerSlot, offlineSlot, cashboxSlot, onlineOrdersCount }: Props) {
   const branchName = branches.find((b) => b.id === identity.branch_id)?.name;
   const [currentTime, setCurrentTime] = useState("");
   const [businessName, setBusinessName] = useState(DEFAULT_TICKET_BUSINESS_NAME);
@@ -135,6 +136,7 @@ export function PosHeader({ identity, branches, activeTab, pendingCount, promoCo
           <Text style={{ fontFamily: "monospace", fontSize: 13, fontWeight: 600, color: "#374151", flexShrink: 0 }}>{currentTime}</Text>
           <ConnectionBadge connected={connected} />
           {offlineSlot}
+          {cashboxSlot}
           {printerSlot}
           {fullscreenButton}
           <Button
@@ -177,6 +179,7 @@ export function PosHeader({ identity, branches, activeTab, pendingCount, promoCo
           <Text style={{ fontFamily: "monospace", fontSize: 16, fontWeight: 600, color: "#374151" }}>{currentTime}</Text>
           <ConnectionBadge connected={connected} />
           {offlineSlot}
+          {cashboxSlot}
           {printerSlot}
           {fullscreenButton}
           <Button icon={<ReloadOutlined spin={refreshing} />} onClick={onRefresh} disabled={refreshing} />

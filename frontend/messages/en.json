@@ -45,7 +45,8 @@
     "attendance": "Attendance",
     "reports": "Reports",
     "settings": "Settings",
-    "onlineOrders": "Online orders"
+    "onlineOrders": "Online orders",
+    "cashbox": "Cash"
   },
   "localeSwitcher": {
     "es": "ES",
@@ -1584,6 +1585,79 @@
       "customerNote": "Customer note",
       "rejectReason": "Rejection reason",
       "expiredHint": "Nobody handled this order within the configured time and it was discarded."
+    }
+  },
+  "cashbox": {
+    "header": {
+      "openButton": "Open cash",
+      "expenseButton": "Expense",
+      "closeButton": "Close cash",
+      "openTag": "Cash open"
+    },
+    "openModal": {
+      "title": "Open cash register",
+      "confirm": "Open cash",
+      "amountLabel": "Starting cash amount"
+    },
+    "expenseModal": {
+      "title": "Register petty cash expense",
+      "confirm": "Save expense",
+      "amountLabel": "Amount",
+      "categoryLabel": "Category",
+      "noteLabel": "Note (optional)",
+      "notePlaceholder": "E.g.: Cleaning supplies and bags",
+      "categories": {
+        "insumos": "Supplies",
+        "mantenimiento": "Maintenance",
+        "transporte": "Transport",
+        "otro": "Other"
+      }
+    },
+    "closeModal": {
+      "title": "Close cash register",
+      "confirm": "Close cash",
+      "opening": "Opening",
+      "cashSales": "Cash sales",
+      "expenses": "Registered expenses",
+      "expected": "Expected in drawer",
+      "countedLabel": "Counted amount",
+      "difference": "Difference",
+      "shortage": "shortage",
+      "surplus": "surplus",
+      "balanced": "balanced"
+    },
+    "report": {
+      "columns": {
+        "date": "Date",
+        "branch": "Branch",
+        "cashier": "Cashier",
+        "opening": "Opening",
+        "sales": "Sales",
+        "expenses": "Expenses",
+        "closing": "Closing",
+        "difference": "Difference",
+        "status": "Status"
+      },
+      "status": {
+        "open": "Open",
+        "closed": "Closed",
+        "auto_closed": "Auto-closed (uncounted)"
+      },
+      "empty": "No cash sessions in this period"
+    },
+    "adminControl": {
+      "pickBranch": "Pick a branch above to open or close its cash register.",
+      "openTag": "Cash open",
+      "openButton": "Open cash",
+      "expenseButton": "Expense",
+      "closeButton": "Close cash"
+    },
+    "page": {
+      "filters": {
+        "branch": "Branch",
+        "allBranches": "All branches",
+        "dateRange": "Date range"
+      }
     }
   }
 }

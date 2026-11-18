@@ -26,6 +26,11 @@ import { usePrinter } from "@/features/printing/hooks/usePrinter";
 import { getActivePromotions } from "@/lib/promotions";
 import { ChangePasswordModal } from "@/features/account/components/ChangePasswordModal";
 import { useChangePassword } from "@/features/account/hooks/useChangePassword";
+import { useCashSession } from "@/features/cashbox/hooks/useCashSession";
+import { CashboxHeaderSlot } from "@/features/cashbox/components/CashboxHeaderSlot";
+import { OpenCashModal } from "@/features/cashbox/components/OpenCashModal";
+import { RegisterExpenseModal } from "@/features/cashbox/components/RegisterExpenseModal";
+import { CloseCashModal } from "@/features/cashbox/components/CloseCashModal";
 
 export default function PosPage() {
   const t = useTranslations("pos");
@@ -63,6 +68,9 @@ export default function PosPage() {
   // the tab isn't rendered at all (count stays null).
   const onlineEnabled = identity?.online_orders === true;
   const onlineOrders = useOnlineOrders(effectiveBranchId ?? undefined, onlineEnabled);
+
+  const cashboxEnabled = identity?.cashbox === true;
+  const cashbox = useCashSession(effectiveBranchId ?? undefined, cashboxEnabled);
 
   const actions = usePosPageActions({
     branchId: effectiveBranchId ?? "",
@@ -111,6 +119,17 @@ export default function PosPage() {
         onChangePassword={changePassword.openModal}
         onLogout={handleLogout}
         onlineOrdersCount={onlineEnabled ? onlineOrders.count : null}
+        cashboxSlot={
+          cashboxEnabled ? (
+            <CashboxHeaderSlot
+              session={cashbox.session}
+              loading={cashbox.loading}
+              onOpen={() => cashbox.setOpenModalOpen(true)}
+              onExpense={() => cashbox.setExpenseModalOpen(true)}
+              onClose={cashbox.openCloseModal}
+            />
+          ) : null
+        }
         offlineSlot={
           <OfflineQueueBadge
             snapshot={offlineSales.snapshot}
@@ -201,6 +220,32 @@ export default function PosPage() {
         onClose={changePassword.closeModal}
         onSubmit={changePassword.handleSubmit}
       />
+      {cashboxEnabled && (
+        <>
+          <OpenCashModal
+            open={cashbox.openModalOpen}
+            saving={cashbox.saving}
+            error={cashbox.error}
+            onConfirm={cashbox.openSession}
+            onClose={() => { cashbox.setOpenModalOpen(false); cashbox.dismissError(); }}
+          />
+          <RegisterExpenseModal
+            open={cashbox.expenseModalOpen}
+            saving={cashbox.saving}
+            error={cashbox.error}
+            onConfirm={cashbox.addExpense}
+            onClose={() => { cashbox.setExpenseModalOpen(false); cashbox.dismissError(); }}
+          />
+          <CloseCashModal
+            open={cashbox.closeModalOpen}
+            saving={cashbox.saving}
+            error={cashbox.error}
+            session={cashbox.session}
+            onConfirm={cashbox.closeSession}
+            onClose={() => { cashbox.setCloseModalOpen(false); cashbox.dismissError(); }}
+          />
+        </>
+      )}
     </div>
   );
 }

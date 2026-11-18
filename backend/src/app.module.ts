@@ -33,6 +33,7 @@ import { AiChatPlansModule } from './ai-chat-plans/ai-chat-plans.module';
 import { AiChatUsageModule } from './ai-chat-usage/ai-chat-usage.module';
 import { ProductionModule } from './production/production.module';
 import { AnnouncementsModule } from './announcements/announcements.module';
+import { CashboxModule } from './cashbox/cashbox.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { AnnouncementsModule } from './announcements/announcements.module';
     AiChatModule,
     AiChatPlansModule,
     AiChatUsageModule,
+    CashboxModule,
   ],
   controllers: [AppController],
   providers: [AppService],

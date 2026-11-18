@@ -113,6 +113,13 @@ export const API_ENDPOINTS = {
     confirm: (id: string) => `/online-orders/${id}/confirm`,
     reject: (id: string) => `/online-orders/${id}/reject`,
   },
+  cashbox: {
+    current: (branchId: string) => `/cashbox/sessions/current?branchId=${branchId}`,
+    open: "/cashbox/sessions",
+    addExpense: (sessionId: string) => `/cashbox/sessions/${sessionId}/expenses`,
+    close: (sessionId: string) => `/cashbox/sessions/${sessionId}/close`,
+    list: (qs: string) => `/cashbox/sessions?${qs}`,
+  },
   reports: {
     sales: (qs: string) => `/reports/sales?${qs}`,
     topProducts: (qs: string) => `/reports/top-products?${qs}`,

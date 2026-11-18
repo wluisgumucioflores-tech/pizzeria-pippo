@@ -1,6 +1,6 @@
 // Single source of truth for optional business modules — add a new flaggable
 // module here and every place that reads/writes enabled_modules picks it up.
-export const BUSINESS_MODULE_KEYS = ["kitchen", "stock", "employees", "telegram", "printer", "mesero", "mcpSaas", "aiChat", "produccion", "produccionStock", "admin", "cajero", "offlineSales", "onlineOrders"] as const;
+export const BUSINESS_MODULE_KEYS = ["kitchen", "stock", "employees", "telegram", "printer", "mesero", "mcpSaas", "aiChat", "produccion", "produccionStock", "admin", "cajero", "offlineSales", "onlineOrders", "cashbox"] as const;
 
 export type BusinessModuleKey = (typeof BUSINESS_MODULE_KEYS)[number];
 
@@ -36,6 +36,10 @@ export const DEFAULT_ENABLED_MODULES: EnabledModules = {
   // public page and an unauthenticated write endpoint, so turning it on is a
   // decision the SaaS owner makes per business.
   onlineOrders: false,
+  // Apertura/cierre de caja por turno + registro de gastos de caja chica
+  // (see docs/features/cashbox/). Off by default: it's new and touches
+  // money/reconciliation, so turning it on per business is deliberate.
+  cashbox: false,
 };
 
 // Maps each user role to the enabledModules key that decides whether the

@@ -37,6 +37,8 @@ model Branch {
   productStockMovements     ProductStockMovement[]
   warehouseMovements        WarehouseMovement[]
   warehouseProductMovements WarehouseProductMovement[]
+  cashSessions              CashSession[]
+  cashExpenses              CashExpense[]
   devices                   Device[]
   employees                 Employee[]
   attendanceRecords         AttendanceRecord[]
@@ -160,6 +162,8 @@ model Business {
   productionOutputLogs      ProductionOutputLog[]
   announcement              BusinessAnnouncement?
   onlineOrders              OnlineOrder[]
+  cashSessions              CashSession[]
+  cashExpenses              CashExpense[]
 
   @@map("businesses")
 }
@@ -281,6 +285,9 @@ model Profile {
   warehouseMovements       WarehouseMovement[]
   warehouseProductMovements WarehouseProductMovement[]
   resolvedOnlineOrders     OnlineOrder[]             @relation("OnlineOrderResolver")
+  openedCashSessions       CashSession[]             @relation("CashSessionOpenedBy")
+  closedCashSessions       CashSession[]             @relation("CashSessionClosedBy")
+  cashExpenses             CashExpense[]
 
   @@map("profiles")
 }
@@ -754,6 +761,61 @@ model OnlineOrderItem {
 
   @@index([onlineOrderId], map: "idx_online_order_items_order")
   @@map("online_order_items")
+}
+
+// Un turno de caja de una sucursal — ver docs/database/migrations/077_cashbox.sql.
+// Solo puede existir una fila con status 'open' por branchId (índice único
+// parcial en la migración); eso es lo que permite que el cron de
+// auto-cierre (CashboxService) resuelva turnos olvidados sin bloquear la
+// apertura del día siguiente.
+model CashSession {
+  id             String    @id @default(uuid()) @db.Uuid
+  businessId     String    @map("business_id") @db.Uuid
+  branchId       String    @map("branch_id") @db.Uuid
+  openedBy       String    @map("opened_by") @db.Uuid
+  openingAmount  Decimal   @map("opening_amount")
+  openedAt       DateTime  @default(now()) @map("opened_at")
+  status         String    @default("open")
+  // Snapshot calculado al cerrar (apertura + ventas en efectivo del turno −
+  // gastos) — no se recalcula después, para que el cierre ya confirmado no
+  // cambie si se registran ventas/gastos más tarde. NULL mientras está abierto.
+  expectedAmount Decimal?  @map("expected_amount")
+  countedAmount  Decimal?  @map("counted_amount")
+  difference     Decimal?
+  closedBy       String?   @map("closed_by") @db.Uuid
+  closedAt       DateTime? @map("closed_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  business Business      @relation(fields: [businessId], references: [id])
+  branch   Branch        @relation(fields: [branchId], references: [id])
+  opener   Profile       @relation("CashSessionOpenedBy", fields: [openedBy], references: [id])
+  closer   Profile?      @relation("CashSessionClosedBy", fields: [closedBy], references: [id])
+  expenses CashExpense[]
+
+  @@map("cash_sessions")
+}
+
+// Un gasto de caja chica registrado durante un turno — nunca existe fuera de
+// una CashSession. businessId/branchId quedan denormalizados (mismo criterio
+// que Order.branchId) para filtrar el reporte sin pasar por cash_sessions.
+model CashExpense {
+  id         String   @id @default(uuid()) @db.Uuid
+  sessionId  String   @map("session_id") @db.Uuid
+  businessId String   @map("business_id") @db.Uuid
+  branchId   String   @map("branch_id") @db.Uuid
+  amount     Decimal
+  category   String
+  note       String?
+  createdBy  String   @map("created_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  session  CashSession @relation(fields: [sessionId], references: [id])
+  business Business    @relation(fields: [businessId], references: [id])
+  branch   Branch      @relation(fields: [branchId], references: [id])
+  creator  Profile     @relation(fields: [createdBy], references: [id])
+
+  @@index([sessionId], map: "idx_cash_expenses_session")
+  @@map("cash_expenses")
 }
 
 model OrderPayment {

@@ -18,6 +18,7 @@ export const MODULE_LABELS: Record<BusinessModuleKey, string> = {
   cajero: "Rol: Cajero",
   offlineSales: "Ventas offline (cola local + sincronización)",
   onlineOrders: "Pedidos online por QR (menú público)",
+  cashbox: "Caja chica (apertura/cierre de turno y gastos)",
 };
 
 // Subset of modules that actually control whether a user ROLE can be

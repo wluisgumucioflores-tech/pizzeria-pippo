@@ -81,6 +81,7 @@ export const PosService = {
       branch_id: profile.branch_id,
       offline_sales: profile.enabled_modules?.offlineSales === true,
       online_orders: profile.enabled_modules?.onlineOrders === true,
+      cashbox: profile.enabled_modules?.cashbox === true,
     };
   },
 
