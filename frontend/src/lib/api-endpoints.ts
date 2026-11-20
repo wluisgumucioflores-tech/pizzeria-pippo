@@ -136,7 +136,7 @@ export const API_ENDPOINTS = {
     printer: "/settings/printer",
     kitchenThreshold: "/settings/kitchen-threshold",
     stock: "/settings/stock",
-    posTableNumber: "/settings/pos-table-number",
+    posCheckout: "/settings/pos-checkout",
   },
   paymentValidation: {
     start: "/payment-validation/start",

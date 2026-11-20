@@ -10,6 +10,19 @@ import type { useOfflineSales } from "./useOfflineSales";
 import type { usePosCart } from "./usePosCart";
 import type { TicketData, OrderType, PosTab, PaymentMethod, SplitPayment } from "../types/pos.types";
 
+// Lo que define una venta en el momento de cerrarla. Existe porque el cierre
+// directo (sin paso 2) corre en el mismo tick en que se setea el estado del
+// cobro: leer ese estado ahí devolvería los valores de la venta ANTERIOR.
+interface SaleDraft {
+  orderType: OrderType;
+  paymentMethod: PaymentMethod;
+  paymentProvider: string | null;
+  payments: SplitPayment[] | null;
+  notes: string | null;
+  tableNumber: string | null;
+  idempotencyKey: string;
+}
+
 interface Params {
   branchId: string;
   cart: ReturnType<typeof usePosCart>;
@@ -49,28 +62,54 @@ export function useConfirmSale({
     splitPayments: SplitPayment[] | null,
     notes: string | null,
     tableNumber: string | null,
+    options?: { skipConfirm?: boolean; cashReceived?: number | null },
   ) => {
+    const key = generateUUID();
     setPaymentMethod(method);
     setPaymentProvider(provider);
     setPayments(splitPayments);
     setSaleNotes(notes);
     setSaleTableNumber(tableNumber);
     cart.setOrderType(orderType);
-    setIdempotencyKey(generateUUID());
+    setIdempotencyKey(key);
     setPaymentModal(false);
+
+    // Configuración → POS "saltear la pantalla de confirmación": el paso 1 ya
+    // tiene todo lo que la venta necesita, así que se cierra acá mismo.
+    if (options?.skipConfirm) {
+      void handleConfirmSale(options.cashReceived ?? null, {
+        orderType,
+        paymentMethod: method,
+        paymentProvider: provider,
+        payments: splitPayments,
+        notes,
+        tableNumber,
+        idempotencyKey: key,
+      });
+      return;
+    }
     setConfirmModal(true);
   };
 
-  const handleConfirmSale = async (cashReceived: number | null = null) => {
+  const handleConfirmSale = async (cashReceived: number | null = null, draft?: SaleDraft) => {
     if (!branchId) {
       message.error("No hay sucursal seleccionada.");
       return;
     }
-    const orderType = cart.orderType;
+    const orderType = draft?.orderType ?? cart.orderType;
     if (!orderType) {
       message.error("Seleccioná el tipo de pedido antes de confirmar.");
       return;
     }
+    const sale: SaleDraft = draft ?? {
+      orderType,
+      paymentMethod,
+      paymentProvider,
+      payments,
+      notes: saleNotes,
+      tableNumber: saleTableNumber,
+      idempotencyKey: idempotencyKey ?? generateUUID(),
+    };
 
     // Closes the sale on screen. Shared by both paths so the cashier ends in
     // exactly the same state whether the sale went out or was queued.
@@ -83,11 +122,12 @@ export function useConfirmSale({
       setPayments(null);
       setIdempotencyKey(null);
       setActiveTab("sale");
-      const cashDue = cashDueFor(paymentMethod, cart.total, payments);
+      const cashDue = cashDueFor(sale.paymentMethod, cart.total, sale.payments);
       setTicket({
         orderId, dailyNumber, items: cart.discountedCart, total: cart.total,
-        paymentMethod, paymentProvider, payments, orderType,
-        notes: saleNotes, tableNumber: saleTableNumber, cashReceived,
+        paymentMethod: sale.paymentMethod, paymentProvider: sale.paymentProvider,
+        payments: sale.payments, orderType,
+        notes: sale.notes, tableNumber: sale.tableNumber, cashReceived,
         changeGiven: cashDue === null ? null : computeChange(cashReceived, cashDue),
       });
       setSaleNotes(null);
@@ -95,12 +135,12 @@ export function useConfirmSale({
       cart.clearCart();
     };
 
-    const key = idempotencyKey ?? generateUUID();
+    const key = sale.idempotencyKey;
     const payloadInput = {
       branchId, discountedCart: cart.discountedCart, total: cart.total,
-      paymentMethod, paymentProvider, orderType,
-      idempotencyKey: key, payments: payments ?? undefined,
-      notes: saleNotes, tableNumber: saleTableNumber,
+      paymentMethod: sale.paymentMethod, paymentProvider: sale.paymentProvider, orderType,
+      idempotencyKey: key, payments: sale.payments ?? undefined,
+      notes: sale.notes, tableNumber: sale.tableNumber,
     };
 
     // Offline-first path: written to IndexedDB and the ticket is raised right
@@ -132,7 +172,7 @@ export function useConfirmSale({
 
     setConfirmLoading(true);
     try {
-      const result = await PosService.confirmSale(branchId, cart.discountedCart, cart.total, paymentMethod, paymentProvider, orderType, undefined, key, payments ?? undefined, saleNotes, saleTableNumber);
+      const result = await PosService.confirmSale(branchId, cart.discountedCart, cart.total, sale.paymentMethod, sale.paymentProvider, orderType, undefined, key, sale.payments ?? undefined, sale.notes, sale.tableNumber);
 
       if (result.ok) {
         finishSale(result.order_id!, result.daily_number!);

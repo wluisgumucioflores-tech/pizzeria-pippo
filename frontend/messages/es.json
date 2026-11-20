@@ -519,7 +519,9 @@
       "bothMustBeGreater": "Ambos montos deben ser mayores a 0",
       "tableNumberPlaceholder": "Ej: Mesa 5",
       "note": "Nota de venta",
-      "notePlaceholder": "Ej: sin cebolla, mesa 5, para Juan..."
+      "notePlaceholder": "Ej: sin cebolla, mesa 5, para Juan...",
+      "singleStep": "PASO ÚNICO",
+      "chargeAction": "Cobrar Bs {total}"
     },
     "confirmSaleModal": {
       "title": "Revisar y confirmar",
@@ -945,7 +947,25 @@
       "title": "Cajero",
       "description": "Opciones del punto de venta (cajero).",
       "enableTableNumberLabel": "Pedir número de mesa al cobrar",
-      "enableTableNumberExtra": "Activado: al confirmar un pedido \"Para comer aquí\" el cajero puede indicar la mesa, igual que en Mesero. Desactivado (recomendado si tu local no usa mesas): el campo no aparece."
+      "enableTableNumberExtra": "Activado: al confirmar un pedido \"Para comer aquí\" el cajero puede indicar la mesa, igual que en Mesero. Desactivado (recomendado si tu local no usa mesas): el campo no aparece.",
+      "checkoutFlowTitle": "Flujo de cobro",
+      "checkoutFlowDescription": "Armá el cobro como lo maneja tu local. Lo que apagues acá deja de aparecerle al cajero.",
+      "orderTypesLabel": "Tipos de pedido disponibles",
+      "orderTypesExtra": "Si dejás uno solo, el cajero no tiene que elegirlo: se aplica solo y la sección desaparece.",
+      "defaultOrderTypeLabel": "Tipo de pedido preseleccionado",
+      "defaultOrderTypeExtra": "Viene marcado al abrir el cobro. Ahorra un toque por venta.",
+      "noPreselection": "Sin preselección",
+      "pedidosYaLabel": "Mostrar el atajo de Pedidos Ya",
+      "pedidosYaExtra": "Apagalo si no trabajás con Pedidos Ya. Los pedidos ya registrados no se tocan.",
+      "paymentMethodsLabel": "Métodos de pago disponibles",
+      "paymentMethodsExtra": "También se aplican al cobrar un pedido que quedó pendiente.",
+      "defaultPaymentMethodLabel": "Método de pago preseleccionado",
+      "defaultPaymentMethodExtra": "Solo efectivo o QR: mixto necesita que alguien reparta el monto, y «por cobrar» dejaría ventas impagas por descuido.",
+      "notesLabel": "Mostrar el campo de nota",
+      "notesExtra": "La nota del pedido que viaja a cocina y al ticket.",
+      "skipConfirmLabel": "Cerrar la venta sin pantalla de confirmación",
+      "skipConfirmExtra": "La venta se cierra en una sola pantalla; el vuelto se sigue calculando ahí.",
+      "skipConfirmWarning": "El cajero pierde la última revisión antes de cobrar."
     },
     "printer": {
       "title": "Impresora de tickets",

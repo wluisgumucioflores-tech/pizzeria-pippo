@@ -103,6 +103,13 @@ describe('SettingsService', () => {
         online_menu_mode: 'all',
         online_menu_category_ids: [],
         online_menu_product_ids: [],
+        pos_order_types: ['dine_in', 'takeaway', 'delivery'],
+        pos_default_order_type: null,
+        pos_enable_pedidos_ya: true,
+        pos_payment_methods: ['efectivo', 'qr', 'mixto', 'deferred'],
+        pos_default_payment_method: null,
+        pos_enable_notes: true,
+        pos_skip_confirm_step: false,
       });
     });
 

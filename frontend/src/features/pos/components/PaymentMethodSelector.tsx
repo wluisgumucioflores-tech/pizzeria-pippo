@@ -2,12 +2,15 @@
 
 import { InputNumber, Typography } from "antd";
 import { useTranslations } from "next-intl";
+import type { PosPaymentMethodOption } from "@pippo/shared";
 import { OptionCard } from "./OptionCard";
 import type { PaymentMethod } from "../types/pos.types";
 
 const { Text } = Typography;
 
 interface Props {
+  /** Métodos habilitados por el negocio (Configuración → POS). */
+  options: PosPaymentMethodOption[];
   disabled?: boolean;
   paymentMethod: PaymentMethod;
   deferred: boolean;
@@ -23,6 +26,7 @@ interface Props {
 }
 
 export function PaymentMethodSelector({
+  options,
   disabled,
   paymentMethod,
   deferred,
@@ -49,10 +53,18 @@ export function PaymentMethodSelector({
         <Text type="secondary" className="text-xs">{t("optional")}</Text>
       </div>
       <div className="flex flex-wrap gap-3">
-        <OptionCard selected={paymentMethod === "efectivo"} emoji="💵" label={t("paymentMethod.cash")} accent="blue" onClick={onSelectCash} />
-        <OptionCard selected={paymentMethod === "qr"} emoji="📱" label={t("paymentMethod.qr")} accent="blue" onClick={onSelectQr} />
-        <OptionCard selected={paymentMethod === "mixto"} emoji="🔀" label={t("paymentMethod.mixed")} accent="blue" onClick={onSelectMixto} />
-        <OptionCard selected={deferred} emoji="🧾" label={t("paymentMethod.deferred")} accent="blue" onClick={onSelectDeferred} />
+        {options.includes("efectivo") && (
+          <OptionCard selected={paymentMethod === "efectivo"} emoji="💵" label={t("paymentMethod.cash")} accent="blue" onClick={onSelectCash} />
+        )}
+        {options.includes("qr") && (
+          <OptionCard selected={paymentMethod === "qr"} emoji="📱" label={t("paymentMethod.qr")} accent="blue" onClick={onSelectQr} />
+        )}
+        {options.includes("mixto") && (
+          <OptionCard selected={paymentMethod === "mixto"} emoji="🔀" label={t("paymentMethod.mixed")} accent="blue" onClick={onSelectMixto} />
+        )}
+        {options.includes("deferred") && (
+          <OptionCard selected={deferred} emoji="🧾" label={t("paymentMethod.deferred")} accent="blue" onClick={onSelectDeferred} />
+        )}
       </div>
       <Text type="secondary" className="text-xs mt-1 block">{tm("toggleHint")}</Text>
 

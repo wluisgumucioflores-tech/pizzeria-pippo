@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { PosService } from "../services/pos.service";
 import { PosCatalogCache } from "../services/pos-catalog-cache.service";
 import { requestPersistentStorage } from "@/lib/offline-db";
+import { DEFAULT_POS_CHECKOUT_CONFIG, type PosCheckoutConfig } from "@pippo/shared";
 import type { Product } from "../types/pos.types";
 import type { Promotion } from "@/lib/promotions";
 
@@ -16,7 +17,7 @@ export function usePosProducts(branchId: string | undefined) {
   const [products, setProducts] = useState<Product[]>([]);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [useStock, setUseStock] = useState(true);
-  const [enableTableNumber, setEnableTableNumber] = useState(false);
+  const [checkout, setCheckout] = useState<PosCheckoutConfig>(DEFAULT_POS_CHECKOUT_CONFIG);
   const [loading, setLoading] = useState(false);
   // True when what's on screen came from the cache and the refresh failed —
   // the cashier can keep selling but prices may be out of date.
@@ -28,7 +29,7 @@ export function usePosProducts(branchId: string | undefined) {
       setProducts(cached.catalog.products);
       setPromotions(cached.catalog.promotions);
       setUseStock(cached.catalog.useStock);
-      setEnableTableNumber(cached.catalog.enableTableNumber);
+      setCheckout(cached.catalog.checkout);
       setServingCached(false);
       // A fresh cache needs no network round trip at all — this is what lets
       // the POS open instantly on a slow connection.
@@ -42,7 +43,7 @@ export function usePosProducts(branchId: string | undefined) {
       setProducts(result.products);
       setPromotions(result.promotions);
       setUseStock(result.useStock);
-      setEnableTableNumber(result.enableTableNumber);
+      setCheckout(result.checkout);
       setServingCached(false);
       await PosCatalogCache.write({ branchId: id, ...result });
     } catch {
@@ -73,10 +74,10 @@ export function usePosProducts(branchId: string | undefined) {
             : variant
         ),
       }));
-      void PosCatalogCache.write({ branchId, products: next, promotions, useStock, enableTableNumber });
+      void PosCatalogCache.write({ branchId, products: next, promotions, useStock, checkout });
       return next;
     });
-  }, [branchId, promotions, useStock, enableTableNumber]);
+  }, [branchId, promotions, useStock, checkout]);
 
   // Offline counterpart of applyStockUpdates: a queued sale gets no server
   // response to read absolute quantities from, so the sold units are subtracted
@@ -98,10 +99,10 @@ export function usePosProducts(branchId: string | undefined) {
           return { ...variant, stock_quantity: variant.stock_quantity - qty };
         }),
       }));
-      void PosCatalogCache.write({ branchId, products: next, promotions, useStock, enableTableNumber });
+      void PosCatalogCache.write({ branchId, products: next, promotions, useStock, checkout });
       return next;
     });
-  }, [branchId, promotions, useStock, enableTableNumber]);
+  }, [branchId, promotions, useStock, checkout]);
 
   useEffect(() => {
     if (branchId) fetchData(branchId);
@@ -166,5 +167,5 @@ export function usePosProducts(branchId: string | undefined) {
     return null;
   }, [products, useStock]);
 
-  return { products, promotions, useStock, enableTableNumber, loading, servingCached, getVariantPrice, getPromoLabel, getStockQty, refresh, applyStockUpdates, decrementLocalStock };
+  return { products, promotions, useStock, checkout, loading, servingCached, getVariantPrice, getPromoLabel, getStockQty, refresh, applyStockUpdates, decrementLocalStock };
 }

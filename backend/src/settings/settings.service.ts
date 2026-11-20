@@ -7,8 +7,16 @@ import { randomBytes } from 'crypto';
 import {
   DEFAULT_ONLINE_MENU_MODE,
   DEFAULT_ONLINE_ORDERS_EXPIRE_MINUTES,
+  DEFAULT_POS_CHECKOUT_CONFIG,
   ONLINE_MENU_MODES,
+  POS_ORDER_TYPES,
+  POS_PAYMENT_METHODS,
+  POS_PRESELECTABLE_PAYMENT_METHODS,
   type OnlineMenuMode,
+  type PosCheckoutConfig,
+  type PosOrderTypeOption,
+  type PosPaymentMethodOption,
+  type PosPreselectablePaymentMethod,
 } from '@pippo/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CurrentUserPayload } from '../auth/types/jwt.types';
@@ -39,6 +47,28 @@ const SETTINGS_KEYS = [
   'online_menu_mode',
   'online_menu_category_ids',
   'online_menu_product_ids',
+  'pos_order_types',
+  'pos_default_order_type',
+  'pos_enable_pedidos_ya',
+  'pos_payment_methods',
+  'pos_default_payment_method',
+  'pos_enable_notes',
+  'pos_skip_confirm_step',
+];
+
+// Lo que el POS necesita para armar el modal de cobro — se lee solo esto (no
+// las otras ~20 settings) cada vez que el POS abre. pos_enable_table_number
+// viaja acá aunque sea anterior a la feature: el POS lo necesita en la misma
+// llamada y no tiene sentido pagar un round trip aparte por un booleano.
+const POS_CHECKOUT_SETTING_KEYS = [
+  'pos_order_types',
+  'pos_default_order_type',
+  'pos_enable_pedidos_ya',
+  'pos_payment_methods',
+  'pos_default_payment_method',
+  'pos_enable_notes',
+  'pos_skip_confirm_step',
+  'pos_enable_table_number',
 ];
 
 // Public QR ordering (see docs/features/pedidos-online-qr/). Only read/written
@@ -221,6 +251,62 @@ export class SettingsService {
       online_menu_product_ids: this.parseIdList(
         config.get('online_menu_product_ids'),
       ),
+      ...this.parsePosCheckoutSettings(config),
+    };
+  }
+
+  // Un solo parseo del flujo de cobro, compartido por la pantalla de
+  // Configuración (SettingsResult, plano) y por el POS
+  // (getPosCheckoutConfig, anidado) — así las dos no pueden interpretar
+  // distinto la misma fila.
+  private parsePosCheckoutSettings(config: Map<string, string>) {
+    return {
+      pos_order_types: this.parseOptionList<PosOrderTypeOption>(
+        config.get('pos_order_types'),
+        POS_ORDER_TYPES,
+        DEFAULT_POS_CHECKOUT_CONFIG.order_types,
+      ),
+      pos_default_order_type: this.parseOptionValue<PosOrderTypeOption>(
+        config.get('pos_default_order_type'),
+        POS_ORDER_TYPES,
+      ),
+      pos_enable_pedidos_ya: config.get('pos_enable_pedidos_ya') !== 'false',
+      pos_payment_methods: this.parseOptionList<PosPaymentMethodOption>(
+        config.get('pos_payment_methods'),
+        POS_PAYMENT_METHODS,
+        DEFAULT_POS_CHECKOUT_CONFIG.payment_methods,
+      ),
+      pos_default_payment_method:
+        this.parseOptionValue<PosPreselectablePaymentMethod>(
+          config.get('pos_default_payment_method'),
+          POS_PRESELECTABLE_PAYMENT_METHODS,
+        ),
+      pos_enable_notes: config.get('pos_enable_notes') !== 'false',
+      pos_skip_confirm_step: config.get('pos_skip_confirm_step') === 'true',
+    };
+  }
+
+  // Leído por el POS en cada apertura (y cacheado del lado del cliente junto
+  // al catálogo, así el modal de cobro también se arma offline).
+  async getPosCheckoutConfig(
+    user: CurrentUserPayload,
+  ): Promise<PosCheckoutConfig> {
+    const businessId = this.resolveBusinessId(user);
+    const rows = await this.prisma.appSetting.findMany({
+      where: { businessId, key: { in: POS_CHECKOUT_SETTING_KEYS } },
+    });
+    const config = new Map(rows.map((r) => [r.key, r.value]));
+    const parsed = this.parsePosCheckoutSettings(config);
+
+    return {
+      order_types: parsed.pos_order_types,
+      default_order_type: parsed.pos_default_order_type,
+      enable_pedidos_ya: parsed.pos_enable_pedidos_ya,
+      payment_methods: parsed.pos_payment_methods,
+      default_payment_method: parsed.pos_default_payment_method,
+      enable_notes: parsed.pos_enable_notes,
+      skip_confirm_step: parsed.pos_skip_confirm_step,
+      enable_table_number: config.get('pos_enable_table_number') === 'true',
     };
   }
 
@@ -309,6 +395,31 @@ export class SettingsService {
         'online_menu_product_ids',
         JSON.stringify(dto.online_menu_product_ids ?? []),
       ],
+      // Flujo de cobro del POS. Una lista vacía dejaría al cajero sin forma
+      // de cobrar, así que al guardarla vacía se vuelve al default en vez de
+      // persistir algo que rompe el POS (el DTO ya la valida, esto es el
+      // cinturón además del tirante).
+      [
+        'pos_order_types',
+        JSON.stringify(
+          dto.pos_order_types?.length
+            ? dto.pos_order_types
+            : DEFAULT_POS_CHECKOUT_CONFIG.order_types,
+        ),
+      ],
+      ['pos_default_order_type', dto.pos_default_order_type ?? ''],
+      ['pos_enable_pedidos_ya', String(dto.pos_enable_pedidos_ya ?? true)],
+      [
+        'pos_payment_methods',
+        JSON.stringify(
+          dto.pos_payment_methods?.length
+            ? dto.pos_payment_methods
+            : DEFAULT_POS_CHECKOUT_CONFIG.payment_methods,
+        ),
+      ],
+      ['pos_default_payment_method', dto.pos_default_payment_method ?? ''],
+      ['pos_enable_notes', String(dto.pos_enable_notes ?? true)],
+      ['pos_skip_confirm_step', String(dto.pos_skip_confirm_step ?? false)],
     ];
 
     await Promise.all([
@@ -524,18 +635,6 @@ export class SettingsService {
     };
   }
 
-  // Usado por el POS/Mesero para saber si mostrar el campo "mesa" al cobrar.
-  // No RolesGuard en el controller, mismo criterio que isStockTrackingEnabled.
-  async isPosTableNumberEnabled(user: CurrentUserPayload): Promise<boolean> {
-    const businessId = this.resolveBusinessId(user);
-    const row = await this.prisma.appSetting.findUnique({
-      where: {
-        businessId_key: { businessId, key: 'pos_enable_table_number' },
-      },
-    });
-    return row?.value === 'true';
-  }
-
   // Generic key-value store for config that doesn't fit SettingsResult's
   // fixed shape (e.g. the Telegram AI bot config: provider, model,
   // per-plan limits — a different, larger set of keys).
@@ -737,6 +836,37 @@ export class SettingsService {
     } catch {
       return [];
     }
+  }
+
+  // Lista de opciones de un set cerrado (tipos de pedido, métodos de pago).
+  // Una fila ausente, rota o que quedó sin ninguna opción válida (ej. se
+  // renombró una opción en una versión nueva) cae al default en vez de dejar
+  // al POS sin opciones para mostrar.
+  private parseOptionList<T extends string>(
+    stored: string | undefined,
+    allowed: readonly T[],
+    fallback: T[],
+  ): T[] {
+    if (!stored) return [...fallback];
+    try {
+      const parsed: unknown = JSON.parse(stored);
+      if (!Array.isArray(parsed)) return [...fallback];
+      const valid = parsed.filter((v): v is T =>
+        typeof v === 'string' && allowed.includes(v as T),
+      );
+      return valid.length ? valid : [...fallback];
+    } catch {
+      return [...fallback];
+    }
+  }
+
+  // El "sin preselección" se guarda como string vacío, no como la ausencia
+  // de la fila — por eso vacío e inválido devuelven lo mismo: null.
+  private parseOptionValue<T extends string>(
+    stored: string | undefined,
+    allowed: readonly T[],
+  ): T | null {
+    return stored && allowed.includes(stored as T) ? (stored as T) : null;
   }
 
   private parseOnlineMenuMode(stored: string | undefined): OnlineMenuMode {

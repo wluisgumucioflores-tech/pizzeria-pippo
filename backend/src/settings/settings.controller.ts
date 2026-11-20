@@ -61,13 +61,12 @@ export class SettingsController {
       .then((use_stock) => ({ use_stock }));
   }
 
-  // No RolesGuard: el cajero necesita saber esto para mostrar/ocultar el
-  // campo de mesa en el cobro.
-  @Get('pos-table-number')
-  getPosTableNumberEnabled(@CurrentUser() user: CurrentUserPayload) {
-    return this.settingsService
-      .isPosTableNumberEnabled(user)
-      .then((pos_enable_table_number) => ({ pos_enable_table_number }));
+  // No RolesGuard: el cajero necesita esto para armar el modal de cobro
+  // (qué tipos de pedido y métodos de pago mostrar, si pedir número de mesa,
+  // si saltear la confirmación). Ver docs/features/pos-flujo-cobro/.
+  @Get('pos-checkout')
+  getPosCheckoutConfig(@CurrentUser() user: CurrentUserPayload) {
+    return this.settingsService.getPosCheckoutConfig(user);
   }
 
   @UseGuards(RolesGuard)

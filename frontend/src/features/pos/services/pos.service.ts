@@ -4,6 +4,7 @@ import { nestFetch, RequestTimeoutError } from "@/lib/nestFetch";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { todayInBolivia } from "@/lib/timezone";
 import { BranchesService } from "@/features/branches/services/branches.service";
+import { DEFAULT_POS_CHECKOUT_CONFIG, type PosCheckoutConfig } from "@pippo/shared";
 import type { Identity, Product, DayOrder, OrderType, PaymentMethod, SplitPayment } from "../types/pos.types";
 import type { Promotion, DiscountedItem, FlavorItem } from "@/lib/promotions";
 
@@ -85,20 +86,22 @@ export const PosService = {
     };
   },
 
-  async getProductsAndPromotions(branchId: string): Promise<{ products: Product[]; promotions: Promotion[]; useStock: boolean; enableTableNumber: boolean }> {
+  async getProductsAndPromotions(branchId: string): Promise<{ products: Product[]; promotions: Promotion[]; useStock: boolean; checkout: PosCheckoutConfig }> {
     const today = todayInBolivia();
-    const [productsRes, promoRes, stockRes, tableNumberRes] = await Promise.all([
+    const [productsRes, promoRes, stockRes, checkoutRes] = await Promise.all([
       nestFetch(API_ENDPOINTS.products.posCatalog(branchId)),
       nestFetch(API_ENDPOINTS.promotions.forPos(branchId, today)),
       nestFetch(API_ENDPOINTS.settings.stock),
-      nestFetch(API_ENDPOINTS.settings.posTableNumber),
+      nestFetch(API_ENDPOINTS.settings.posCheckout),
     ]);
-    const [productsData, promoData, stockData, tableNumberData] = await Promise.all([productsRes.json(), promoRes.json(), stockRes.json(), tableNumberRes.json()]);
+    const [productsData, promoData, stockData, checkoutData] = await Promise.all([productsRes.json(), promoRes.json(), stockRes.json(), checkoutRes.json()]);
     return {
       products: Array.isArray(productsData) ? productsData : [],
       promotions: Array.isArray(promoData) ? promoData : [],
       useStock: stockRes.ok ? stockData.use_stock !== false : true,
-      enableTableNumber: tableNumberRes.ok ? tableNumberData.pos_enable_table_number === true : false,
+      // Si la config no llega, el cobro cae al flujo completo de siempre —
+      // nunca a uno recortado, que escondería opciones sin que nadie lo pida.
+      checkout: checkoutRes.ok ? { ...DEFAULT_POS_CHECKOUT_CONFIG, ...checkoutData } : DEFAULT_POS_CHECKOUT_CONFIG,
     };
   },
 

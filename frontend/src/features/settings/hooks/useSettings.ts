@@ -3,7 +3,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { message } from "antd";
 import { useTranslations } from "next-intl";
-import { DEFAULT_ONLINE_MENU_MODE, DEFAULT_ONLINE_ORDERS_EXPIRE_MINUTES } from "@pippo/shared";
+import {
+  DEFAULT_ONLINE_MENU_MODE,
+  DEFAULT_ONLINE_ORDERS_EXPIRE_MINUTES,
+  DEFAULT_POS_CHECKOUT_CONFIG,
+} from "@pippo/shared";
 import { AppSettings } from "@/features/settings/types";
 import { getSettings, saveSettings, testConnection } from "@/features/settings/services/settings.service";
 
@@ -32,6 +36,13 @@ export function useSettings() {
     online_menu_mode: DEFAULT_ONLINE_MENU_MODE,
     online_menu_category_ids: [],
     online_menu_product_ids: [],
+    pos_order_types: DEFAULT_POS_CHECKOUT_CONFIG.order_types,
+    pos_default_order_type: "",
+    pos_enable_pedidos_ya: DEFAULT_POS_CHECKOUT_CONFIG.enable_pedidos_ya,
+    pos_payment_methods: DEFAULT_POS_CHECKOUT_CONFIG.payment_methods,
+    pos_default_payment_method: "",
+    pos_enable_notes: DEFAULT_POS_CHECKOUT_CONFIG.enable_notes,
+    pos_skip_confirm_step: DEFAULT_POS_CHECKOUT_CONFIG.skip_confirm_step,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

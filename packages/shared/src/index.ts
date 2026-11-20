@@ -11,5 +11,6 @@ export * from "./models/telegram";
 export * from "./models/category";
 export * from "./constants/payment-providers";
 export * from "./constants/business-modules";
+export * from "./constants/pos-checkout";
 export * from "./constants/ai-model-providers";
 export * from "./constants/online-orders";

@@ -11,6 +11,7 @@ import { AddItemsModal } from "./AddItemsModal";
 import type { usePosCart } from "../hooks/usePosCart";
 import type { usePaymentValidation } from "../hooks/usePaymentValidation";
 import type { usePosPageActions } from "../hooks/usePosPageActions";
+import type { PosCheckoutConfig } from "@pippo/shared";
 import type { Product, Branch, Variant, DayOrder, PaymentMethod, SplitPayment } from "../types/pos.types";
 import type { usePrinter } from "@/features/printing/hooks/usePrinter";
 import type { Promotion } from "@/lib/promotions";
@@ -21,7 +22,7 @@ interface Props {
   products: Product[];
   promotions: Promotion[];
   useStock: boolean;
-  enableTableNumber: boolean;
+  checkout: PosCheckoutConfig;
   getStockQty: (variantId: string) => number | null;
   cart: ReturnType<typeof usePosCart>;
   paymentValidation: ReturnType<typeof usePaymentValidation>;
@@ -43,7 +44,7 @@ interface Props {
 }
 
 export function PosModals({
-  branchId, branches, products, promotions, useStock, enableTableNumber, getStockQty, cart, paymentValidation, actions,
+  branchId, branches, products, promotions, useStock, checkout, getStockQty, cart, paymentValidation, actions,
   getVariantPrice, getPromoLabel, printer, cancelModal, cancelling, onCancelOrder, onCloseCancelModal,
   payModal, paying, onPayOrder, onClosePayModal, addItemsModal, onCloseAddItemsModal, onItemsAdded,
 }: Props) {
@@ -61,7 +62,7 @@ export function PosModals({
       <PaymentModal
         open={actions.paymentModal}
         total={cart.total}
-        enableTableNumber={enableTableNumber}
+        checkout={checkout}
         onClose={() => { actions.setPaymentModal(false); actions.setPaymentMethod(null); actions.setPaymentProvider(null); }}
         onConfirm={actions.handlePaymentConfirm}
       />
@@ -94,7 +95,7 @@ export function PosModals({
         canPrint={printer.status !== "unsupported"}
       />
       <CancelOrderModal order={cancelModal} loading={cancelling} onConfirm={onCancelOrder} onClose={onCloseCancelModal} />
-      <CollectPaymentModal key={payModal?.id ?? "pay-closed"} order={payModal} submitting={paying} onConfirm={onPayOrder} onClose={onClosePayModal} />
+      <CollectPaymentModal key={payModal?.id ?? "pay-closed"} order={payModal} methods={checkout.payment_methods} submitting={paying} onConfirm={onPayOrder} onClose={onClosePayModal} />
       <AddItemsModal
         key={addItemsModal?.id ?? "add-items-closed"}
         order={addItemsModal}

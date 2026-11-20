@@ -1,4 +1,9 @@
-import type { OnlineMenuMode } from '@pippo/shared';
+import type {
+  OnlineMenuMode,
+  PosOrderTypeOption,
+  PosPaymentMethodOption,
+  PosPreselectablePaymentMethod,
+} from '@pippo/shared';
 
 export interface SettingsResult {
   telegram_bot_token: string;
@@ -23,4 +28,11 @@ export interface SettingsResult {
   online_menu_mode: OnlineMenuMode;
   online_menu_category_ids: string[];
   online_menu_product_ids: string[];
+  pos_order_types: PosOrderTypeOption[];
+  pos_default_order_type: PosOrderTypeOption | null;
+  pos_enable_pedidos_ya: boolean;
+  pos_payment_methods: PosPaymentMethodOption[];
+  pos_default_payment_method: PosPreselectablePaymentMethod | null;
+  pos_enable_notes: boolean;
+  pos_skip_confirm_step: boolean;
 }

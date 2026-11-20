@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Modal, Button, InputNumber, Typography } from "antd";
 import { ArrowRightOutlined } from "@ant-design/icons";
+import type { PosPaymentMethodOption } from "@pippo/shared";
 import { cashDueFor } from "@/lib/cash-change";
 import { OptionCard } from "./OptionCard";
 import { CashChangeCalculator } from "./CashChangeCalculator";
@@ -13,6 +14,11 @@ const { Text } = Typography;
 
 interface Props {
   order: DayOrder | null;
+  /**
+   * Métodos habilitados en Configuración → POS. "por cobrar" no aplica acá:
+   * esto ES el cobro de un pedido que quedó pendiente.
+   */
+  methods: PosPaymentMethodOption[];
   submitting: boolean;
   onClose: () => void;
   onConfirm: (paymentMethod: PaymentMethod, payments: SplitPayment[] | null) => void;
@@ -21,7 +27,7 @@ interface Props {
 // Fase 4 (docs/features/mesero-y-mejoras-pos/) — cobro diferido. Versión
 // reducida de PaymentModal: la orden ya existe (mesa/mesero/items ya están
 // fijos), acá solo se elige CÓMO se cobró.
-export function CollectPaymentModal({ order, submitting, onClose, onConfirm }: Props) {
+export function CollectPaymentModal({ order, methods, submitting, onClose, onConfirm }: Props) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
   const [cashAmount, setCashAmount] = useState(0);
 
@@ -77,9 +83,15 @@ export function CollectPaymentModal({ order, submitting, onClose, onConfirm }: P
         </div>
 
         <div className="flex gap-3">
-          <OptionCard selected={paymentMethod === "efectivo"} emoji="💵" label="Efectivo" accent="blue" onClick={() => setPaymentMethod(paymentMethod === "efectivo" ? null : "efectivo")} />
-          <OptionCard selected={paymentMethod === "qr"} emoji="📱" label="QR" accent="blue" onClick={() => setPaymentMethod(paymentMethod === "qr" ? null : "qr")} />
-          <OptionCard selected={paymentMethod === "mixto"} emoji="🔀" label="Mixto" accent="blue" onClick={handleSelectMixto} />
+          {methods.includes("efectivo") && (
+            <OptionCard selected={paymentMethod === "efectivo"} emoji="💵" label="Efectivo" accent="blue" onClick={() => setPaymentMethod(paymentMethod === "efectivo" ? null : "efectivo")} />
+          )}
+          {methods.includes("qr") && (
+            <OptionCard selected={paymentMethod === "qr"} emoji="📱" label="QR" accent="blue" onClick={() => setPaymentMethod(paymentMethod === "qr" ? null : "qr")} />
+          )}
+          {methods.includes("mixto") && (
+            <OptionCard selected={paymentMethod === "mixto"} emoji="🔀" label="Mixto" accent="blue" onClick={handleSelectMixto} />
+          )}
         </div>
 
         {paymentMethod === "mixto" && (

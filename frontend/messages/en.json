@@ -519,7 +519,9 @@
       "bothMustBeGreater": "Both amounts must be greater than 0",
       "tableNumberPlaceholder": "E.g: Table 5",
       "note": "Order note",
-      "notePlaceholder": "E.g: no onion, table 5, for John..."
+      "notePlaceholder": "E.g: no onion, table 5, for John...",
+      "singleStep": "SINGLE STEP",
+      "chargeAction": "Charge Bs {total}"
     },
     "confirmSaleModal": {
       "title": "Review and confirm",
@@ -945,7 +947,25 @@
       "title": "Cashier",
       "description": "Point of sale (cashier) options.",
       "enableTableNumberLabel": "Ask for table number when checking out",
-      "enableTableNumberExtra": "On: when confirming a \"Dine in\" order, the cashier can enter the table, same as in the waiter app. Off (recommended if your venue has no tables): the field doesn't show."
+      "enableTableNumberExtra": "On: when confirming a \"Dine in\" order, the cashier can enter the table, same as in the waiter app. Off (recommended if your venue has no tables): the field doesn't show.",
+      "checkoutFlowTitle": "Checkout flow",
+      "checkoutFlowDescription": "Build checkout the way your store runs it. Whatever you turn off here stops showing up for the cashier.",
+      "orderTypesLabel": "Available order types",
+      "orderTypesExtra": "Leave just one and the cashier never picks it: it applies on its own and the section disappears.",
+      "defaultOrderTypeLabel": "Preselected order type",
+      "defaultOrderTypeExtra": "Comes already marked when checkout opens. Saves one tap per sale.",
+      "noPreselection": "No preselection",
+      "pedidosYaLabel": "Show the Pedidos Ya shortcut",
+      "pedidosYaExtra": "Turn it off if you don't work with Pedidos Ya. Orders already recorded stay untouched.",
+      "paymentMethodsLabel": "Available payment methods",
+      "paymentMethodsExtra": "They also apply when collecting an order left pending.",
+      "defaultPaymentMethodLabel": "Preselected payment method",
+      "defaultPaymentMethodExtra": "Cash or QR only: mixed needs someone to split the amount, and \"pay later\" would leave sales unpaid by accident.",
+      "notesLabel": "Show the note field",
+      "notesExtra": "The order note that reaches the kitchen and the receipt.",
+      "skipConfirmLabel": "Close the sale without a confirmation screen",
+      "skipConfirmExtra": "The sale closes in a single screen; change is still calculated there.",
+      "skipConfirmWarning": "The cashier loses the last review before charging."
     },
     "printer": {
       "title": "Receipt printer",

@@ -1,4 +1,5 @@
 import { STORE, dbGet, dbPut } from "@/lib/offline-db";
+import { DEFAULT_POS_CHECKOUT_CONFIG, type PosCheckoutConfig } from "@pippo/shared";
 import type { Product } from "../types/pos.types";
 import type { Promotion } from "@/lib/promotions";
 
@@ -13,7 +14,7 @@ export interface CachedCatalog {
   products: Product[];
   promotions: Promotion[];
   useStock: boolean;
-  enableTableNumber: boolean;
+  checkout: PosCheckoutConfig;
 }
 
 export const PosCatalogCache = {
@@ -21,7 +22,11 @@ export const PosCatalogCache = {
     try {
       const catalog = await dbGet<CachedCatalog>(STORE.catalog, branchId);
       if (!catalog?.products?.length) return null;
-      return { catalog, isStale: Date.now() - catalog.cachedAt > FRESH_FOR_MS };
+      // Una entrada guardada por una versión anterior no tiene `checkout`
+      // (antes acá vivía un solo booleano de número de mesa). Se sirve igual
+      // con el flujo de cobro por defecto hasta que el refresh la reemplace.
+      const safe = catalog.checkout ? catalog : { ...catalog, checkout: DEFAULT_POS_CHECKOUT_CONFIG };
+      return { catalog: safe, isStale: Date.now() - catalog.cachedAt > FRESH_FOR_MS };
     } catch {
       // No IndexedDB (private mode, blocked storage) — behave as a cold start.
       return null;

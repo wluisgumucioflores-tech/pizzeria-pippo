@@ -1,4 +1,5 @@
 import {
+  ArrayNotEmpty,
   IsArray,
   IsBoolean,
   IsIn,
@@ -15,7 +16,13 @@ import {
   MAX_ONLINE_ORDERS_EXPIRE_MINUTES,
   MIN_ONLINE_ORDERS_EXPIRE_MINUTES,
   ONLINE_MENU_MODES,
+  POS_ORDER_TYPES,
+  POS_PAYMENT_METHODS,
+  POS_PRESELECTABLE_PAYMENT_METHODS,
   type OnlineMenuMode,
+  type PosOrderTypeOption,
+  type PosPaymentMethodOption,
+  type PosPreselectablePaymentMethod,
 } from '@pippo/shared';
 
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
@@ -131,4 +138,40 @@ export class UpdateSettingsDto {
   @IsArray()
   @IsUUID('4', { each: true })
   online_menu_product_ids?: string[];
+
+  // Flujo de cobro del POS. ArrayNotEmpty en las dos listas: dejar al cajero
+  // sin ningún tipo de pedido o sin ningún método de pago lo deja sin poder
+  // cobrar, y eso se rechaza en el borde en vez de llegar a la DB.
+  @IsOptional()
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsIn(POS_ORDER_TYPES, { each: true })
+  pos_order_types?: PosOrderTypeOption[];
+
+  // Cadena vacía = "sin preselección" (el frontend manda siempre el campo).
+  @IsOptional()
+  @IsIn([...POS_ORDER_TYPES, ''])
+  pos_default_order_type?: PosOrderTypeOption | '';
+
+  @IsOptional()
+  @IsBoolean()
+  pos_enable_pedidos_ya?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsIn(POS_PAYMENT_METHODS, { each: true })
+  pos_payment_methods?: PosPaymentMethodOption[];
+
+  @IsOptional()
+  @IsIn([...POS_PRESELECTABLE_PAYMENT_METHODS, ''])
+  pos_default_payment_method?: PosPreselectablePaymentMethod | '';
+
+  @IsOptional()
+  @IsBoolean()
+  pos_enable_notes?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  pos_skip_confirm_step?: boolean;
 }
