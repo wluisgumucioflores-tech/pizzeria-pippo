@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Modal, InputNumber, Alert, Typography } from "antd";
 import { useTranslations } from "next-intl";
 
@@ -15,15 +15,17 @@ interface Props {
 }
 
 export function OpenCashModal({ open, saving, error, onConfirm, onClose }: Props) {
-  const [amount, setAmount] = useState<number>(0);
+  // null, no 0: con 0 el campo arranca con un valor real y tipear 5 deja "05".
+  const [amount, setAmount] = useState<number | null>(null);
   const t = useTranslations("cashbox.openModal");
   const tc = useTranslations("common");
 
-  const handleConfirm = () => onConfirm(amount);
-  const handleClose = () => {
-    setAmount(0);
-    onClose();
-  };
+  useEffect(() => {
+    if (open) setAmount(null);
+  }, [open]);
+
+  // Abrir con la caja vacía es válido, así que no haber tipeado nada vale 0.
+  const handleConfirm = () => onConfirm(amount ?? 0);
 
   return (
     <Modal
@@ -34,7 +36,7 @@ export function OpenCashModal({ open, saving, error, onConfirm, onClose }: Props
       cancelText={tc("cancel")}
       okButtonProps={{ loading: saving }}
       onOk={handleConfirm}
-      onCancel={handleClose}
+      onCancel={onClose}
       destroyOnClose
     >
       {error && <Alert type="error" showIcon message={error} style={{ marginBottom: 16 }} />}
@@ -43,7 +45,8 @@ export function OpenCashModal({ open, saving, error, onConfirm, onClose }: Props
         prefix="Bs"
         min={0}
         value={amount}
-        onChange={(v) => setAmount(v ?? 0)}
+        placeholder="0.00"
+        onChange={setAmount}
         style={{ width: "100%" }}
         autoFocus
       />

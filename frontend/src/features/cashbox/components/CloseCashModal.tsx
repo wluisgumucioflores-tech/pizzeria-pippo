@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Modal, InputNumber, Alert, Typography, Divider } from "antd";
 import { useTranslations } from "next-intl";
 import type { CashSession } from "../types/cashbox.types";
@@ -17,25 +17,34 @@ interface Props {
 }
 
 export function CloseCashModal({ open, saving, error, session, onConfirm, onClose }: Props) {
-  const [counted, setCounted] = useState<number>(0);
+  // null, no 0: con 0 el campo arranca con un valor real y tipear 5 deja "05".
+  const [counted, setCounted] = useState<number | null>(null);
   const t = useTranslations("cashbox.closeModal");
   const tc = useTranslations("common");
 
-  const handleConfirm = () => onConfirm(counted);
-  const handleClose = () => {
-    setCounted(0);
-    onClose();
+  useEffect(() => {
+    if (open) setCounted(null);
+  }, [open]);
+
+  const handleConfirm = () => {
+    if (counted === null) return;
+    onConfirm(counted);
   };
 
   if (!session) return null;
 
-  const diff = counted - session.expected_amount;
+  // Sin monto contado todavía no hay diferencia que mostrar: con 0 por
+  // defecto el modal abría gritando "faltante" antes de que el cajero
+  // tocara nada.
+  const diff = counted === null ? null : counted - session.expected_amount;
   const diffDisplay =
-    diff < 0
-      ? { text: `− Bs ${Math.abs(diff).toFixed(2)} · ${t("shortage")}`, color: "#dc2626" }
-      : diff > 0
-        ? { text: `+ Bs ${diff.toFixed(2)} · ${t("surplus")}`, color: "#d97706" }
-        : { text: `Bs 0,00 · ${t("balanced")}`, color: "#16a34a" };
+    diff === null
+      ? null
+      : diff < 0
+        ? { text: `− Bs ${Math.abs(diff).toFixed(2)} · ${t("shortage")}`, color: "#dc2626" }
+        : diff > 0
+          ? { text: `+ Bs ${diff.toFixed(2)} · ${t("surplus")}`, color: "#d97706" }
+          : { text: `Bs 0,00 · ${t("balanced")}`, color: "#16a34a" };
 
   return (
     <Modal
@@ -44,9 +53,9 @@ export function CloseCashModal({ open, saving, error, session, onConfirm, onClos
       title={t("title")}
       okText={t("confirm")}
       cancelText={tc("cancel")}
-      okButtonProps={{ loading: saving, danger: true }}
+      okButtonProps={{ loading: saving, danger: true, disabled: counted === null }}
       onOk={handleConfirm}
-      onCancel={handleClose}
+      onCancel={onClose}
       destroyOnClose
     >
       {error && <Alert type="error" showIcon message={error} style={{ marginBottom: 16 }} />}
@@ -74,25 +83,28 @@ export function CloseCashModal({ open, saving, error, session, onConfirm, onClos
         prefix="Bs"
         min={0}
         value={counted}
-        onChange={(v) => setCounted(v ?? 0)}
+        placeholder="0.00"
+        onChange={setCounted}
         style={{ width: "100%", marginBottom: 16 }}
         autoFocus
       />
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          padding: "10px 14px",
-          borderRadius: 6,
-          background: `${diffDisplay.color}1a`,
-          color: diffDisplay.color,
-          fontWeight: 600,
-        }}
-      >
-        <span>{t("difference")}</span>
-        <span>{diffDisplay.text}</span>
-      </div>
+      {diffDisplay && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            padding: "10px 14px",
+            borderRadius: 6,
+            background: `${diffDisplay.color}1a`,
+            color: diffDisplay.color,
+            fontWeight: 600,
+          }}
+        >
+          <span>{t("difference")}</span>
+          <span>{diffDisplay.text}</span>
+        </div>
+      )}
     </Modal>
   );
 }

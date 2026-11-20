@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Modal, InputNumber, Select, Input, Alert, Typography } from "antd";
 import { useTranslations } from "next-intl";
 import type { CashExpenseCategory } from "../types/cashbox.types";
@@ -19,20 +19,28 @@ interface Props {
 }
 
 export function RegisterExpenseModal({ open, saving, error, onConfirm, onClose }: Props) {
-  const [amount, setAmount] = useState<number>(0);
+  // null, no 0: con 0 el campo arranca con un valor real y tipear 5 deja "05".
+  const [amount, setAmount] = useState<number | null>(null);
   const [category, setCategory] = useState<CashExpenseCategory>("insumos");
   const [note, setNote] = useState("");
   const t = useTranslations("cashbox.expenseModal");
   const tc = useTranslations("common");
 
-  const categoryOptions = CATEGORIES.map((value) => ({ value, label: t(`categories.${value}`) }));
-
-  const handleConfirm = () => onConfirm(amount, category, note);
-  const handleClose = () => {
-    setAmount(0);
+  // Se limpia al abrir, no al cerrar: guardar un gasto cierra el modal desde
+  // el hook (sin pasar por handleClose), y el gasto anterior quedaba cargado
+  // para el siguiente.
+  useEffect(() => {
+    if (!open) return;
+    setAmount(null);
     setCategory("insumos");
     setNote("");
-    onClose();
+  }, [open]);
+
+  const categoryOptions = CATEGORIES.map((value) => ({ value, label: t(`categories.${value}`) }));
+
+  const handleConfirm = () => {
+    if (!amount) return;
+    onConfirm(amount, category, note);
   };
 
   return (
@@ -42,9 +50,9 @@ export function RegisterExpenseModal({ open, saving, error, onConfirm, onClose }
       title={t("title")}
       okText={t("confirm")}
       cancelText={tc("cancel")}
-      okButtonProps={{ loading: saving, disabled: amount <= 0 }}
+      okButtonProps={{ loading: saving, disabled: !amount || amount <= 0 }}
       onOk={handleConfirm}
-      onCancel={handleClose}
+      onCancel={onClose}
       destroyOnClose
     >
       {error && <Alert type="error" showIcon message={error} style={{ marginBottom: 16 }} />}
@@ -54,7 +62,8 @@ export function RegisterExpenseModal({ open, saving, error, onConfirm, onClose }
         prefix="Bs"
         min={0.01}
         value={amount}
-        onChange={(v) => setAmount(v ?? 0)}
+        placeholder="0.00"
+        onChange={setAmount}
         style={{ width: "100%", marginBottom: 16 }}
         autoFocus
       />
